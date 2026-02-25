@@ -1,191 +1,181 @@
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1><i class="fas fa-microscope"></i> Exámenes Coprológicos</h1>
+    </div>
+    <button class="btn btn-primary" (click)="createNewTest()">
+      <i class="fas fa-plus"></i> Nuevo Examen
+    </button>
+  </div>
 
-    <div class="container">
-      <div class="header">
-        <div class="header-left">
-          <h1><i class="fas fa-microscope"></i> Exámenes Coprológicos</h1>
-        </div>
-        <button class="btn btn-primary" (click)="createNewTest()">
-          <i class="fas fa-plus"></i> Nuevo Examen
-        </button>
-      </div>
+  <!-- Filters -->
+  @if (!loading() && !error()) {
+  <div class="filters">
+    <div class="filter-group">
+      <label for="patientIdSearch">ID Paciente:</label>
+      <input id="patientIdSearch" type="text" [ngModel]="filters().patientId"
+        (ngModelChange)="filters.set({...filters(), patientId: $event})" placeholder="ID del paciente..."
+        (input)="onSearch()">
+    </div>
 
-      <!-- Filters -->
-      <div *ngIf="!loading && !error" class="filters">
-        <div class="filter-group">
-          <label for="patientIdSearch">ID Paciente:</label>
-          <input 
-            id="patientIdSearch"
-            type="text" 
-            [(ngModel)]="filters.patientId"
-            placeholder="ID del paciente..."
-            (input)="onFilterChange()">
-        </div>
-        
-        <div class="filter-group">
-          <label for="statusFilter">Estado:</label>
-          <select 
-            id="statusFilter"
-            [(ngModel)]="filters.status"
-            (change)="onFilterChange()">
-            <option value="">Todos los estados</option>
-            <option value="pending">Pendiente</option>
-            <option value="completed">Completado</option>
-            <option value="reviewed">Revisado</option>
-          </select>
-        </div>
+    <div class="filter-group">
+      <label for="statusFilter">Estado:</label>
+      <select id="statusFilter" [ngModel]="filters().status"
+        (ngModelChange)="filters.set({...filters(), status: $event}); onFilterChange()">
+        <option value="">Todos los estados</option>
+        <option value="pending">Pendiente</option>
+        <option value="completed">Completado</option>
+        <option value="reviewed">Revisado</option>
+      </select>
+    </div>
 
-        <div class="filter-group">
-          <label for="dateFrom">Desde:</label>
-          <input 
-            id="dateFrom"
-            type="date" 
-            [(ngModel)]="filters.dateFrom"
-            (change)="onFilterChange()">
-        </div>
+    <div class="filter-group">
+      <label for="dateFrom">Desde:</label>
+      <input id="dateFrom" type="date" [ngModel]="filters().dateFrom"
+        (ngModelChange)="filters.set({...filters(), dateFrom: $event}); onFilterChange()">
+    </div>
 
-        <div class="filter-group">
-          <label for="dateTo">Hasta:</label>
-          <input 
-            id="dateTo"
-            type="date" 
-            [(ngModel)]="filters.dateTo"
-            (change)="onFilterChange()">
-        </div>
+    <div class="filter-group">
+      <label for="dateTo">Hasta:</label>
+      <input id="dateTo" type="date" [ngModel]="filters().dateTo"
+        (ngModelChange)="filters.set({...filters(), dateTo: $event}); onFilterChange()">
+    </div>
 
-        <div class="filter-actions">
-          <button class="btn btn-secondary" (click)="clearFilters()">
-            <i class="fas fa-filter"></i> Limpiar Filtros
-          </button>
-          <button class="btn btn-secondary" (click)="refreshData()">
-            <i class="fas fa-sync-alt"></i> Actualizar
-          </button>
-        </div>
-      </div>
+    <div class="filter-actions">
+      <button class="btn btn-secondary" (click)="clearFilters()">
+        <i class="fas fa-filter"></i> Limpiar Filtros
+      </button>
+      <button class="btn btn-secondary" (click)="refreshData()">
+        <i class="fas fa-sync-alt"></i> Actualizar
+      </button>
+    </div>
+  </div>
+  }
 
-      <!-- Loading State -->
-      <div *ngIf="loading" class="loading">
-        <i class="fas fa-spinner fa-spin"></i> Cargando exámenes coprológicos...
-      </div>
-      
-      <!-- Error State -->
-      <div *ngIf="error" class="error">
-        ❌ Error al cargar los exámenes: {{ error }}
-        <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
-      </div>
+  <!-- Loading State -->
+  @if (loading()) {
+  <div class="loading">
+    <i class="fas fa-spinner fa-spin"></i> Cargando exámenes coprológicos...
+  </div>
+  }
 
-      <!-- Empty State -->
-      <div *ngIf="!loading && !error && stoolTests.length === 0" class="no-data">
-        📋 No se encontraron exámenes coprológicos.
-        <br><small>Crea el primer examen haciendo clic en "Nuevo Examen".</small>
-      </div>
-      
-      <!-- Results Table -->
-      <div *ngIf="!loading && !error && stoolTests.length > 0" class="table-container">
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>Muestra</th>
-              <th>Paciente</th>
-              <th>Edad</th>
-              <th>Fecha</th>
-              <th>Estado</th>
-              <th>Hallazgos</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let test of (stoolTests || [])" 
-                (click)="viewTest(test)" 
-                class="test-row"
-                [class.abnormal-row]="hasAbnormalFindings(test)">
-              <td>
-                <div class="sample-info">
-                  <strong>{{ test.sampleNumber }}</strong>
-                </div>
-              </td>
-              <td>
-                <div class="patient-info">
-                  <strong>{{ test.patient.name }}</strong>
-                </div>
-              </td>
-              <td>{{ test.patient.age || 'N/A' }}</td>
-              <td>{{ formatDate(test.testDate) }}</td>
-              <td>
-                <span class="status-badge" [ngClass]="getStatusClass(test.status)">
-                  {{ getStatusText(test.status) }}
-                </span>
-              </td>
-              <td>
-                <div class="findings-summary">
-                  <span class="finding-tag" [ngClass]="'color-' + ((test.color && test.color.toLowerCase()) || 'unknown')">{{ test.color || 'No especificado' }}</span>
-                  <span class="finding-tag">{{ test.consistency || 'No especificado' }}</span>
-                  <span *ngIf="hasAbnormalFindings(test)" class="finding-tag abnormal">
-                    ⚠️ Anormal
-                  </span>
-                </div>
-              </td>
-                  <!-- <i class="fas fa-eye"></i>
-                  <i class="fas fa-edit"></i>
-                  <i class="fas fa-file-pdf"></i>
-                  <i class="fas fa-trash"></i> -->
-              <td class="actions">
-                <button 
-                  class="action-btn view-btn" 
-                  (click)="viewTest(test, $event)"
-                  title="Ver detalles">
-                  👁️ Ver
-                </button>
-                <button class="action-btn edit-btn" (click)="editTest(test, $event)" title="Editar examen">
-                  ✏️ Editar
-                </button>
-                <button 
-                  class="action-btn" 
-                  [class.status-active-btn]="test.isActive"
-                  [class.status-inactive-btn]="!test.isActive"
-                  (click)="deleteTest(test.id); $event.stopPropagation()"
-                  [title]="test.isActive ? 'Desactivar examen' : 'Activar examen'">
-                  {{ test.isActive ? '🗑️ Desactivar' : '🟢 Activar' }}
-                </button>
-                <button class="action-btn pdf-btn" (click)="generatePdf(test, $event)" title="Generar PDF">
-                  🖨️ PDF
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  <!-- Error State -->
+  @if (error()) {
+  <div class="error">
+    ❌ Error al cargar los exámenes: {{ error() }}
+    <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
+  </div>
+  }
 
-      <!-- Pagination -->
-      <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
-        <button 
-          class="btn" 
-          [disabled]="currentPage === 1" 
-          (click)="goToPage(currentPage - 1)">
-          ← Anterior
-        </button>
-        
-        <span class="page-info">
-          Página {{ currentPage }} de {{ totalPages }} 
-          ({{ totalTests }} exámenes totales)
-        </span>
-        
-        <button 
-          class="btn" 
-          [disabled]="currentPage === totalPages" 
-          (click)="goToPage(currentPage + 1)">
-          Siguiente →
-        </button>
-      </div>
-      
-      <!-- Modal de confirmación -->
-      <div class="modal" *ngIf="showConfirmModal" (click)="closeModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>{{ confirmAction.title }}</h3>
-          <p>{{ confirmAction.message }}</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
-            <button class="btn-danger" (click)="confirmAction.action()">Confirmar</button>
-          </div>
-        </div>
+  <!-- Empty State -->
+  @if (!loading() && !error() && stoolTests().length === 0) {
+  <div class="no-data">
+    📋 No se encontraron exámenes coprológicos.
+    <br><small>Crea el primer examen haciendo clic en "Nuevo Examen".</small>
+  </div>
+  }
+
+  <!-- Results Table -->
+  @if (!loading() && !error() && stoolTests().length > 0) {
+  <div class="table-container">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Muestra</th>
+          <th>Paciente</th>
+          <th>Edad</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Hallazgos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (test of stoolTests(); track test.id) {
+        <tr (click)="viewTest(test)" class="test-row" [class.abnormal-row]="hasAbnormalFindings(test)"
+          [class.inactive-row]="!test.isActive">
+          <td>
+            <div class="sample-info">
+              <strong>{{ test.sampleNumber }}</strong>
+            </div>
+          </td>
+          <td>
+            <div class="patient-info">
+              <strong>{{ test.patient.name }}</strong>
+            </div>
+          </td>
+          <td>{{ test.patient.age || 'N/A' }}</td>
+          <td>{{ formatDate(test.testDate) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(test.status)">
+              {{ getStatusText(test.status) }}
+            </span>
+          </td>
+          <td>
+            <div class="findings-summary">
+              <span class="finding-tag"
+                [ngClass]="'color-' + ((test.color && test.color.toLowerCase()) || 'unknown')">{{ test.color || 'No
+                especificado' }}</span>
+              <span class="finding-tag">{{ test.consistency || 'No especificado' }}</span>
+              @if (hasAbnormalFindings(test)) {
+              <span class="finding-tag abnormal">
+                ⚠️ Anormal
+              </span>
+              }
+            </div>
+          </td>
+          <td class="actions">
+            <button class="action-btn view-btn" (click)="viewTest(test, $event)" title="Ver detalles">
+              👁️ Ver
+            </button>
+            <button class="action-btn edit-btn" (click)="editTest(test, $event)" title="Editar examen">
+              ✏️ Editar
+            </button>
+            <button class="action-btn" [class.status-active-btn]="test.isActive"
+              [class.status-inactive-btn]="!test.isActive" (click)="deleteTest(test.id); $event.stopPropagation()"
+              [title]="test.isActive ? 'Desactivar examen' : 'Activar examen'">
+              {{ test.isActive ? '🗑️ Desactivar' : '🟢 Activar' }}
+            </button>
+            <button class="action-btn pdf-btn" (click)="generatePdf(test, $event)" title="Generar PDF">
+              🖨️ PDF
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+
+  <!-- Pagination -->
+  @if (!loading() && !error() && totalPages() > 1) {
+  <div class="pagination">
+    <button class="btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+      ← Anterior
+    </button>
+
+    <span class="page-info">
+      Página {{ currentPage() }} de {{ totalPages() }}
+      ({{ totalTests() }} exámenes totales)
+    </span>
+
+    <button class="btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">
+      Siguiente →
+    </button>
+  </div>
+  }
+
+  <!-- Modal de confirmación -->
+  @if (showConfirmModal()) {
+  <div class="modal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>{{ confirmAction().title }}</h3>
+      <p>{{ confirmAction().message }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmAction().action()">Confirmar</button>
       </div>
     </div>
+  </div>
+  }
+</div>

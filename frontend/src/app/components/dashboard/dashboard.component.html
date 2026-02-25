@@ -1,25 +1,39 @@
-
-    <div class="dashboard">
-      <!-- Dashboard Cards -->
-      <div class="dashboard-cards">
-        <div class="card" 
-             *ngFor="let card of dashboardCards"
-             [ngClass]="'card-' + card.color"
-             [attr.data-trend]="card.trend">
-          <div class="card-header">
-            <div class="card-icon">
-              <i [ngClass]="'fa ' + card.icon"></i>
-            </div>
-            <div *ngIf="card.trend" class="card-trend" [ngClass]="'trend-' + card.trend">
+<div class="dashboard">
+  <!-- Dashboard Cards -->
+  <div class="dashboard-cards">
+    @for (card of dashboardCards(); track card.name) {
+      <div class="card" 
+           [ngClass]="'card-' + card.color"
+           [attr.data-trend]="card.trend">
+        <div class="card-header">
+          <div class="card-icon">
+            <i [ngClass]="'fa ' + card.icon"></i>
+          </div>
+          @if (card.trend) {
+            <div class="card-trend" [ngClass]="'trend-' + card.trend">
               <i [ngClass]="getTrendIcon(card.trend)"></i>
-              <span *ngIf="card.trendPercent !== undefined">{{ card.trendPercent }}%</span>
+              @if (card.trendPercent !== undefined) {
+                <span>{{ card.trendPercent }}%</span>
+              }
             </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">{{ card.name }}</h3>
-            <div class="card-value">{{ card.value | number }}</div>
-            <div class="card-description">{{ card.description }}</div>
-          </div>
+          }
+        </div>
+        <div class="card-content">
+          <h3 class="card-title">{{ card.name }}</h3>
+          <div class="card-value">{{ card.value | number }}</div>
+          <div class="card-description">{{ card.description }}</div>
         </div>
       </div>
+    } @empty {
+      @if (isLoading()) {
+        <div class="loading-state">Cargando tablero...</div>
+      }
+    }
+  </div>
+
+  @if (hasError()) {
+    <div class="error-banner">
+      {{ errorMessage() }}
     </div>
+  }
+</div>

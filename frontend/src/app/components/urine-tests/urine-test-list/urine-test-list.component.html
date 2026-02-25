@@ -1,242 +1,264 @@
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Generales de Orina</h1>
+    </div>
+    <button class="btn btn-primary" routerLink="/urine-tests/new">
+      ➕ Nuevo Examen
+    </button>
+  </div>
 
-    <div class="container">
-      <div class="header">
-        <div class="header-left">
-          <h1>Generales de Orina</h1>
-        </div>
-        <button class="btn btn-primary" routerLink="/urine-tests/new">
-          ➕ Nuevo Examen
-        </button>
-      </div>
-      
-      <div *ngIf="loading" class="loading">
-        🔄 Cargando exámenes de orina...
-      </div>
-      
-      <div *ngIf="error" class="error">
-        ❌ Error: {{ error }}
-        <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
-      </div>
+  @if (loading()) {
+  <div class="loading">
+    🔄 Cargando exámenes de orina...
+  </div>
+  }
 
-      <div *ngIf="successMessage" class="success">
-        ✅ {{ successMessage }}
-      </div>
+  @if (error()) {
+  <div class="error">
+    ❌ Error: {{ error() }}
+    <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
+  </div>
+  }
 
-      <!-- Filters Section -->
-      <div *ngIf="!loading && !error" class="filters">
-        <div class="filter-group">
-          <label for="statusFilter">Estado:</label>
-          <select id="statusFilter" [(ngModel)]="filters.status" (ngModelChange)="applyFilters()">
-            <option value="">Todos los estados</option>
-            <option *ngFor="let option of statusOptions" [value]="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-        </div>
+  @if (successMessage()) {
+  <div class="success">
+    ✅ {{ successMessage() }}
+  </div>
+  }
 
-        <div class="filter-group">
-          <label for="dateFromFilter">Desde:</label>
-          <input 
-            id="dateFromFilter" 
-            type="date" 
-            [(ngModel)]="filters.dateFrom" 
-            (change)="applyFilters()"
-          >
-        </div>
+  <!-- Filters Section -->
+  @if (!loading() && !error()) {
+  <div class="filters">
+    <div class="filter-group">
+      <label for="statusFilter">Estado:</label>
+      <select id="statusFilter" [ngModel]="filters().status"
+        (ngModelChange)="filters.set({...filters(), status: $event}); applyFilters()">
+        <option value="">Todos los estados</option>
+        @for (option of statusOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
 
-        <div class="filter-group">
-          <label for="dateToFilter">Hasta:</label>
-          <input 
-            id="dateToFilter" 
-            type="date" 
-            [(ngModel)]="filters.dateTo" 
-            (change)="applyFilters()"
-          >
-        </div>
+    <div class="filter-group">
+      <label for="dateFromFilter">Desde:</label>
+      <input id="dateFromFilter" type="date" [ngModel]="filters().dateFrom"
+        (ngModelChange)="filters.set({...filters(), dateFrom: $event}); applyFilters()">
+    </div>
 
-        <div class="filter-group checkbox-group">
-          <label>
-            <input 
-              type="checkbox" 
-              [(ngModel)]="filters.hasAbnormalResults" 
-              (change)="applyFilters()"
-            >
-            Solo resultados anormales
-          </label>
-        </div>
+    <div class="filter-group">
+      <label for="dateToFilter">Hasta:</label>
+      <input id="dateToFilter" type="date" [ngModel]="filters().dateTo"
+        (ngModelChange)="filters.set({...filters(), dateTo: $event}); applyFilters()">
+    </div>
 
-        <div class="filter-actions">
-          <button class="btn btn-secondary" (click)="clearFilters()">
-            🗑️ Limpiar Filtros
-          </button>
-        </div>
-      </div>
+    <div class="filter-group checkbox-group">
+      <label>
+        <input type="checkbox" [ngModel]="filters().hasAbnormalResults"
+          (ngModelChange)="filters.set({...filters(), hasAbnormalResults: $event}); applyFilters()">
+        Solo resultados anormales
+      </label>
+    </div>
 
-      <!-- Results Table -->
-      <div *ngIf="!loading && !error && urineTests.length > 0" class="table-container">
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th (click)="sort('patient.name')">
-                Paciente
-                <span class="sort-indicator" [class.active]="sortField === 'patient.name'">
-                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                </span>
-              </th>
-              <th (click)="sort('testDate')">
-                Fecha Examen
-                <span class="sort-indicator" [class.active]="sortField === 'testDate'">
-                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                </span>
-              </th>
-              <th>Examen Físico</th>
-              <th>Examen Químico</th>
-              <th>Microscópico</th>
-              <th (click)="sort('status')">
-                Estado
-                <span class="sort-indicator" [class.active]="sortField === 'status'">
-                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                </span>
-              </th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let test of urineTests; trackBy: trackByTestId" 
-                [class.abnormal-row]="hasAbnormalResults(test)">
-              <td>
-                <div class="patient-info">
-                  <strong>{{ test.patient?.name || 'Paciente no disponible' }}</strong>
-                  <small *ngIf="test.patient?.age">{{ test.patient?.age }} años</small>
-                </div>
-              </td>
-              <td>
-                <div class="date-info">
-                  <strong>{{ formatDate(test.testDate) }}</strong>                  
-                </div>
-              </td>
-              <td>
-                <div class="physical-results">
-                  <div *ngIf="test.color" class="result-item">
-                    <span class="label">Color:</span>
-                    <span class="value" [class]="getColorClass(test.color)">{{ test.color }}</span>
-                  </div>
-                  <div *ngIf="test.aspect" class="result-item">
-                    <span class="label">Aspecto:</span>
-                    <span class="value">{{ test.aspect }}</span>
-                  </div>
-                  <div *ngIf="test.volume" class="result-item">
-                    <span class="label">Volumen:</span>
-                    <span class="value">{{ test.volume }}</span>
-                  </div>
-                  <span *ngIf="!hasPhysicalResults(test)" class="no-data">Sin datos</span>
-                </div>
-              </td>
-              <td>
-                <div class="chemical-results">
-                  <div *ngIf="test.protein" class="result-item">
-                    <span class="label">Proteína:</span>
-                    <span class="value" [class]="getResultClass(test.protein)">{{ test.protein }}</span>
-                  </div>
-                  <div *ngIf="test.glucose" class="result-item">
-                    <span class="label">Glucosa:</span>
-                    <span class="value" [class]="getResultClass(test.glucose)">{{ test.glucose }}</span>
-                  </div>
-                  <div *ngIf="test.bilirubin" class="result-item">
-                    <span class="label">Bilirrubina:</span>
-                    <span class="value" [class]="getResultClass(test.bilirubin)">{{ test.bilirubin }}</span>
-                  </div>
+    <div class="filter-actions">
+      <button class="btn btn-secondary" (click)="clearFilters()">
+        🗑️ Limpiar Filtros
+      </button>
+    </div>
+  </div>
+  }
 
-                  <span *ngIf="!hasChemicalResults(test)" class="no-data">Sin datos</span>
-                </div>
-              </td>
-              <td>
-                <div class="microscopic-results">
-                  <div *ngIf="test.bacteria" class="result-item">
-                    <span class="label">Bacterias:</span>
-                    <span class="value" [class]="getBacteriaClass(test.bacteria)">{{ test.bacteria }}</span>
-                  </div>
-                  <div *ngIf="test.epithelialCells" class="result-item">
-                    <span class="label">Células Epiteliales:</span>
-                    <span class="value">{{ test.epithelialCells }}</span>
-                  </div>
-                  <span *ngIf="!hasMicroscopicResults(test)" class="no-data">Sin datos</span>
-                </div>
-              </td>
-              <td>
-                <span class="status" [class]="getStatusClass(test.status)">
-                  {{ getStatusText(test.status) }}
-                </span>
-                <div *ngIf="hasAbnormalResults(test)" class="abnormal-indicator">
-                  ⚠️ Anormal
-                </div>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button class="action-btn view-btn" (click)="viewDetails(test.id)" title="Ver detalle">
-                    👁️ Ver
-                  </button>
-                  <button class="action-btn edit-btn" (click)="editTest(test.id)" title="Editar examen">
-                    ✏️ Editar
-                  </button>
-                  <button 
-                    class="action-btn" 
-                    [class.status-active-btn]="test.isActive"
-                    [class.status-inactive-btn]="!test.isActive"
-                    (click)="deleteTest(test.id)"
-                    [title]="test.isActive ? 'Desactivar examen' : 'Activar examen'">
-                    {{ test.isActive ? '� Desactivar' : '🟢 Activar' }}
-                  </button>
-                  <button class="action-btn pdf-btn" (click)="generateReport(test.id)" title="Descargar PDF">
-                    �️ PDF
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  <!-- Results Table -->
+  @if (!loading() && !error() && urineTests().length > 0) {
+  <div class="table-container">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th (click)="sort('patient.name')">
+            Paciente
+            <span class="sort-indicator" [class.active]="sortField() === 'patient.name'">
+              {{ sortDirection() === 'asc' ? '↑' : '↓' }}
+            </span>
+          </th>
+          <th (click)="sort('testDate')">
+            Fecha Examen
+            <span class="sort-indicator" [class.active]="sortField() === 'testDate'">
+              {{ sortDirection() === 'asc' ? '↑' : '↓' }}
+            </span>
+          </th>
+          <th>Examen Físico</th>
+          <th>Examen Químico</th>
+          <th>Microscópico</th>
+          <th (click)="sort('status')">
+            Estado
+            <span class="sort-indicator" [class.active]="sortField() === 'status'">
+              {{ sortDirection() === 'asc' ? '↑' : '↓' }}
+            </span>
+          </th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (test of urineTests(); track test.id) {
+        <tr [class.abnormal-row]="hasAbnormalResults(test)" [class.inactive-row]="!test.isActive">
+          <td>
+            <div class="patient-info">
+              <strong>{{ test.patient?.name || 'Paciente no disponible' }}</strong>
+              @if (test.patient?.age) {
+              <small>{{ test.patient?.age }} años</small>
+              }
+            </div>
+          </td>
+          <td>
+            <div class="date-info">
+              <strong>{{ formatDate(test.testDate) }}</strong>
+            </div>
+          </td>
+          <td>
+            <div class="physical-results">
+              @if (test.color) {
+              <div class="result-item">
+                <span class="label">Color:</span>
+                <span class="value" [class]="getColorClass(test.color)">{{ test.color }}</span>
+              </div>
+              }
+              @if (test.aspect) {
+              <div class="result-item">
+                <span class="label">Aspecto:</span>
+                <span class="value">{{ test.aspect }}</span>
+              </div>
+              }
+              @if (test.volume) {
+              <div class="result-item">
+                <span class="label">Volumen:</span>
+                <span class="value">{{ test.volume }}</span>
+              </div>
+              }
+              @if (!hasPhysicalResults(test)) {
+              <span class="no-data">Sin datos</span>
+              }
+            </div>
+          </td>
+          <td>
+            <div class="chemical-results">
+              @if (test.protein) {
+              <div class="result-item">
+                <span class="label">Proteína:</span>
+                <span class="value" [class]="getResultClass(test.protein)">{{ test.protein }}</span>
+              </div>
+              }
+              @if (test.glucose) {
+              <div class="result-item">
+                <span class="label">Glucosa:</span>
+                <span class="value" [class]="getResultClass(test.glucose)">{{ test.glucose }}</span>
+              </div>
+              }
+              @if (test.bilirubin) {
+              <div class="result-item">
+                <span class="label">Bilirrubina:</span>
+                <span class="value" [class]="getResultClass(test.bilirubin)">{{ test.bilirubin }}</span>
+              </div>
+              }
+              @if (!hasChemicalResults(test)) {
+              <span class="no-data">Sin datos</span>
+              }
+            </div>
+          </td>
+          <td>
+            <div class="microscopic-results">
+              @if (test.bacteria) {
+              <div class="result-item">
+                <span class="label">Bacterias:</span>
+                <span class="value" [class]="getBacteriaClass(test.bacteria)">{{ test.bacteria }}</span>
+              </div>
+              }
+              @if (test.epithelialCells) {
+              <div class="result-item">
+                <span class="label">Células Epiteliales:</span>
+                <span class="value">{{ test.epithelialCells }}</span>
+              </div>
+              }
+              @if (!hasMicroscopicResults(test)) {
+              <span class="no-data">Sin datos</span>
+              }
+            </div>
+          </td>
+          <td>
+            <span class="status" [class]="getStatusClass(test.status)">
+              {{ getStatusText(test.status) }}
+            </span>
+            @if (hasAbnormalResults(test)) {
+            <div class="abnormal-indicator">
+              ⚠️ Anormal
+            </div>
+            }
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="action-btn view-btn" (click)="viewDetails(test.id)" title="Ver detalle">
+                👁️ Ver
+              </button>
+              <button class="action-btn edit-btn" (click)="editTest(test.id)" title="Editar examen">
+                ✏️ Editar
+              </button>
+              <button class="action-btn" [class.status-active-btn]="test.isActive"
+                [class.status-inactive-btn]="!test.isActive" (click)="deleteTest(test.id)"
+                [title]="test.isActive ? 'Desactivar examen' : 'Activar examen'">
+                {{ test.isActive ? '🗑️ Desactivar' : '🟢 Activar' }}
+              </button>
+              <button class="action-btn pdf-btn" (click)="generateReport(test.id)" title="Descargar PDF">
+                🖨️ PDF
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
 
-      <!-- Pagination -->
-      <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
-        <button 
-          class="btn" 
-          [disabled]="currentPage === 1" 
-          (click)="goToPage(currentPage - 1)">
-          ← Anterior
-        </button>
-        
-        <span class="page-info">
-          Página {{ currentPage }} de {{ totalPages }} 
-          ({{ totalItems }} exámenes)
-        </span>
-        
-        <button 
-          class="btn" 
-          [disabled]="currentPage === totalPages" 
-          (click)="goToPage(currentPage + 1)">
-          Siguiente →
-        </button>
-      </div>
+  <!-- Pagination -->
+  @if (!loading() && !error() && totalPages() > 1) {
+  <div class="pagination">
+    <button class="btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
+      ← Anterior
+    </button>
 
-      <!-- Empty State -->
-      <div *ngIf="!loading && !error && urineTests.length === 0" class="empty-state">
-        <p>🧪 No hay exámenes de orina disponibles</p>
-        <small>Los exámenes aparecerán aquí cuando sean creados</small>
-        <button class="btn btn-primary" routerLink="/urine-tests/new">
-          Crear Primer Examen
-        </button>
-      </div>
+    <span class="page-info">
+      Página {{ currentPage() }} de {{ totalPages() }}
+      ({{ totalItems() }} exámenes)
+    </span>
 
-      <!-- Modal de confirmación -->
-      <div class="modal" *ngIf="showConfirmModal" (click)="closeModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>{{ confirmAction.title }}</h3>
-          <p>{{ confirmAction.message }}</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
-            <button class="btn-danger" (click)="confirmAction.action()">Confirmar</button>
-          </div>
-        </div>
+    <button class="btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">
+      Siguiente →
+    </button>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && !error() && urineTests().length === 0) {
+  <div class="empty-state">
+    <p>🧪 No hay exámenes de orina disponibles</p>
+    <small>Los exámenes aparecerán aquí cuando sean creados</small>
+    <button class="btn btn-primary" routerLink="/urine-tests/new">
+      Crear Primer Examen
+    </button>
+  </div>
+  }
+
+  <!-- Modal de confirmación -->
+  @if (showConfirmModal()) {
+  <div class="modal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>{{ confirmAction().title }}</h3>
+      <p>{{ confirmAction().message }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmAction().action()">Confirmar</button>
       </div>
     </div>
+  </div>
+  }
+</div>

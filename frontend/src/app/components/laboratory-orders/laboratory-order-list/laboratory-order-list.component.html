@@ -1,93 +1,101 @@
-
-    <div class="container">
-      <div class="header">
-        <h1>Órdenes de Laboratorio</h1>
-        <div class="search-controls">
-          <input 
-            type="text" 
-            placeholder="Buscar orden..." 
-            [(ngModel)]="searchTerm"
-            (input)="onSearch()"
-            class="search-input">
-          <button class="btn-secondary" (click)="clearSearch()">Limpiar</button>
-          <select [(ngModel)]="statusFilter" (change)="onStatusFilterChange()" class="filter-select">
-            <option value="">Todos los estados</option>
-            <option value="pending">Pendiente</option>
-            <option value="in-progress">En progreso</option>
-            <option value="completed">Completada</option>
-            <option value="cancelled">Cancelada</option>
-          </select>
-        </div>
-        <button class="btn-primary" (click)="openCreateModal()">
-          + Nueva Orden
-        </button>
-      </div>
-
-      <div *ngIf="loading" class="loading">Cargando órdenes...</div>
-      <div *ngIf="error" class="error">{{ error }}</div>
-
-      <div *ngIf="!loading && !error" class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Número de Orden</th>
-              <th>Paciente</th>
-              <th>Estado</th>
-              <th>Prioridad</th>
-              <th>Fecha Solicitud</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let order of orders">
-              <td>{{ order.orderNumber }}</td>
-              <td>{{ order.patientId }}</td>
-              <td>
-                <span class="status-badge" [class]="'status-' + order.status">
-                  {{ order.status }}
-                </span>
-              </td>
-              <td>
-                <span class="priority-badge" [class]="'priority-' + order.priority">
-                  {{ order.priority }}
-                </span>
-              </td>
-              <td>{{ order.orderDate | date:'short' }}</td>
-              <td>
-                <div class="actions">
-                  <button class="action-btn view-btn" (click)="viewOrder(order)" title="Ver detalles">👁️ Ver</button>
-                  <button class="action-btn edit-btn" (click)="editOrder(order)" title="Editar orden">✏️ Editar</button>
-                  <button class="action-btn delete-btn" (click)="deleteOrder(order.id)" title="Eliminar orden">🗑️ Eliminar</button>
-                  <button class="action-btn pdf-btn" (click)="generatePdf(order)" title="Descargar PDF">🖨️ PDF</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div *ngIf="!loading && !error && orders.length === 0" class="no-data">
-        <p>No hay órdenes disponibles</p>
-        <button class="btn-primary" (click)="openCreateModal()">Crear primera orden</button>
-      </div>
-
-      <!-- Paginación -->
-      <div *ngIf="!loading && !error && orders.length > 0" class="pagination">
-        <button class="btn-pagination" [disabled]="currentPage === 1" (click)="previousPage()">
-          ← Anterior
-        </button>
-        <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
-        <button class="btn-pagination" [disabled]="currentPage === totalPages" (click)="nextPage()">
-          Siguiente →
-        </button>
-      </div>
-
-      <!-- Modal de formulario -->
-      <app-laboratory-order-form
-        *ngIf="showFormModal"
-        [order]="selectedOrder"
-        [isEditMode]="isEditMode"
-        (saved)="onOrderSaved($event)"
-        (cancelled)="closeFormModal()">
-      </app-laboratory-order-form>
+<div class="container">
+  <div class="header">
+    <h1>Órdenes de Laboratorio</h1>
+    <div class="search-controls">
+      <input type="text" placeholder="Buscar orden..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+        (input)="onSearch()" class="search-input">
+      <button class="btn-secondary" (click)="clearSearch()">Limpiar</button>
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); onStatusFilterChange()"
+        class="filter-select">
+        <option value="">Todos los estados</option>
+        <option value="pending">Pendiente</option>
+        <option value="in-progress">En progreso</option>
+        <option value="completed">Completada</option>
+        <option value="cancelled">Cancelada</option>
+      </select>
     </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      + Nueva Orden
+    </button>
+  </div>
+
+  @if (loading()) {
+  <div class="loading">Cargando órdenes...</div>
+  }
+
+  @if (error()) {
+  <div class="error">{{ error() }}</div>
+  }
+
+  @if (!loading() && !error() && orders().length > 0) {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Número de Orden</th>
+          <th>Paciente</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+          <th>Fecha Solicitud</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of orders(); track order.id) {
+        <tr>
+          <td>{{ order.orderNumber }}</td>
+          <td>{{ order.patientId }}</td>
+          <td>
+            <span class="status-badge" [class]="'status-' + order.status">
+              {{ order.status }}
+            </span>
+          </td>
+          <td>
+            <span class="priority-badge" [class]="'priority-' + order.priority">
+              {{ order.priority }}
+            </span>
+          </td>
+          <td>{{ order.orderDate | date:'short' }}</td>
+          <td>
+            <div class="actions">
+              <button class="action-btn view-btn" (click)="viewOrder(order)" title="Ver detalles">👁️ Ver</button>
+              <button class="action-btn edit-btn" (click)="editOrder(order)" title="Editar orden">✏️ Editar</button>
+              <button class="action-btn delete-btn" (click)="deleteOrder(order.id)" title="Eliminar orden">🗑️
+                Eliminar</button>
+              <button class="action-btn pdf-btn" (click)="generatePdf(order)" title="Descargar PDF">🖨️ PDF</button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+
+  @if (!loading() && !error() && orders().length === 0) {
+  <div class="no-data">
+    <p>No hay órdenes disponibles</p>
+    <button class="btn-primary" (click)="openCreateModal()">Crear primera orden</button>
+  </div>
+  }
+
+  <!-- Paginación -->
+  @if (!loading() && !error() && orders().length > 0 && totalPages() > 1) {
+  <div class="pagination">
+    <button class="btn-pagination" [disabled]="currentPage() === 1" (click)="previousPage()">
+      ← Anterior
+    </button>
+    <span class="page-info">Página {{ currentPage() }} de {{ totalPages() }}</span>
+    <button class="btn-pagination" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+      Siguiente →
+    </button>
+  </div>
+  }
+
+  <!-- Modal de formulario -->
+  @if (showFormModal()) {
+  <app-laboratory-order-form [order]="selectedOrder()" [isEditMode]="isEditMode()" (saved)="onOrderSaved($event)"
+    (cancelled)="closeFormModal()">
+  </app-laboratory-order-form>
+  }
+</div>

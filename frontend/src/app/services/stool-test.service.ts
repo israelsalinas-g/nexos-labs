@@ -1,130 +1,74 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { 
+import { Observable, catchError } from 'rxjs';
+import {
   StoolTest,
   CreateStoolTestDto,
   UpdateStoolTestDto
 } from '../models/stool-test.interface';
 import { StoolTestFilters } from '../models/stool-test.interfaces';
 import { PaginatedResponse } from '../models/patient.interface';
+import { BaseService } from './base.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class StoolTestService {
-  private readonly baseUrl = 'http://localhost:3000/stool-tests';
+export class StoolTestService extends BaseService {
+  private readonly endpoint = `${this.baseUrl}/stool-tests`;
 
-  constructor(private http: HttpClient) { }
-
-  /**
-   * Obtiene una lista paginada de exámenes con filtros opcionales
-   */
   getStoolTests(filters: StoolTestFilters = {}): Observable<PaginatedResponse<StoolTest>> {
-    let params = new HttpParams()
-      .set('page', filters.page?.toString() || '1')
-      .set('limit', filters.limit?.toString() || '4');
+    const params = this.getParams({
+      page: filters.page || 1,
+      limit: filters.limit || 4,
+      patientId: filters.patientId,
+      status: filters.status,
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo
+    });
 
-    if (filters.patientId) {
-      params = params.set('patientId', filters.patientId);
-    }
-    if (filters.status) {
-      params = params.set('status', filters.status);
-    }
-    if (filters.dateFrom) {
-      params = params.set('dateFrom', filters.dateFrom);
-    }
-    if (filters.dateTo) {
-      params = params.set('dateTo', filters.dateTo);
-    }
-
-    return this.http.get<PaginatedResponse<StoolTest>>(this.baseUrl, { params })
-      .pipe(catchError(this.handleError));
+    return this.http.get<PaginatedResponse<StoolTest>>(this.endpoint, { params })
+      .pipe(catchError(err => this.handleError(err)));
   }
 
-  /**
-   * Obtiene un examen por su ID
-   */
   getStoolTestById(id: number): Observable<StoolTest> {
-    return this.http.get<StoolTest>(`${this.baseUrl}/${id}`)
-      .pipe(catchError(this.handleError));
+    return this.http.get<StoolTest>(`${this.endpoint}/${id}`)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
-  /**
-   * Crea un nuevo examen
-   */
   createStoolTest(data: CreateStoolTestDto): Observable<StoolTest> {
-    // 🔍 LOG: Verificar el objeto que se envía
-    console.log('📤 FRONTEND - Objeto COMPLETO enviado:', data);
-    console.log('📤 FRONTEND - ¿Tiene createdById?', 'createdById' in data, 'Valor:', data.createdById);
-    console.log('📤 FRONTEND - ¿Tiene doctorId?', 'doctorId' in data, 'Valor:', data.doctorId);
-
-    // Filtrar propiedades undefined para evitar problemas de validación en el backend
     const cleanedData = Object.fromEntries(
       Object.entries(data).filter(([_, value]) => value !== undefined)
     ) as CreateStoolTestDto;
-    
-    console.log('📤 FRONTEND - Objeto limpio COMPLETO:', cleanedData);
-    console.log('📤 FRONTEND - Limpio ¿Tiene createdById?', 'createdById' in cleanedData, 'Valor:', cleanedData.createdById);
-    console.log('📤 FRONTEND - Limpio ¿Tiene doctorId?', 'doctorId' in cleanedData, 'Valor:', cleanedData.doctorId);
 
-    return this.http.post<StoolTest>(this.baseUrl, cleanedData)
-      .pipe(catchError(this.handleError));
+    return this.http.post<StoolTest>(this.endpoint, cleanedData)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
-  /**
-   * Actualiza un examen existente
-   */
   updateStoolTest(id: number, data: UpdateStoolTestDto): Observable<StoolTest> {
-    // 🔍 LOG: Verificar el objeto antes de enviar
-    console.log('📤 FRONTEND UPDATE - Objeto COMPLETO:', data);
-    console.log('📤 FRONTEND UPDATE - ¿Tiene doctorId?', 'doctorId' in data, 'Valor:', data.doctorId);
-    console.log('📤 FRONTEND UPDATE - ¿Tiene reviewedById?', 'reviewedById' in data, 'Valor:', data.reviewedById);
-
-    // Filtrar propiedades undefined para evitar problemas de validación en el backend
     const cleanedData = Object.fromEntries(
       Object.entries(data).filter(([_, value]) => value !== undefined)
     ) as UpdateStoolTestDto;
-    
-    console.log('📤 FRONTEND UPDATE - Objeto limpio COMPLETO:', cleanedData);
-    console.log('📤 FRONTEND UPDATE - Limpio ¿Tiene doctorId?', 'doctorId' in cleanedData, 'Valor:', cleanedData.doctorId);
-    
-    return this.http.patch<StoolTest>(`${this.baseUrl}/${id}`, cleanedData)
-      .pipe(catchError(this.handleError));
+
+    return this.http.patch<StoolTest>(`${this.endpoint}/${id}`, cleanedData)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
-  /**
-   * Elimina un examen
-   */
   deleteStoolTest(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`)
-      .pipe(catchError(this.handleError));
+    return this.http.delete<void>(`${this.endpoint}/${id}`)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
-  /**
-   * Desactiva un examen
-   */
   deactivateStoolTest(id: number): Observable<StoolTest> {
-    return this.http.patch<StoolTest>(`${this.baseUrl}/${id}/deactivate`, {})
-      .pipe(catchError(this.handleError));
+    return this.http.patch<StoolTest>(`${this.endpoint}/${id}/deactivate`, {})
+      .pipe(catchError(err => this.handleError(err)));
   }
 
-  /**
-   * Activa un examen
-   */
   activateStoolTest(id: number): Observable<StoolTest> {
-    return this.http.patch<StoolTest>(`${this.baseUrl}/${id}/reactivate`, {})
-      .pipe(catchError(this.handleError));
+    return this.http.patch<StoolTest>(`${this.endpoint}/${id}/reactivate`, {})
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   getNextSampleNumber(): Observable<{ sampleNumber: string }> {
-    return this.http.get<{ sampleNumber: string }>(`${this.baseUrl}/next-sample-number`)
-      .pipe(catchError(this.handleError));
-  }
-
-  private handleError(error: any) {
-    console.error('An error occurred:', error);
-    return throwError(() => error);
+    return this.http.get<{ sampleNumber: string }>(`${this.endpoint}/next-sample-number`)
+      .pipe(catchError(err => this.handleError(err)));
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
@@ -10,8 +10,8 @@ import { UserAuth } from '../../models/auth.interface';
 import { UserRole } from '../../enums/role.enums';
 
 /**
- * Componente de lista de usuarios
- * Muestra todos los usuarios del sistema con paginación, crear, editar y eliminar
+ * Componente de lista de usuarios.
+ * Muestra todos los usuarios del sistema con paginación, crear, editar y eliminar.
  * Requiere roles: ADMIN, SUPERADMIN
  */
 @Component({
@@ -19,56 +19,46 @@ import { UserRole } from '../../enums/role.enums';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './user-list.component.html',
-  styleUrls: ['./user-list.component.css']
+  styleUrls: ['./user-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserListComponent implements OnInit {
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private roleService = inject(RoleService);
 
-  users: UserListItem[] = [];
-  roles: Role[] = [];
-  currentPage = 1;
-  pageSize = 4;
-  total = 0;
-  totalPages = 0;
-  isLoading = false;
-  errorMessage = '';
-  successMessage = '';
+  users = signal<UserListItem[]>([]);
+  roles = signal<Role[]>([]);
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(4);
+  total = signal<number>(0);
+  totalPages = signal<number>(0);
+  isLoading = signal<boolean>(false);
+  errorMessage = signal<string>('');
+  successMessage = signal<string>('');
 
   // Permisos del usuario actual
-  canCreateUser = false;
-  canEditUser = false;
-  canDeleteUser = false;
-  currentUser: UserAuth | null = null;
+  canCreateUser = signal<boolean>(false);
+  canEditUser = signal<boolean>(false);
+  canDeleteUser = signal<boolean>(false);
+  currentUser = signal<UserAuth | null>(null);
 
   // Modal states
-  showUserModal = false;
-  showConfirmModal = false;
-  showDetailModal = false;
+  showUserModal = signal<boolean>(false);
+  showConfirmModal = signal<boolean>(false);
+  showDetailModal = signal<boolean>(false);
 
   // Form data
-  userFormData: CreateUserRequest = {
-    username: '',
-    password: '',
-    name: '',
-    lastName: '',
-    email: '',
-    roleId: '',
-    isActive: true
-  };
+  userFormData = signal<CreateUserRequest>({
+    username: '', password: '', name: '', lastName: '', email: '', roleId: '', isActive: true
+  });
 
-  // Selected user for delete or detail
-  selectedUser: UserListItem | null = null;
-  userToDelete: UserListItem | null = null;
+  selectedUser = signal<UserListItem | null>(null);
+  userToDelete = signal<UserListItem | null>(null);
 
-  // Confirm action
-  confirmAction = {
-    title: '',
-    message: ''
-  };
+  confirmAction = signal<{ title: string; message: string }>({ title: '', message: '' });
 
-  isEditMode = false;
+  isEditMode = signal<boolean>(false);
 
   ngOnInit(): void {
     this.checkPermissions();
@@ -77,100 +67,75 @@ export class UserListComponent implements OnInit {
   }
 
   checkPermissions(): void {
-    this.canCreateUser = this.authService.hasAnyRole([UserRole.ADMIN, UserRole.SUPERADMIN]);
-    this.canEditUser = this.authService.hasAnyRole([UserRole.ADMIN, UserRole.SUPERADMIN]);
-    this.canDeleteUser = this.authService.hasRole(UserRole.SUPERADMIN);
-    this.currentUser = this.authService.getCurrentUserValue();
+    this.canCreateUser.set(this.authService.hasAnyRole([UserRole.ADMIN, UserRole.SUPERADMIN]));
+    this.canEditUser.set(this.authService.hasAnyRole([UserRole.ADMIN, UserRole.SUPERADMIN]));
+    this.canDeleteUser.set(this.authService.hasRole(UserRole.SUPERADMIN));
+    this.currentUser.set(this.authService.getCurrentUserValue());
   }
 
   loadRoles(): void {
     this.roleService.getAllRoles().subscribe({
-      next: (roles) => {
-        console.log('Roles cargados:', roles);
-        this.roles = roles;
-      },
-      error: (error) => {
-        console.error('Error cargando roles directamente, intentando con paginación:', error);
-        // Fallback: intentar con paginación si /all no funciona
+      next: (roles) => this.roles.set(roles),
+      error: () => {
         this.roleService.getRoles(1, 100).subscribe({
-          next: (response) => {
-            console.log('Roles cargados con paginación:', response.data);
-            this.roles = response.data as unknown as Role[];
-          },
-          error: (paginationError) => {
-            console.error('Error cargando roles con paginación:', paginationError);
-            this.errorMessage = 'Error al cargar los roles. Por favor intente más tarde.';
-          }
+          next: (response) => this.roles.set(response.data as unknown as Role[]),
+          error: () => this.errorMessage.set('Error al cargar los roles. Por favor intente más tarde.')
         });
       }
     });
   }
 
   loadUsers(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
-    this.userService.getUsers(this.currentPage, this.pageSize).subscribe({
+    this.userService.getUsers(this.currentPage(), this.pageSize()).subscribe({
       next: (response) => {
-        this.users = response.data;
-        this.total = response.total;
-        this.totalPages = response.totalPages;
-        this.isLoading = false;
+        this.users.set(response.data);
+        this.total.set(response.total);
+        this.totalPages.set(response.totalPages);
+        this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error cargando usuarios:', error);
-        this.errorMessage = error.message || 'Error al cargar usuarios';
-        this.isLoading = false;
+        this.errorMessage.set(error.message || 'Error al cargar usuarios');
+        this.isLoading.set(false);
       }
     });
   }
 
   goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
       this.loadUsers();
     }
   }
 
   createNewUser(): void {
-    if (this.roles.length === 0) {
-      this.errorMessage = 'Cargando roles... Por favor intente de nuevo en unos segundos.';
-      console.warn('Roles no disponibles aún. Intentando cargar...');
+    if (this.roles().length === 0) {
+      this.errorMessage.set('Cargando roles... Por favor intente de nuevo en unos segundos.');
       this.loadRoles();
       return;
     }
-    
-    this.isEditMode = false;
-    this.userFormData = {
-      username: '',
-      password: '',
-      name: '',
-      lastName: '',
-      email: '',
-      roleId: '',
-      isActive: true
-    };
-    this.errorMessage = '';
-    this.showUserModal = true;
-    console.log('Modal abierto. Roles disponibles:', this.roles);
+    this.isEditMode.set(false);
+    this.userFormData.set({ username: '', password: '', name: '', lastName: '', email: '', roleId: '', isActive: true });
+    this.errorMessage.set('');
+    this.showUserModal.set(true);
   }
 
   viewUser(user: UserListItem): void {
-    this.selectedUser = user;
-    this.showDetailModal = true;
+    this.selectedUser.set(user);
+    this.showDetailModal.set(true);
   }
 
   editUser(user: UserListItem): void {
-    if (this.roles.length === 0) {
-      this.errorMessage = 'Cargando roles... Por favor intente de nuevo en unos segundos.';
-      console.warn('Roles no disponibles aún. Intentando cargar...');
+    if (this.roles().length === 0) {
+      this.errorMessage.set('Cargando roles... Por favor intente de nuevo en unos segundos.');
       this.loadRoles();
       return;
     }
-    
-    this.isEditMode = true;
-    this.userFormData = {
+    this.isEditMode.set(true);
+    this.userFormData.set({
       username: user.username,
       password: '',
       name: user.name,
@@ -178,161 +143,106 @@ export class UserListComponent implements OnInit {
       email: user.email,
       roleId: user.role.id,
       isActive: user.isActive
-    };
-    this.selectedUser = user;
-    this.errorMessage = '';
-    this.showUserModal = true;
-    console.log('Modal de edición abierto. Roles disponibles:', this.roles);
+    });
+    this.selectedUser.set(user);
+    this.errorMessage.set('');
+    this.showUserModal.set(true);
   }
 
   saveUser(): void {
     if (!this.isUserFormValid()) return;
+    this.isLoading.set(true);
+    const form = this.userFormData();
+    const selected = this.selectedUser();
 
-    this.isLoading = true;
-
-    if (this.isEditMode && this.selectedUser) {
+    if (this.isEditMode() && selected) {
       const updateData: UpdateUserRequest = {
-        name: this.userFormData.name,
-        lastName: this.userFormData.lastName,
-        email: this.userFormData.email,
-        roleId: this.userFormData.roleId,
-        isActive: this.userFormData.isActive
+        name: form.name, lastName: form.lastName, email: form.email,
+        roleId: form.roleId, isActive: form.isActive
       };
-
-      this.userService.updateUser(this.selectedUser.id, updateData).subscribe({
+      this.userService.updateUser(selected.id, updateData).subscribe({
         next: () => {
-          this.successMessage = 'Usuario actualizado exitosamente';
-          this.showUserModal = false;
-          setTimeout(() => {
-            this.loadUsers();
-            this.successMessage = '';
-          }, 1500);
+          this.successMessage.set('Usuario actualizado exitosamente');
+          this.showUserModal.set(false);
+          setTimeout(() => { this.loadUsers(); this.successMessage.set(''); }, 1500);
         },
-        error: (error) => {
-          this.errorMessage = error.message || 'Error al actualizar el usuario';
-          this.isLoading = false;
-        }
+        error: (error) => { this.errorMessage.set(error.message || 'Error al actualizar usuario'); this.isLoading.set(false); }
       });
     } else {
-      const createData: CreateUserRequest = {
-        username: this.userFormData.username,
-        password: this.userFormData.password,
-        name: this.userFormData.name,
-        lastName: this.userFormData.lastName,
-        email: this.userFormData.email,
-        roleId: this.userFormData.roleId,
-        isActive: true
-      };
-
-      this.userService.createUser(createData).subscribe({
+      this.userService.createUser(form).subscribe({
         next: () => {
-          this.successMessage = 'Usuario creado exitosamente';
-          this.showUserModal = false;
-          setTimeout(() => {
-            this.loadUsers();
-            this.successMessage = '';
-          }, 1500);
+          this.successMessage.set('Usuario creado exitosamente');
+          this.showUserModal.set(false);
+          setTimeout(() => { this.loadUsers(); this.successMessage.set(''); }, 1500);
         },
-        error: (error) => {
-          this.errorMessage = error.message || 'Error al crear el usuario';
-          this.isLoading = false;
-        }
+        error: (error) => { this.errorMessage.set(error.message || 'Error al crear usuario'); this.isLoading.set(false); }
       });
     }
   }
 
   deleteUser(user: UserListItem): void {
-    if (user.username === this.currentUser?.username) {
-      this.errorMessage = 'No puedes eliminar tu propio usuario';
+    if (user.username === this.currentUser()?.username) {
+      this.errorMessage.set('No puedes eliminar tu propio usuario');
       return;
     }
-
-    this.userToDelete = user;
-    this.confirmAction = {
+    this.userToDelete.set(user);
+    this.confirmAction.set({
       title: 'Confirmar eliminación',
       message: `¿Está seguro de que desea eliminar al usuario "${user.username}"? Esta acción no se puede deshacer.`
-    };
-    this.showConfirmModal = true;
+    });
+    this.showConfirmModal.set(true);
   }
 
   confirmDelete(): void {
-    if (!this.userToDelete) return;
-
-    this.isLoading = true;
-    this.userService.deleteUser(this.userToDelete.id).subscribe({
+    const target = this.userToDelete();
+    if (!target) return;
+    this.isLoading.set(true);
+    this.userService.deleteUser(target.id).subscribe({
       next: () => {
-        this.successMessage = `Usuario "${this.userToDelete?.username}" eliminado exitosamente`;
-        this.showConfirmModal = false;
-        this.userToDelete = null;
-        setTimeout(() => {
-          this.loadUsers();
-          this.successMessage = '';
-        }, 1500);
+        this.successMessage.set(`Usuario "${target.username}" eliminado exitosamente`);
+        this.showConfirmModal.set(false);
+        this.userToDelete.set(null);
+        setTimeout(() => { this.loadUsers(); this.successMessage.set(''); }, 1500);
       },
-      error: (error) => {
-        this.errorMessage = error.message || 'Error al eliminar el usuario';
-        this.isLoading = false;
-      }
+      error: (error) => { this.errorMessage.set(error.message || 'Error al eliminar el usuario'); this.isLoading.set(false); }
     });
   }
 
   toggleActive(user: UserListItem): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.userService.toggleActive(user.id).subscribe({
       next: () => {
         const action = user.isActive ? 'desactivado' : 'activado';
-        this.successMessage = `Usuario ${action} exitosamente`;
-        setTimeout(() => {
-          this.loadUsers();
-          this.successMessage = '';
-        }, 1500);
+        this.successMessage.set(`Usuario ${action} exitosamente`);
+        setTimeout(() => { this.loadUsers(); this.successMessage.set(''); }, 1500);
       },
-      error: (error) => {
-        this.errorMessage = error.message || 'Error al cambiar el estado del usuario';
-        this.isLoading = false;
-      }
+      error: (error) => { this.errorMessage.set(error.message || 'Error al cambiar el estado'); this.isLoading.set(false); }
     });
   }
 
   closeUserModal(): void {
-    this.showUserModal = false;
-    this.isEditMode = false;
-    this.selectedUser = null;
-    this.userFormData = {
-      username: '',
-      password: '',
-      name: '',
-      lastName: '',
-      email: '',
-      roleId: '',
-      isActive: true
-    };
+    this.showUserModal.set(false);
+    this.isEditMode.set(false);
+    this.selectedUser.set(null);
+    this.userFormData.set({ username: '', password: '', name: '', lastName: '', email: '', roleId: '', isActive: true });
   }
 
   closeConfirmModal(): void {
-    this.showConfirmModal = false;
-    this.userToDelete = null;
+    this.showConfirmModal.set(false);
+    this.userToDelete.set(null);
   }
 
   closeDetailModal(): void {
-    this.showDetailModal = false;
-    this.selectedUser = null;
+    this.showDetailModal.set(false);
+    this.selectedUser.set(null);
   }
 
   isUserFormValid(): boolean {
-    if (this.isEditMode) {
-      return !!(this.userFormData.name && 
-             this.userFormData.lastName && 
-             this.userFormData.email && 
-             this.userFormData.roleId);
-    } else {
-      return !!(this.userFormData.username && 
-             this.userFormData.password && 
-             this.userFormData.name && 
-             this.userFormData.lastName && 
-             this.userFormData.email && 
-             this.userFormData.roleId);
+    const form = this.userFormData();
+    if (this.isEditMode()) {
+      return !!(form.name && form.lastName && form.email && form.roleId);
     }
+    return !!(form.username && form.password && form.name && form.lastName && form.email && form.roleId);
   }
 
   getRoleBadgeClass(roleName: string): string {
@@ -340,13 +250,8 @@ export class UserListComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-HN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString('es-HN', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   }
 }

@@ -1,287 +1,229 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { RoleService } from '../../services/role.service';
 import { AuthService } from '../../services/auth.service';
 import { Role, RoleListItem, CreateRoleRequest, RolePaginatedResponse } from '../../models/role.interface';
 import { Permission } from '../../models/permission.interface';
 
 /**
- * Componente para CRUD de roles
- * Solo accesible por SUPERADMIN
+ * Componente para CRUD de roles.
+ * Solo accesible por SUPERADMIN.
  */
 @Component({
   selector: 'app-role-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './role-list.component.html',
-  styleUrls: ['./role-list.component.css']
+  styleUrls: ['./role-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoleListComponent implements OnInit {
   private roleService = inject(RoleService);
   private authService = inject(AuthService);
-  private router = inject(Router);
 
-  roles: RoleListItem[] = [];
-  currentPage = 1;
-  pageSize = 4;
-  totalRoles = 0;
-  totalPages = 0;
-  loading = false;
-  error = '';
-  successMessage = '';
+  roles = signal<RoleListItem[]>([]);
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(4);
+  totalRoles = signal<number>(0);
+  totalPages = signal<number>(0);
+  loading = signal<boolean>(false);
+  error = signal<string>('');
+  successMessage = signal<string>('');
 
   // Modal states
-  showConfirmModal = false;
-  showRoleModal = false;
-  showPermissionsModal = false;
+  showConfirmModal = signal<boolean>(false);
+  showRoleModal = signal<boolean>(false);
+  showPermissionsModal = signal<boolean>(false);
 
   // Form data
-  roleFormData: CreateRoleRequest = {
-    name: '',
-    level: 3,
-    description: ''
-  };
+  roleFormData = signal<CreateRoleRequest>({ name: '', level: 3, description: '' });
 
   // Permissions
-  selectedRole: Role | null = null;
-  newPermission = {
-    code: '',
-    description: ''
-  };
+  selectedRole = signal<Role | null>(null);
+  newPermission = signal<{ code: string; description: string }>({ code: '', description: '' });
 
   // Confirm action
-  confirmAction = {
-    title: '',
-    message: '',
-    action: () => {}
-  };
+  confirmAction = signal<{ title: string; message: string; action: () => void }>({
+    title: '', message: '', action: () => { }
+  });
 
-  isEditMode = false;
-  roleToDelete: RoleListItem | null = null;
+  isEditMode = signal<boolean>(false);
+  roleToDelete = signal<RoleListItem | null>(null);
 
   // Default roles that cannot be deleted
-  defaultRoles = ['SUPERADMIN', 'ADMIN', 'TECNICO', 'OPERADOR'];
+  readonly defaultRoles = ['SUPERADMIN', 'ADMIN', 'TECNICO', 'OPERADOR'];
 
   ngOnInit(): void {
     this.loadRoles();
   }
 
   loadRoles(): void {
-    this.loading = true;
-    this.error = '';
-    this.successMessage = '';
+    this.loading.set(true);
+    this.error.set('');
+    this.successMessage.set('');
 
-    this.roleService.getRoles(this.currentPage, this.pageSize).subscribe({
+    this.roleService.getRoles(this.currentPage(), this.pageSize()).subscribe({
       next: (response: RolePaginatedResponse) => {
-        this.roles = response.data;
-        this.totalRoles = response.total;
-        this.totalPages = response.totalPages;
-        this.loading = false;
+        this.roles.set(response.data);
+        this.totalRoles.set(response.total);
+        this.totalPages.set(response.totalPages);
+        this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error loading roles:', err);
-        this.error = err.message || 'Error al cargar los roles';
-        this.loading = false;
+        this.error.set(err.message || 'Error al cargar los roles');
+        this.loading.set(false);
       }
     });
   }
 
   goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
       this.loadRoles();
     }
   }
 
   createNewRole(): void {
-    this.isEditMode = false;
-    this.roleFormData = {
-      name: '',
-      level: 3,
-      description: ''
-    };
-    this.showRoleModal = true;
-  }
-
-  viewRole(role: RoleListItem): void {
-    // Implementar vista detallada del rol
-    console.log('Ver rol:', role);
+    this.isEditMode.set(false);
+    this.roleFormData.set({ name: '', level: 3, description: '' });
+    this.showRoleModal.set(true);
   }
 
   editRole(role: RoleListItem): void {
-    this.isEditMode = true;
-    this.roleFormData = {
-      name: role.name,
-      level: role.level,
-      description: role.description
-    };
-    this.showRoleModal = true;
+    this.isEditMode.set(true);
+    this.roleFormData.set({ name: role.name, level: role.level, description: role.description });
+    this.showRoleModal.set(true);
   }
 
   deleteRole(role: RoleListItem): void {
     if (this.isDefaultRole(role.name)) {
-      this.error = 'No se pueden eliminar los roles predefinidos del sistema';
+      this.error.set('No se pueden eliminar los roles predefinidos del sistema');
       return;
     }
-
-    this.roleToDelete = role;
-    this.confirmAction = {
+    this.roleToDelete.set(role);
+    this.confirmAction.set({
       title: 'Confirmar eliminación',
       message: `¿Está seguro de que desea eliminar el rol "${role.name}"? Esta acción no se puede deshacer.`,
-      action: () => {}
-    };
-    this.showConfirmModal = true;
+      action: () => this.confirmDelete()
+    });
+    this.showConfirmModal.set(true);
   }
 
   confirmDelete(): void {
-    if (!this.roleToDelete) return;
-
-    this.loading = true;
-    this.roleService.deleteRole(this.roleToDelete.id).subscribe({
+    const target = this.roleToDelete();
+    if (!target) return;
+    this.loading.set(true);
+    this.roleService.deleteRole(target.id).subscribe({
       next: () => {
-        this.successMessage = `Rol "${this.roleToDelete!.name}" eliminado exitosamente`;
-        this.showConfirmModal = false;
-        this.roleToDelete = null;
-        setTimeout(() => {
-          this.loadRoles();
-          this.successMessage = '';
-        }, 1500);
+        this.successMessage.set(`Rol "${target.name}" eliminado exitosamente`);
+        this.showConfirmModal.set(false);
+        this.roleToDelete.set(null);
+        setTimeout(() => { this.loadRoles(); this.successMessage.set(''); }, 1500);
       },
-      error: (err) => {
-        this.error = err.message || 'Error al eliminar el rol';
-        this.loading = false;
-      }
+      error: (err) => { this.error.set(err.message || 'Error al eliminar el rol'); this.loading.set(false); }
     });
   }
 
   saveRole(): void {
     if (!this.isFormValid()) return;
+    this.loading.set(true);
+    const roleData = this.roleFormData();
 
-    this.loading = true;
-
-    const roleData = {
-      name: this.roleFormData.name,
-      level: this.roleFormData.level,
-      description: this.roleFormData.description
-    };
-
-    if (this.isEditMode) {
-      // Implementar actualización
-      const roleToUpdate = this.roles.find(r => r.name === this.roleFormData.name);
+    if (this.isEditMode()) {
+      const roleToUpdate = this.roles().find(r => r.name === roleData.name);
       if (roleToUpdate) {
         this.roleService.updateRole(roleToUpdate.id, roleData).subscribe({
           next: () => {
-            this.successMessage = 'Rol actualizado exitosamente';
-            this.showRoleModal = false;
-            setTimeout(() => {
-              this.loadRoles();
-              this.successMessage = '';
-            }, 1500);
+            this.successMessage.set('Rol actualizado exitosamente');
+            this.showRoleModal.set(false);
+            setTimeout(() => { this.loadRoles(); this.successMessage.set(''); }, 1500);
           },
-          error: (err) => {
-            this.error = err.message || 'Error al actualizar el rol';
-            this.loading = false;
-          }
+          error: (err) => { this.error.set(err.message || 'Error al actualizar el rol'); this.loading.set(false); }
         });
       }
     } else {
       this.roleService.createRole(roleData).subscribe({
         next: () => {
-          this.successMessage = 'Rol creado exitosamente';
-          this.showRoleModal = false;
-          setTimeout(() => {
-            this.loadRoles();
-            this.successMessage = '';
-          }, 1500);
+          this.successMessage.set('Rol creado exitosamente');
+          this.showRoleModal.set(false);
+          setTimeout(() => { this.loadRoles(); this.successMessage.set(''); }, 1500);
         },
-        error: (err) => {
-          this.error = err.message || 'Error al crear el rol';
-          this.loading = false;
-        }
+        error: (err) => { this.error.set(err.message || 'Error al crear el rol'); this.loading.set(false); }
       });
     }
   }
 
   managePermissions(role: RoleListItem): void {
-    // Fetch the full role object with permissions
-    this.loading = true;
+    this.loading.set(true);
     this.roleService.getRoleById(role.id).subscribe({
       next: (fullRole: Role) => {
-        this.selectedRole = fullRole;
-        this.newPermission = { code: '', description: '' };
-        this.showPermissionsModal = true;
-        this.loading = false;
+        this.selectedRole.set(fullRole);
+        this.newPermission.set({ code: '', description: '' });
+        this.showPermissionsModal.set(true);
+        this.loading.set(false);
       },
-      error: (err) => {
-        this.error = err.message || 'Error al cargar el rol';
-        this.loading = false;
-      }
+      error: (err) => { this.error.set(err.message || 'Error al cargar el rol'); this.loading.set(false); }
     });
   }
 
   addPermission(): void {
-    if (!this.selectedRole || !this.newPermission.code || !this.newPermission.description) {
-      return;
-    }
+    const role = this.selectedRole();
+    const perm = this.newPermission();
+    if (!role || !perm.code || !perm.description) return;
 
-    this.loading = true;
-    this.roleService.addPermissionToRole(this.selectedRole.id, this.newPermission).subscribe({
+    this.loading.set(true);
+    this.roleService.addPermissionToRole(role.id, perm).subscribe({
       next: (permission: Permission) => {
-        if (!this.selectedRole!.permissions) {
-          this.selectedRole!.permissions = [];
-        }
-        this.selectedRole!.permissions.push(permission);
-        this.newPermission = { code: '', description: '' };
-        this.loading = false;
+        const current = this.selectedRole()!;
+        this.selectedRole.set({
+          ...current,
+          permissions: [...(current.permissions || []), permission]
+        });
+        this.newPermission.set({ code: '', description: '' });
+        this.loading.set(false);
       },
-      error: (err) => {
-        this.error = err.message || 'Error al agregar permiso';
-        this.loading = false;
-      }
+      error: (err) => { this.error.set(err.message || 'Error al agregar permiso'); this.loading.set(false); }
     });
   }
 
   removePermission(permissionId: string): void {
-    if (!this.selectedRole) return;
-
-    this.loading = true;
-    this.roleService.removePermissionFromRole(this.selectedRole.id, permissionId).subscribe({
+    const role = this.selectedRole();
+    if (!role) return;
+    this.loading.set(true);
+    this.roleService.removePermissionFromRole(role.id, permissionId).subscribe({
       next: () => {
-        if (this.selectedRole?.permissions) {
-          this.selectedRole.permissions = this.selectedRole.permissions.filter(
-            (p: Permission) => p.id !== permissionId
-          );
-        }
-        this.loading = false;
+        const current = this.selectedRole()!;
+        this.selectedRole.set({
+          ...current,
+          permissions: (current.permissions || []).filter((p: Permission) => p.id !== permissionId)
+        });
+        this.loading.set(false);
       },
-      error: (err) => {
-        this.error = err.message || 'Error al remover permiso';
-        this.loading = false;
-      }
+      error: (err) => { this.error.set(err.message || 'Error al remover permiso'); this.loading.set(false); }
     });
   }
 
   closeRoleModal(): void {
-    this.showRoleModal = false;
-    this.isEditMode = false;
-    this.roleFormData = { name: '', level: 3, description: '' };
+    this.showRoleModal.set(false);
+    this.isEditMode.set(false);
+    this.roleFormData.set({ name: '', level: 3, description: '' });
   }
 
   closePermissionsModal(): void {
-    this.showPermissionsModal = false;
-    this.selectedRole = null;
-    this.newPermission = { code: '', description: '' };
+    this.showPermissionsModal.set(false);
+    this.selectedRole.set(null);
+    this.newPermission.set({ code: '', description: '' });
   }
 
   closeModal(): void {
-    this.showConfirmModal = false;
-    this.confirmAction = { title: '', message: '', action: () => {} };
+    this.showConfirmModal.set(false);
+    this.confirmAction.set({ title: '', message: '', action: () => { } });
   }
 
   isFormValid(): boolean {
-    return !!(this.roleFormData.name && this.roleFormData.level && this.roleFormData.description);
+    const form = this.roleFormData();
+    return !!(form.name && form.level && form.description);
   }
 
   isDefaultRole(roleName: string): boolean {
@@ -289,13 +231,8 @@ export class RoleListComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-HN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString('es-HN', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   }
 }

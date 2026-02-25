@@ -1,44 +1,51 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { UrineTest, UrineTestFilters} from '../../../models/urine-test.interface';
+import { UrineTest, UrineTestFilters } from '../../../models/urine-test.interface';
 import { ConfirmAction } from '../../../models/common.interface';
 import { UrineTestService } from '../../../services/urine-test.service';
 import { PdfUrineTestService } from '../../../services/pdf/pdf-urine-test.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-urine-test-list',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './urine-test-list.component.html',
-  styleUrls: ['./urine-test-list.component.css']
+  styleUrls: ['./urine-test-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UrineTestListComponent implements OnInit {
-  urineTests: UrineTest[] = [];
-  loading = false;
-  error: string | null = null;
-  successMessage: string | null = null;
-  pendingReviewCount = 0;
+  private urineTestService = inject(UrineTestService);
+  private router = inject(Router);
+  private pdfService = inject(PdfUrineTestService);
+  private toastService = inject(ToastService);
+
+  urineTests = signal<UrineTest[]>([]);
+  loading = signal<boolean>(false);
+  error = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
+  pendingReviewCount = signal<number>(0);
 
   // Modal de confirmación
-  showConfirmModal = false;
-  confirmAction: ConfirmAction = { title: '', message: '', action: () => {} };
+  showConfirmModal = signal<boolean>(false);
+  confirmAction = signal<ConfirmAction>({ title: '', message: '', action: () => { } });
 
   // Filtering and sorting
-  filters: UrineTestFilters = {
+  filters = signal<UrineTestFilters>({
     page: 1,
     limit: 20,
-    isActive: true  // Solo mostrar exámenes activos por defecto
-  };
-  sortField = '';
-  sortDirection: 'asc' | 'desc' = 'asc';
+    isActive: true
+  });
+  sortField = signal<string>('');
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
   // Pagination
-  currentPage = 1;
-  pageSize = 4;
-  totalItems = 0;
-  totalPages = 1;
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(4);
+  totalItems = signal<number>(0);
+  totalPages = signal<number>(1);
 
   // Options for selects
   statusOptions = [
@@ -50,82 +57,66 @@ export class UrineTestListComponent implements OnInit {
     { value: 'cancelled', label: 'Cancelado' }
   ];
 
-  constructor(
-    private urineTestService: UrineTestService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-    private pdfService: PdfUrineTestService
-  ) {}
-
   ngOnInit(): void {
     this.loadUrineTests();
     this.loadPendingReviewCount();
   }
 
   loadUrineTests(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
 
     const queryFilters = {
-      ...this.filters,
-      page: this.currentPage,
-      limit: this.pageSize
+      ...this.filters(),
+      page: this.currentPage(),
+      limit: this.pageSize()
     };
 
     this.urineTestService.getUrineTests(queryFilters).subscribe({
       next: (response) => {
-        this.urineTests = response.data;
-        this.totalItems = response.total;
-        this.currentPage = response.page;
-        this.totalPages = response.totalPages;
-        this.loading = false;
-        this.cdr.detectChanges();
+        this.urineTests.set(response.data || []);
+        this.totalItems.set(response.total || 0);
+        this.totalPages.set(response.totalPages || 1);
+        this.loading.set(false);
       },
       error: (error) => {
-        console.error('Error loading urine tests:', error);
-        this.error = error.message || 'Error desconocido al cargar los exámenes';
-        this.loading = false;
-        this.cdr.detectChanges();
+        this.error.set(error.message || 'Error desconocido al cargar los exámenes');
+        this.loading.set(false);
       }
     });
   }
 
-
   loadPendingReviewCount(): void {
     this.urineTestService.getPendingReview().subscribe({
-      next: (tests) => {
-        this.pendingReviewCount = tests.length;
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Error loading pending review count:', error);
-      }
+      next: (tests) => this.pendingReviewCount.set(tests.length),
+      error: (error) => console.error('Error loading pending review count:', error)
     });
   }
 
   applyFilters(): void {
-    this.currentPage = 1;
+    this.currentPage.set(1);
     this.loadUrineTests();
   }
 
   clearFilters(): void {
-    this.filters = {
+    this.filters.set({
       page: 1,
-      limit: 20
-    };
-    this.currentPage = 1;
+      limit: 20,
+      isActive: true
+    });
+    this.currentPage.set(1);
     this.loadUrineTests();
   }
 
   sort(field: string): void {
-    if (this.sortField === field) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    if (this.sortField() === field) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
-      this.sortField = field;
-      this.sortDirection = 'asc';
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
     }
 
-    this.urineTests.sort((a, b) => {
+    const sortedTests = [...this.urineTests()].sort((a, b) => {
       let aValue = this.getNestedValue(a, field);
       let bValue = this.getNestedValue(b, field);
 
@@ -137,24 +128,21 @@ export class UrineTestListComponent implements OnInit {
         bValue = bValue.toLowerCase();
       }
 
-      if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1;
+      if (aValue < bValue) return this.sortDirection() === 'asc' ? -1 : 1;
+      if (aValue > bValue) return this.sortDirection() === 'asc' ? 1 : -1;
       return 0;
     });
+
+    this.urineTests.set(sortedTests);
   }
 
   goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
       this.loadUrineTests();
     }
   }
 
-  trackByTestId(index: number, test: UrineTest): string {
-    return test.id;
-  }
-
-  // Helper methods
   getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((o, p) => o && o[p], obj);
   }
@@ -164,16 +152,16 @@ export class UrineTestListComponent implements OnInit {
   }
 
   hasChemicalResults(test: UrineTest): boolean {
-    return !!(test.protein || test.glucose || test.bilirubin || test.urobilinogen || 
-              test.nitrites || test.leukocytes || test.density || test.ph || 
-              test.ketones || test.occultBlood);
+    return !!(test.protein || test.glucose || test.bilirubin || test.urobilinogen ||
+      test.nitrites || test.leukocytes || test.density || test.ph ||
+      test.ketones || test.occultBlood);
   }
 
   hasMicroscopicResults(test: UrineTest): boolean {
-    return !!(test.bacteria || test.epithelialCells || test.mucousFilaments || 
-              test.yeasts || test.leukocytesField || test.erythrocytesField ||
-              (test.crystals && test.crystals.length > 0) || 
-              (test.cylinders && test.cylinders.length > 0));
+    return !!(test.bacteria || test.epithelialCells || test.mucousFilaments ||
+      test.yeasts || test.leukocytesField || test.erythrocytesField ||
+      (test.crystals && test.crystals.length > 0) ||
+      (test.cylinders && test.cylinders.length > 0));
   }
 
   hasAbnormalResults(test: UrineTest): boolean {
@@ -200,8 +188,7 @@ export class UrineTestListComponent implements OnInit {
 
   getStatusText(status: string | undefined): string {
     if (!status) return 'Sin estado';
-    
-    const statusMap: {[key: string]: string} = {
+    const statusMap: { [key: string]: string } = {
       'pending': 'Pendiente',
       'in_progress': 'En Proceso',
       'completed': 'Completado',
@@ -212,123 +199,91 @@ export class UrineTestListComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
     });
   }
 
-  // Actions
   viewDetails(id: string): void {
-    // Navega a la ruta de solo lectura
     this.router.navigate(['/urine-tests', id]);
   }
 
   editTest(id: string): void {
-    // Navega a la ruta de edición
     this.router.navigate(['/urine-tests', id, 'edit']);
   }
 
   generateReport(id: string): void {
-    // Buscar el test en la lista actual
-    const test = this.urineTests.find(t => t.id === id);
+    const test = this.urineTests().find(t => t.id === id);
     if (test) {
       try {
         this.pdfService.generateUrineReport(test);
-        this.successMessage = 'PDF generado correctamente';
-        setTimeout(() => this.successMessage = null, 3000);
+        this.toastService.success('PDF generado correctamente');
       } catch (error) {
-        console.error('Error generando PDF:', error);
-        this.error = 'Error al generar el PDF. Por favor, intente nuevamente.';
-        setTimeout(() => this.error = null, 3000);
+        this.toastService.error('Error al generar el PDF');
       }
-    } else {
-      this.error = 'No se encontró el examen solicitado';
-      setTimeout(() => this.error = null, 3000);
     }
   }
 
   markAsCompleted(id: string): void {
     this.urineTestService.markAsCompleted(id).subscribe({
-      next: (updatedTest) => {
-        const index = this.urineTests.findIndex(t => t.id === id);
-        if (index !== -1) {
-          this.urineTests[index] = updatedTest;
-        }
-        this.successMessage = 'Examen marcado como completado';
-        setTimeout(() => this.successMessage = null, 3000);
-        this.cdr.detectChanges();
+      next: () => {
+        this.loadUrineTests();
+        this.toastService.success('Examen marcado como completado');
       },
-      error: (error) => {
-        console.error('Error marking as completed:', error);
-        this.error = 'Error al marcar como completado';
-        setTimeout(() => this.error = null, 3000);
-      }
+      error: () => this.toastService.error('Error al marcar como completado')
     });
   }
 
   deleteTest(id: string): void {
-    const test = this.urineTests.find(t => t.id === id);
+    const test = this.urineTests().find(t => t.id === id);
     if (!test) return;
-    
-    // Determinar la acción según el estado actual
+
     const isActivating = !test.isActive;
-    
-    this.confirmAction = {
-      title: isActivating ? 'Activar Examen de Orina' : 'Desactivar Examen de Orina',
-      message: isActivating 
-        ? `¿Está seguro que desea activar este examen de orina? El registro volverá a estar visible y disponible.`
-        : `¿Está seguro que desea desactivar este examen de orina? Este registro se ocultará y dejará de estar disponible.`,
-      action: () => this.executeDelete(test)
-    };
-    this.showConfirmModal = true;
+
+    this.confirmAction.set({
+      title: isActivating ? 'Activar Examen' : 'Desactivar Examen',
+      message: isActivating
+        ? `¿Está seguro que desea activar este examen de orina?`
+        : `¿Está seguro que desea desactivar este examen de orina?`,
+      action: () => this.executeStatusToggle(test)
+    });
+    this.showConfirmModal.set(true);
   }
 
-  executeDelete(test: UrineTest): void {
-    console.log('Executing status toggle for test:', test.id, 'isActive:', test.isActive);
-    
-    // Determinar qué servicio llamar según el estado actual
-    const serviceCall = test.isActive 
+  executeStatusToggle(test: UrineTest): void {
+    const serviceCall = test.isActive
       ? this.urineTestService.deactivateUrineTest(test.id)
       : this.urineTestService.activateUrineTest(test.id);
-    
+
     const actionText = test.isActive ? 'desactivado' : 'activado';
-    
+
     serviceCall.subscribe({
-      next: (updatedTest) => {
-        console.log(`Test ${actionText} successfully:`, updatedTest);
-        // Recargar la lista completa para asegurar que los datos estén sincronizados
+      next: () => {
         this.loadUrineTests();
-        this.successMessage = `Examen ${actionText} correctamente`;
-        setTimeout(() => this.successMessage = null, 3000);
+        this.toastService.success(`Examen ${actionText} correctamente`);
         this.closeModal();
       },
       error: (error) => {
-        console.error(`Error ${actionText.slice(0, -2)}ando test:`, error);
-        console.error('Error message:', error.message);
-        console.error('Full error:', error);
-        this.error = error.message || `Error al ${actionText.slice(0, -2)}ar el examen`;
-        setTimeout(() => this.error = null, 5000);
+        this.error.set(error.message || `Error al ${actionText.slice(0, -2)}ar el examen`);
         this.closeModal();
       }
     });
   }
+
   closeModal(): void {
-    this.showConfirmModal = false;
-    this.confirmAction = { title: '', message: '', action: () => {} };
+    this.showConfirmModal.set(false);
+    this.confirmAction.set({ title: '', message: '', action: () => { } });
   }
 
   loadPendingReview(): void {
-    this.filters.status = 'completed';
+    this.filters.set({ ...this.filters(), status: 'completed' });
     this.applyFilters();
   }
 
   loadAbnormalResults(): void {
-    this.filters.hasAbnormalResults = true;
+    this.filters.set({ ...this.filters(), hasAbnormalResults: true });
     this.applyFilters();
   }
 
@@ -337,9 +292,6 @@ export class UrineTestListComponent implements OnInit {
   }
 
   exportData(): void {
-    // Aquí implementarías la lógica de exportación
-    console.log('Exporting urine test data...');
-    this.successMessage = 'Función de exportación en desarrollo';
-    setTimeout(() => this.successMessage = null, 3000);
+    this.toastService.info('Función de exportación en desarrollo');
   }
 }

@@ -1,306 +1,270 @@
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1><i class="fas fa-users"></i> Gestión de Usuarios</h1>
+    </div>
+    @if (canCreateUser()) {
+    <button class="btn btn-primary" (click)="createNewUser()">
+      <i class="fas fa-plus"></i> Nuevo Usuario
+    </button>
+    }
+  </div>
 
-    <div class="container">
-      <div class="header">
-        <div class="header-left">
-          <h1><i class="fas fa-users"></i> Gestión de Usuarios</h1>
-        </div>
-        @if (canCreateUser) {
-          <button class="btn btn-primary" (click)="createNewUser()">
-            <i class="fas fa-plus"></i> Nuevo Usuario
-          </button>
-        }
-      </div>
-
-      @if (isLoading) {
-        <div class="loading">
-          <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
-        </div>
-      } @else if (errorMessage) {
-        <div class="error">
-          ❌ {{ errorMessage }}
-        </div>
-      } @else if (successMessage) {
-        <div class="success">
-          ✅ {{ successMessage }}
-        </div>
-      } @else if (users.length === 0) {
-        <div class="no-data">
-          📋 No hay usuarios registrados.
-          <br><small>Crea el primer usuario haciendo clic en "Nuevo Usuario".</small>
-        </div>
-      } @else {
-        <div class="table-container">
-          <table class="results-table">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Estado</th>
-                <th>Último Login</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (user of users; track user.id) {
-                <tr class="user-row">
-                  <td>
-                    <div class="user-info">
-                      <strong>{{ user.username }}</strong>
-                    </div>
-                  </td>
-                  <td>{{ user.name }} {{ user.lastName }}</td>
-                  <td>{{ user.email }}</td>
-                  <td>
-                    <span class="badge" [class]="'badge-' + getRoleBadgeClass(user.role.name)">
-                      {{ user.role.name }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="badge" [class]="user.isActive ? 'badge-success' : 'badge-danger'">
-                      {{ user.isActive ? 'Activo' : 'Inactivo' }}
-                    </span>
-                  </td>
-                  <td>
-                    @if (user.lastLogin) {
-                      {{ formatDate(user.lastLogin) }}
-                    } @else {
-                      <span class="text-muted">Nunca</span>
-                    }
-                  </td>
-                  <td class="actions">
-                    <button 
-                      class="action-btn view-btn" 
-                      (click)="viewUser(user)"
-                      title="Ver detalles">
-                      👁️ Ver
-                    </button>
-                    @if (canEditUser) {
-                      <button class="action-btn edit-btn" (click)="editUser(user)" title="Editar usuario">
-                        ✏️ Editar
-                      </button>
-                    }
-                    @if (canEditUser) {
-                      <button
-                        class="action-btn"
-                        [class.status-active-btn]="user.isActive"
-                        [class.status-inactive-btn]="!user.isActive"
-                        (click)="toggleActive(user)"
-                        [title]="user.isActive ? 'Desactivar usuario' : 'Activar usuario'">
-                        {{ user.isActive ? '🔒 Desactivar' : '🟢 Activar' }}
-                      </button>
-                    }
-                    @if (canDeleteUser) {
-                      <button
-                        class="action-btn delete-btn"
-                        (click)="deleteUser(user)"
-                        title="Eliminar usuario"
-                        [disabled]="user.username === currentUser?.username">
-                        🗑️ Eliminar
-                      </button>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        @if (totalPages > 1) {
-          <div class="pagination">
-            <button 
-              class="btn-page" 
-              [disabled]="currentPage <= 1"
-              (click)="goToPage(currentPage - 1)">
-              Anterior
-            </button>
-            
-            <span class="page-info">
-              Página {{ currentPage }} de {{ totalPages }} 
-              ({{ total }} usuarios)
+  @if (isLoading()) {
+  <div class="loading">
+    <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
+  </div>
+  } @else if (errorMessage()) {
+  <div class="error">
+    ❌ {{ errorMessage() }}
+  </div>
+  } @else if (successMessage()) {
+  <div class="success">
+    ✅ {{ successMessage() }}
+  </div>
+  } @else if (users().length === 0) {
+  <div class="no-data">
+    📋 No hay usuarios registrados.
+    <br><small>Crea el primer usuario haciendo clic en "Nuevo Usuario".</small>
+  </div>
+  } @else {
+  <div class="table-container">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Último Login</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+        <tr class="user-row">
+          <td>
+            <div class="user-info">
+              <strong>{{ user.username }}</strong>
+            </div>
+          </td>
+          <td>{{ user.name }} {{ user.lastName }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="badge" [class]="'badge-' + getRoleBadgeClass(user.role.name)">
+              {{ user.role.name }}
             </span>
-            
-            <button 
-              class="btn-page" 
-              [disabled]="currentPage >= totalPages"
-              (click)="goToPage(currentPage + 1)">
-              Siguiente
+          </td>
+          <td>
+            <span class="badge" [class]="user.isActive ? 'badge-success' : 'badge-danger'">
+              {{ user.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            @if (user.lastLogin) {
+            {{ formatDate(user.lastLogin) }}
+            } @else {
+            <span class="text-muted">Nunca</span>
+            }
+          </td>
+          <td class="actions">
+            <button class="action-btn view-btn" (click)="viewUser(user)" title="Ver detalles">
+              👁️ Ver
             </button>
-          </div>
+            @if (canEditUser()) {
+            <button class="action-btn edit-btn" (click)="editUser(user)" title="Editar usuario">
+              ✏️ Editar
+            </button>
+            }
+            @if (canEditUser()) {
+            <button class="action-btn" [class.status-active-btn]="user.isActive"
+              [class.status-inactive-btn]="!user.isActive" (click)="toggleActive(user)"
+              [title]="user.isActive ? 'Desactivar usuario' : 'Activar usuario'">
+              {{ user.isActive ? '🔒 Desactivar' : '🟢 Activar' }}
+            </button>
+            }
+            @if (canDeleteUser()) {
+            <button class="action-btn delete-btn" (click)="deleteUser(user)" title="Eliminar usuario"
+              [disabled]="user.username === currentUser()?.username">
+              🗑️ Eliminar
+            </button>
+            }
+          </td>
+        </tr>
         }
-      }
+      </tbody>
+    </table>
+  </div>
 
-      <!-- Modal para crear/editar usuario -->
-      <div class="modal" *ngIf="showUserModal" (click)="closeUserModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>{{ isEditMode ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</h3>
-          
-          <form (ngSubmit)="saveUser()">
-            <div class="form-group">
-              <label for="username">Usuario *</label>
-              <input
-                id="username"
-                type="text"
-                [(ngModel)]="userFormData.username"
-                name="username"
-                required
-                [disabled]="isEditMode"
-                placeholder="Ej: jperez">
-            </div>
+  @if (totalPages() > 1) {
+  <div class="pagination">
+    <button class="btn-page" [disabled]="currentPage() <= 1" (click)="goToPage(currentPage() - 1)">
+      Anterior
+    </button>
 
-            @if (!isEditMode) {
-              <div class="form-group">
-                <label for="password">Contraseña *</label>
-                <input
-                  id="password"
-                  type="password"
-                  [(ngModel)]="userFormData.password"
-                  name="password"
-                  required
-                  placeholder="Mínimo 6 caracteres">
-              </div>
-            }
+    <span class="page-info">
+      Página {{ currentPage() }} de {{ totalPages() }}
+      ({{ total() }} usuarios)
+    </span>
 
-            <div class="form-group">
-              <label for="name">Nombre *</label>
-              <input
-                id="name"
-                type="text"
-                [(ngModel)]="userFormData.name"
-                name="name"
-                required
-                placeholder="Ej: Juan">
-            </div>
+    <button class="btn-page" [disabled]="currentPage() >= totalPages()" (click)="goToPage(currentPage() + 1)">
+      Siguiente
+    </button>
+  </div>
+  }
+  }
 
-            <div class="form-group">
-              <label for="lastName">Apellido *</label>
-              <input
-                id="lastName"
-                type="text"
-                [(ngModel)]="userFormData.lastName"
-                name="lastName"
-                required
-                placeholder="Ej: Pérez">
-            </div>
+  <!-- Modal para crear/editar usuario -->
+  @if (showUserModal()) {
+  <div class="modal" (click)="closeUserModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>{{ isEditMode() ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</h3>
 
-            <div class="form-group">
-              <label for="email">Email *</label>
-              <input
-                id="email"
-                type="email"
-                [(ngModel)]="userFormData.email"
-                name="email"
-                required
-                placeholder="Ej: juan@lab.com">
-            </div>
-
-            <div class="form-group">
-              <label for="roleId">Rol *</label>
-              @if (roles.length === 0) {
-                <div class="warning-message">
-                  ⚠️ Cargando roles... Por favor espere.
-                </div>
-              } @else {
-                <select
-                  id="roleId"
-                  [(ngModel)]="userFormData.roleId"
-                  name="roleId"
-                  required>
-                  <option value="">Seleccionar rol</option>
-                  @for (role of roles; track role.id) {
-                    <option [value]="role.id">{{ role.name }}</option>
-                  }
-                </select>
-              }
-            </div>
-
-            @if (isEditMode) {
-              <div class="form-group">
-                <label for="isActive">Estado</label>
-                <select
-                  id="isActive"
-                  [(ngModel)]="userFormData.isActive"
-                  name="isActive">
-                  <option [value]="true">Activo</option>
-                  <option [value]="false">Inactivo</option>
-                </select>
-              </div>
-            }
-
-            <div class="modal-actions">
-              <button type="button" class="btn-secondary" (click)="closeUserModal()">Cancelar</button>
-              <button type="submit" class="btn-primary" [disabled]="!isUserFormValid()">
-                {{ isEditMode ? 'Actualizar' : 'Crear' }}
-              </button>
-            </div>
-          </form>
+      <form (ngSubmit)="saveUser()">
+        <div class="form-group">
+          <label for="username">Usuario *</label>
+          <input id="username" type="text" [ngModel]="userFormData().username"
+            (ngModelChange)="userFormData.set({...userFormData(), username: $event})" name="username" required
+            [disabled]="isEditMode()" placeholder="Ej: jperez">
         </div>
-      </div>
 
-      <!-- Modal de confirmación para eliminar -->
-      <div class="modal" *ngIf="showConfirmModal" (click)="closeConfirmModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>{{ confirmAction.title }}</h3>
-          <p>{{ confirmAction.message }}</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeConfirmModal()">Cancelar</button>
-            <button class="btn-danger" (click)="confirmDelete()">Confirmar</button>
+        @if (!isEditMode()) {
+        <div class="form-group">
+          <label for="password">Contraseña *</label>
+          <input id="password" type="password" [ngModel]="userFormData().password"
+            (ngModelChange)="userFormData.set({...userFormData(), password: $event})" name="password" required
+            placeholder="Mínimo 6 caracteres">
+        </div>
+        }
+
+        <div class="form-group">
+          <label for="name">Nombre *</label>
+          <input id="name" type="text" [ngModel]="userFormData().name"
+            (ngModelChange)="userFormData.set({...userFormData(), name: $event})" name="name" required
+            placeholder="Ej: Juan">
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Apellido *</label>
+          <input id="lastName" type="text" [ngModel]="userFormData().lastName"
+            (ngModelChange)="userFormData.set({...userFormData(), lastName: $event})" name="lastName" required
+            placeholder="Ej: Pérez">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input id="email" type="email" [ngModel]="userFormData().email"
+            (ngModelChange)="userFormData.set({...userFormData(), email: $event})" name="email" required
+            placeholder="Ej: juan@lab.com">
+        </div>
+
+        <div class="form-group">
+          <label for="roleId">Rol *</label>
+          @if (roles().length === 0) {
+          <div class="warning-message">
+            ⚠️ Cargando roles... Por favor espere.
           </div>
-        </div>
-      </div>
-
-      <!-- Modal para ver detalles -->
-      <div class="modal" *ngIf="showDetailModal" (click)="closeDetailModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>Detalles del Usuario</h3>
-          
-          @if (selectedUser) {
-            <div class="detail-grid">
-              <div class="detail-item">
-                <label>Usuario:</label>
-                <span>{{ selectedUser.username }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Nombre:</label>
-                <span>{{ selectedUser.name }} {{ selectedUser.lastName }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Email:</label>
-                <span>{{ selectedUser.email }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Rol:</label>
-                <span class="badge" [class]="'badge-' + getRoleBadgeClass(selectedUser.role.name)">
-                  {{ selectedUser.role.name }}
-                </span>
-              </div>
-              <div class="detail-item">
-                <label>Estado:</label>
-                <span class="badge" [class]="selectedUser.isActive ? 'badge-success' : 'badge-danger'">
-                  {{ selectedUser.isActive ? 'Activo' : 'Inactivo' }}
-                </span>
-              </div>
-              <div class="detail-item">
-                <label>Creado:</label>
-                <span>{{ formatDate(selectedUser.createdAt) }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Último Login:</label>
-                <span>
-                  @if (selectedUser.lastLogin) {
-                    {{ formatDate(selectedUser.lastLogin) }}
-                  } @else {
-                    <span class="text-muted">Nunca</span>
-                  }
-                </span>
-              </div>
-            </div>
+          } @else {
+          <select id="roleId" [ngModel]="userFormData().roleId"
+            (ngModelChange)="userFormData.set({...userFormData(), roleId: $event})" name="roleId" required>
+            <option value="">Seleccionar rol</option>
+            @for (role of roles(); track role.id) {
+            <option [value]="role.id">{{ role.name }}</option>
+            }
+          </select>
           }
-
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeDetailModal()">Cerrar</button>
-          </div>
         </div>
+
+        @if (isEditMode()) {
+        <div class="form-group">
+          <label for="isActive">Estado</label>
+          <select id="isActive" [ngModel]="userFormData().isActive"
+            (ngModelChange)="userFormData.set({...userFormData(), isActive: $event})" name="isActive">
+            <option [value]="true">Activo</option>
+            <option [value]="false">Inactivo</option>
+          </select>
+        </div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeUserModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="!isUserFormValid()">
+            {{ isEditMode() ? 'Actualizar' : 'Crear' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  }
+
+  <!-- Modal de confirmación para eliminar -->
+  @if (showConfirmModal()) {
+  <div class="modal" (click)="closeConfirmModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>{{ confirmAction().title }}</h3>
+      <p>{{ confirmAction().message }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeConfirmModal()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmDelete()">Confirmar</button>
       </div>
     </div>
+  </div>
+  }
+
+  <!-- Modal para ver detalles -->
+  @if (showDetailModal()) {
+  <div class="modal" (click)="closeDetailModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Detalles del Usuario</h3>
+
+      @if (selectedUser()) {
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Usuario:</label>
+          <span>{{ selectedUser()!.username }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Nombre:</label>
+          <span>{{ selectedUser()!.name }} {{ selectedUser()!.lastName }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Email:</label>
+          <span>{{ selectedUser()!.email }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Rol:</label>
+          <span class="badge" [class]="'badge-' + getRoleBadgeClass(selectedUser()!.role.name)">
+            {{ selectedUser()!.role.name }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <label>Estado:</label>
+          <span class="badge" [class]="selectedUser()!.isActive ? 'badge-success' : 'badge-danger'">
+            {{ selectedUser()!.isActive ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <label>Creado:</label>
+          <span>{{ formatDate(selectedUser()!.createdAt) }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Último Login:</label>
+          <span>
+            @if (selectedUser()!.lastLogin) {
+            {{ formatDate(selectedUser()!.lastLogin) }}
+            } @else {
+            <span class="text-muted">Nunca</span>
+            }
+          </span>
+        </div>
+      </div>
+      }
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeDetailModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

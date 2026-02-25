@@ -1,166 +1,86 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError, tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { Patient, CreatePatientRequest, UpdatePatientRequest } from '../models/patient.interface';
 import { PaginatedResponse } from '../models/paginated-response.interface';
+import { BaseService } from './base.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class PatientService {
-  private readonly apiUrl = 'http://localhost:3000/patients';
-  
-  private readonly httpOptions = {
-    headers: new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Origin, Content-Type, X-Auth-Token'
-    })
-  };
-
-  constructor(private http: HttpClient) { }
+export class PatientService extends BaseService {
+  private readonly endpoint = `${this.baseUrl}/patients`;
 
   // Obtener todos los pacientes con paginación
   getPatients(page: number = 1, limit: number = 7, search?: string): Observable<PaginatedResponse<Patient>> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
-    
-    if (search && search.trim()) {
-      params = params.set('search', search.trim());
-    }
+    const params = this.getParams({ page, limit, search });
 
-    return this.http.get<PaginatedResponse<Patient>>(this.apiUrl, { 
-      params, 
-      ...this.httpOptions 
-    }).pipe(
-      tap(response => console.log('Patients loaded from backend:', response)),
-      catchError(this.handleError)
-    );
+    return this.http.get<PaginatedResponse<Patient>>(this.endpoint, { params })
+      .pipe(
+        tap(response => console.log('Patients loaded:', response)),
+        catchError(err => this.handleError(err))
+      );
   }
 
   // Obtener un paciente por ID
   getPatientById(id: string): Observable<Patient> {
-    const url = `${this.apiUrl}/${id}`;
-    return this.http.get<Patient>(url, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.get<Patient>(`${this.endpoint}/${id}`)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   // Obtener paciente por DNI
   getPatientByDni(dni: string): Observable<Patient> {
-    const url = `${this.apiUrl}/dni/${dni}`;
-    return this.http.get<Patient>(url, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.get<Patient>(`${this.endpoint}/dni/${dni}`)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   // Buscar pacientes por nombre
   searchPatientsByName(name: string): Observable<Patient[]> {
-    const url = `${this.apiUrl}/search?name=${encodeURIComponent(name)}`;
-    return this.http.get<Patient[]>(url, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
+    const params = this.getParams({ name });
+    return this.http.get<Patient[]>(`${this.endpoint}/search`, { params })
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   // Crear nuevo paciente
   createPatient(patient: CreatePatientRequest): Observable<Patient> {
-    return this.http.post<Patient>(this.apiUrl, patient, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.post<Patient>(this.endpoint, patient)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   // Actualizar paciente existente
   updatePatient(id: string, patient: UpdatePatientRequest): Observable<Patient> {
-    const url = `${this.apiUrl}/${id}`;
-    return this.http.patch<Patient>(url, patient, this.httpOptions)
+    return this.http.patch<Patient>(`${this.endpoint}/${id}`, patient)
       .pipe(
         tap(response => console.log('Patient updated:', response)),
-        catchError(this.handleError)
+        catchError(err => this.handleError(err))
       );
   }
 
   // Eliminar paciente (soft delete)
   deletePatient(id: string): Observable<void> {
-    const url = `${this.apiUrl}/${id}`;
-    return this.http.delete<void>(url, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http.delete<void>(`${this.endpoint}/${id}`)
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   // Activar/Desactivar paciente
   togglePatientStatus(id: string, isActive: boolean): Observable<Patient> {
-    if (isActive) {
-      // Activar paciente
-      const url = `${this.apiUrl}/${id}/activate`;
-      return this.http.patch<Patient>(url, {}, this.httpOptions)
-        .pipe(
-          catchError(this.handleError)
-        );
-    } else {
-      // Desactivar paciente
-      const url = `${this.apiUrl}/${id}/deactivate`;
-      return this.http.patch<Patient>(url, {}, this.httpOptions)
-        .pipe(
-          catchError(this.handleError)
-        );
-    }
-  }
-
-  // Obtener pacientes activos solamente
-  getActivePatients(): Observable<Patient[]> {
-    const url = `${this.apiUrl}/active`;
-    return this.http.get<Patient[]>(url, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
+    const action = isActive ? 'activate' : 'deactivate';
+    return this.http.patch<Patient>(`${this.endpoint}/${id}/${action}`, {})
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   // Validar si DNI ya existe
   validateDni(dni: string, excludeId?: string): Observable<boolean> {
-    let url = `${this.apiUrl}/validate-dni/${dni}`;
-    if (excludeId) {
-      url += `?excludeId=${excludeId}`;
-    }
-    return this.http.get<boolean>(url, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
+    const params = this.getParams({ excludeId });
+    return this.http.get<boolean>(`${this.endpoint}/validate-dni/${dni}`, { params })
+      .pipe(catchError(err => this.handleError(err)));
   }
 
   // Validar si email ya existe  
   validateEmail(email: string, excludeId?: string): Observable<boolean> {
-    let url = `${this.apiUrl}/validate-email/${encodeURIComponent(email)}`;
-    if (excludeId) {
-      url += `?excludeId=${excludeId}`;
-    }
-    return this.http.get<boolean>(url, this.httpOptions)
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  private handleError(error: any): Observable<never> {
-    let errorMessage = 'Error desconocido';
-    
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente
-      errorMessage = `Error del cliente: ${error.error.message}`;
-    } else {
-      // Error del lado del servidor
-      errorMessage = `Error del servidor: ${error.status} - ${error.message}`;
-      if (error.error?.message) {
-        errorMessage = error.error.message;
-      }
-    }
-    
-    console.error('Error en PatientService:', errorMessage);
-    return throwError(() => new Error(errorMessage));
+    const params = this.getParams({ excludeId });
+    return this.http.get<boolean>(`${this.endpoint}/validate-email/${encodeURIComponent(email)}`, { params })
+      .pipe(catchError(err => this.handleError(err)));
   }
 }
+
+import { catchError } from 'rxjs';

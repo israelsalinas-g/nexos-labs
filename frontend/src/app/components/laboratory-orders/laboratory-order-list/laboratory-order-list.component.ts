@@ -1,99 +1,95 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LaboratoryOrder } from '../../../models/laboratory-order.interface';
 import { LaboratoryOrderService } from '../../../services/laboratory-order.service';
 import { LaboratoryOrderFormComponent } from '../laboratory-order-form/laboratory-order-form.component';
-
-interface MenuItem {
-  label: string;
-  icon: string;
-  route: string;
-  active: boolean;
-}
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-laboratory-order-list',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, LaboratoryOrderFormComponent],
   templateUrl: './laboratory-order-list.component.html',
-  styleUrls: ['./laboratory-order-list.component.css']
+  styleUrls: ['./laboratory-order-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LaboratoryOrderListComponent implements OnInit {
-  orders: LaboratoryOrder[] = [];
-  selectedOrder: LaboratoryOrder | null = null;
-  showFormModal = false;
-  isEditMode = false;
-  loading = false;
-  error: string | null = null;
-  searchTerm = '';
-  statusFilter = '';
-  currentPage = 1;
-  pageSize = 4;
-  totalPages = 1;
+  private orderService = inject(LaboratoryOrderService);
+  private toastService = inject(ToastService);
 
-  constructor(private orderService: LaboratoryOrderService) {}
+  orders = signal<LaboratoryOrder[]>([]);
+  selectedOrder = signal<LaboratoryOrder | null>(null);
+  showFormModal = signal<boolean>(false);
+  isEditMode = signal<boolean>(false);
+  loading = signal<boolean>(false);
+  error = signal<string | null>(null);
+
+  searchTerm = signal<string>('');
+  statusFilter = signal<string>('');
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(4);
+  totalPages = signal<number>(1);
 
   ngOnInit(): void {
     this.loadOrders();
   }
 
   loadOrders(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
 
     this.orderService.getOrders(
-      this.currentPage,
-      this.pageSize,
-      this.statusFilter,
+      this.currentPage(),
+      this.pageSize(),
+      this.statusFilter() || undefined,
       undefined,
-      this.searchTerm
+      this.searchTerm() || undefined
     ).subscribe({
-      next: (response: any) => {
-        this.orders = response.data;
-        this.totalPages = response.totalPages;
-        this.loading = false;
+      next: (response) => {
+        this.orders.set(response.data || []);
+        this.totalPages.set(response.totalPages || 1);
+        this.loading.set(false);
       },
-      error: (err: any) => {
-        this.error = 'Error al cargar las órdenes';
-        this.loading = false;
+      error: () => {
+        this.error.set('Error al cargar las órdenes');
+        this.loading.set(false);
       }
     });
   }
 
   onSearch(): void {
-    this.currentPage = 1;
+    this.currentPage.set(1);
     this.loadOrders();
   }
 
   clearSearch(): void {
-    this.searchTerm = '';
-    this.statusFilter = '';
-    this.currentPage = 1;
+    this.searchTerm.set('');
+    this.statusFilter.set('');
+    this.currentPage.set(1);
     this.loadOrders();
   }
 
   onStatusFilterChange(): void {
-    this.currentPage = 1;
+    this.currentPage.set(1);
     this.loadOrders();
   }
 
   openCreateModal(): void {
-    this.selectedOrder = null;
-    this.isEditMode = false;
-    this.showFormModal = true;
+    this.selectedOrder.set(null);
+    this.isEditMode.set(false);
+    this.showFormModal.set(true);
   }
 
   editOrder(order: LaboratoryOrder): void {
-    this.selectedOrder = order;
-    this.isEditMode = true;
-    this.showFormModal = true;
+    this.selectedOrder.set(order);
+    this.isEditMode.set(true);
+    this.showFormModal.set(true);
   }
 
   viewOrder(order: LaboratoryOrder): void {
     console.log('Ver orden:', order);
-    // Implementar visualización de detalles
   }
 
   deleteOrder(id: string): void {
@@ -101,18 +97,15 @@ export class LaboratoryOrderListComponent implements OnInit {
       this.orderService.deleteOrder(id).subscribe({
         next: () => {
           this.loadOrders();
+          this.toastService.success('Orden eliminada correctamente');
         },
-        error: (err: any) => {
-          this.error = 'Error al eliminar la orden';
-        }
+        error: () => this.toastService.error('Error al eliminar la orden')
       });
     }
   }
 
   generatePdf(order: LaboratoryOrder): void {
-    console.log('Generando PDF para orden:', order);
-    // Implementar generación de PDF
-    alert(`Generando PDF para la orden ${order.orderNumber}`);
+    this.toastService.info(`Generando PDF para la orden ${order.orderNumber}`);
   }
 
   onOrderSaved(order: LaboratoryOrder): void {
@@ -121,21 +114,21 @@ export class LaboratoryOrderListComponent implements OnInit {
   }
 
   closeFormModal(): void {
-    this.showFormModal = false;
-    this.selectedOrder = null;
-    this.isEditMode = false;
+    this.showFormModal.set(false);
+    this.selectedOrder.set(null);
+    this.isEditMode.set(false);
   }
 
   previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
+    if (this.currentPage() > 1) {
+      this.currentPage.update(p => p - 1);
       this.loadOrders();
     }
   }
 
   nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.update(p => p + 1);
       this.loadOrders();
     }
   }

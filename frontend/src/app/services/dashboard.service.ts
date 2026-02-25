@@ -1,17 +1,16 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError } from 'rxjs';
 import { DashboardCard } from '../models/dashboard.interface';
+import { BaseService } from './base.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class DashboardService {
-  private apiUrl = 'http://localhost:3000/dashboard';
-
-  constructor(private http: HttpClient) {}
+export class DashboardService extends BaseService {
+  private readonly endpoint = `${this.baseUrl}/dashboard`;
 
   getDashboardCards(): Observable<DashboardCard[]> {
-    return this.http.get<DashboardCard[]>(`${this.apiUrl}/cards`);
+    return this.http.get<DashboardCard[]>(`${this.endpoint}/cards`)
+      .pipe(catchError(err => this.handleError(err)));
   }
 }
