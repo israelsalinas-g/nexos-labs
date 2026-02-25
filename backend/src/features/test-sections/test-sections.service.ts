@@ -5,194 +5,89 @@ import { TestSection } from '../../entities/test-section.entity';
 import { CreateTestSectionDto } from '../../dto/create-test-section.dto';
 import { UpdateTestSectionDto } from '../../dto/update-test-section.dto';
 import { PaginationResult } from '../../common/interfaces';
+import { BaseService } from '../../common/bases/base.service';
 
 @Injectable()
-export class TestSectionsService {
+export class TestSectionsService extends BaseService<TestSection> {
+  protected readonly logger = new Logger(TestSectionsService.name);
+
   constructor(
     @InjectRepository(TestSection)
     private readonly testSectionRepository: Repository<TestSection>,
-  ) {}
+  ) {
+    super(testSectionRepository);
+  }
 
-  /**
-   * Crear una nueva sección de examen
-   */
   async create(createDto: CreateTestSectionDto): Promise<TestSection> {
-    // Verificar si ya existe una sección con el mismo nombre
-    const existingByName = await this.testSectionRepository.findOne({
-      where: { name: createDto.name }
-    });
-
-    if (existingByName) {
-      throw new ConflictException(`Ya existe una sección con el nombre "${createDto.name}"`);
-    }
-
-    // Verificar si ya existe una sección con el mismo código (si se proporciona)
-    if (createDto.code) {
-      const existingByCode = await this.testSectionRepository.findOne({
-        where: { code: createDto.code }
-      });
-
-      if (existingByCode) {
-        throw new ConflictException(`Ya existe una sección con el código "${createDto.code}"`);
-      }
-    }
-
+    await this.validateUniqueness(createDto.name, createDto.code);
     const section = this.testSectionRepository.create(createDto);
     return await this.testSectionRepository.save(section);
   }
 
-  private readonly logger = new Logger(TestSectionsService.name);
+  async findAll(page = 1, limit = 10, includeInactive = false, search?: string): Promise<PaginationResult<TestSection>> {
+    const query = this.testSectionRepository.createQueryBuilder('section')
+      .leftJoinAndSelect('section.tests', 'tests')
+      .orderBy('section.displayOrder', 'ASC')
+      .addOrderBy('section.name', 'ASC');
 
-  /**
-   * Obtener todas las secciones de examen con paginación
-   */
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-    includeInactive: boolean = false,
-    search?: string
-  ): Promise<PaginationResult<TestSection>> {
-    this.logger.log(`Obteniendo secciones - Página: ${page}, Límite: ${limit}, IncludeInactive: ${includeInactive}, Search: "${search}"`);
-
-    try {
-      const skip = (page - 1) * limit;
-      const query = this.testSectionRepository
-        .createQueryBuilder('section')
-        .leftJoinAndSelect('section.tests', 'tests')
-        .orderBy('section.displayOrder', 'ASC')
-        .addOrderBy('section.name', 'ASC')
-        .skip(skip)
-        .take(limit);
-
-      if (!includeInactive) {
-        query.andWhere('section.isActive = :isActive', { isActive: true });
-      }
-
-      if (search) {
-        query.andWhere(
-          '(LOWER(section.name) LIKE LOWER(:search) OR ' +
-          'LOWER(section.code) LIKE LOWER(:search) OR ' +
-          'LOWER(section.description) LIKE LOWER(:search))',
-          { search: `%${search}%` }
-        );
-      }
-
-      const [sections, total] = await query.getManyAndCount();
-
-      return {
-        data: sections,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    } catch (error) {
-      this.logger.error(`Error obteniendo secciones: ${error.message}`);
-      throw error;
+    if (!includeInactive) query.andWhere('section.isActive = true');
+    if (search) {
+      query.andWhere(
+        '(LOWER(section.name) LIKE LOWER(:search) OR LOWER(section.code) LIKE LOWER(:search) OR LOWER(section.description) LIKE LOWER(:search))',
+        { search: `%${search}%` }
+      );
     }
+
+    return this.paginateQueryBuilder(query, page, limit);
   }
 
-  /**
-   * Obtener una sección por su ID
-   */
   async findOne(id: string): Promise<TestSection> {
-    const section = await this.testSectionRepository.findOne({
-      where: { id },
-      relations: ['tests']
-    });
-
-    if (!section) {
-      throw new NotFoundException(`Sección con ID ${id} no encontrada`);
-    }
-
-    return section;
+    return super.findOne(id, { relations: ['tests'] });
   }
 
-  /**
-   * Obtener una sección por su código
-   */
-  async findByCode(code: string): Promise<TestSection> {
-    const section = await this.testSectionRepository.findOne({
-      where: { code },
-      relations: ['tests']
-    });
-
-    if (!section) {
-      throw new NotFoundException(`Sección con código "${code}" no encontrada`);
-    }
-
-    return section;
-  }
-
-  /**
-   * Actualizar una sección
-   */
   async update(id: string, updateDto: UpdateTestSectionDto): Promise<TestSection> {
     const section = await this.findOne(id);
-
-    // Verificar conflictos de nombre si se está actualizando
-    if (updateDto.name && updateDto.name !== section.name) {
-      const existingByName = await this.testSectionRepository.findOne({
-        where: { name: updateDto.name }
-      });
-
-      if (existingByName && existingByName.id !== id) {
-        throw new ConflictException(`Ya existe una sección con el nombre "${updateDto.name}"`);
-      }
-    }
-
-    // Verificar conflictos de código si se está actualizando
-    if (updateDto.code && updateDto.code !== section.code) {
-      const existingByCode = await this.testSectionRepository.findOne({
-        where: { code: updateDto.code }
-      });
-
-      if (existingByCode && existingByCode.id !== id) {
-        throw new ConflictException(`Ya existe una sección con el código "${updateDto.code}"`);
-      }
-    }
-
+    await this.validateUniqueness(
+      updateDto.name !== section.name ? updateDto.name : undefined,
+      updateDto.code !== section.code ? updateDto.code : undefined,
+      id
+    );
     Object.assign(section, updateDto);
     return await this.testSectionRepository.save(section);
   }
 
-  /**
-   * Eliminar una sección (soft delete - marcar como inactiva)
-   */
   async remove(id: string): Promise<void> {
     const section = await this.findOne(id);
-
-    // Verificar si tiene pruebas asociadas
-    if (section.tests && section.tests.length > 0) {
-      throw new ConflictException(
-        `No se puede eliminar la sección porque tiene ${section.tests.length} prueba(s) asociada(s). Desactívela en su lugar.`
-      );
+    if (section.tests?.length > 0) {
+      throw new ConflictException(`No se puede eliminar: tiene ${section.tests.length} prueba(s) asociada(s). Desactívela.`);
     }
-
     await this.testSectionRepository.remove(section);
   }
 
-  /**
-   * Activar/Desactivar una sección
-   */
   async toggleActive(id: string): Promise<TestSection> {
     const section = await this.findOne(id);
     section.isActive = !section.isActive;
     return await this.testSectionRepository.save(section);
   }
 
-  /**
-   * Obtener estadísticas de secciones
-   */
   async getStats() {
-    const total = await this.testSectionRepository.count();
-    const active = await this.testSectionRepository.count({ where: { isActive: true } });
-    const inactive = total - active;
+    const [total, active] = await Promise.all([
+      this.testSectionRepository.count(),
+      this.testSectionRepository.count({ where: { isActive: true } }),
+    ]);
+    return { total, active, inactive: total - active };
+  }
 
-    return {
-      total,
-      active,
-      inactive
-    };
+  private async validateUniqueness(name?: string, code?: string, excludeId?: string): Promise<void> {
+    if (name) {
+      const q = this.testSectionRepository.createQueryBuilder('s').where('s.name = :name', { name });
+      if (excludeId) q.andWhere('s.id != :excludeId', { excludeId });
+      if (await q.getOne()) throw new ConflictException(`Ya existe una sección con el nombre "${name}"`);
+    }
+    if (code) {
+      const q = this.testSectionRepository.createQueryBuilder('s').where('s.code = :code', { code });
+      if (excludeId) q.andWhere('s.id != :excludeId', { excludeId });
+      if (await q.getOne()) throw new ConflictException(`Ya existe una sección con el código "${code}"`);
+    }
   }
 }

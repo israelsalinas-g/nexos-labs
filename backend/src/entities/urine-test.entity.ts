@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { ApiProperty } from '@nestjs/swagger';
 import { Patient } from './patient.entity';
 import { User } from './user.entity';
-import { CrystalType, CylinderType, UrineAspect, UrineColor, UrineDensity, UrinePH, Urobilinogen} from '../common/enums/urine-test.enums';
+import { CrystalType, CylinderType, UrineAspect, UrineColor, UrineDensity, UrinePH, Urobilinogen } from '../common/enums/urine-test.enums';
 import { NegativePositive } from '../common/enums/negative-positive.enums';
 import { CrystalResult, CylinderResult } from '../common/interfaces/urine-test.interfaces';
 import { NegativePositive3Plus } from '../common/enums/negative-positive-3-plus.enums';
@@ -17,11 +17,11 @@ export class UrineTest {
   @ApiProperty({ description: 'ID único del examen de orina' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
-  
+
   @ApiProperty({ description: 'Número de muestra (único)' })
   @Column({ name: 'sample_number', unique: true })
   sampleNumber: string;
-    
+
   @ApiProperty({ description: 'Fecha del examen' })
   @Column({ name: 'test_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   testDate: Date;
@@ -136,8 +136,8 @@ export class UrineTest {
   @Column({ name: 'yeasts', type: 'enum', enum: EscasaModeradaAbundanteAusenteQuantity, nullable: true })
   yeasts: EscasaModeradaAbundanteAusenteQuantity | null;
 
-  @ApiProperty({ 
-    description: 'Cristales encontrados', 
+  @ApiProperty({
+    description: 'Cristales encontrados',
     type: 'array',
     example: [
       { type: CrystalType.OXALATOS_CALCIO_DIHIDRATADO, quantity: '2-3 por campo' },
@@ -147,7 +147,7 @@ export class UrineTest {
   @Column({ name: 'crystals', type: 'jsonb', default: [] })
   crystals: CrystalResult[];
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Cilindros encontrados',
     type: 'array',
     example: [
@@ -174,7 +174,7 @@ export class UrineTest {
   @Column({ name: 'status', type: 'varchar', length: 50, default: 'completed' })
   status: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Indica si el examen de orina está activo/vigente',
     example: true,
     default: true
@@ -183,7 +183,7 @@ export class UrineTest {
   isActive: boolean;
 
   // RELACIONES CON USUARIOS
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Usuario que creó/realizó el examen',
     type: () => User
   })
@@ -195,7 +195,7 @@ export class UrineTest {
   @Column({ name: 'created_by_id', type: 'uuid', nullable: true })
   createdById: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Usuario que revisó/aprobó el examen',
     type: () => User
   })
@@ -214,4 +214,38 @@ export class UrineTest {
   @ApiProperty({ description: 'Fecha de actualización' })
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  isComplete(): boolean {
+    const requiredPhysicalFields = ['volume', 'color', 'aspect', 'sediment', 'density'];
+    const requiredChemicalFields = [
+      'ph', 'protein', 'glucose', 'bilirubin', 'ketones',
+      'occultBlood', 'nitrites', 'urobilinogen', 'leukocytes'
+    ];
+    const requiredMicroscopicFields = [
+      'epithelialCells', 'leukocytesField', 'erythrocytesField',
+      'bacteria', 'mucousFilaments', 'yeasts'
+    ];
+
+    const checkFields = (fields: string[]) => fields.every(field =>
+      this[field] !== null && this[field] !== undefined && this[field] !== ''
+    );
+
+    return checkFields(requiredPhysicalFields) &&
+      checkFields(requiredChemicalFields) &&
+      checkFields(requiredMicroscopicFields);
+  }
+
+  getAutoStatus(requestedStatus?: string): string {
+    const isComplete = this.isComplete();
+
+    if (requestedStatus === 'completed' && !isComplete) {
+      return 'pending'; // Or throw if we want strictness, but let's be flexible in entity
+    }
+
+    if (isComplete && (!requestedStatus || requestedStatus === 'pending')) {
+      return 'completed';
+    }
+
+    return requestedStatus || (isComplete ? 'completed' : 'pending');
+  }
 }

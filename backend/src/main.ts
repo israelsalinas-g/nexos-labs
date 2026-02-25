@@ -5,12 +5,17 @@ import { AppModule } from './app.module';
 import * as express from 'express';
 import * as path from 'path';
 
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Servir archivos estáticos (avatares)
   const publicPath = path.join(process.cwd(), 'public');
   app.use(express.static(publicPath));
+
+  // Configurar filtro de excepciones global
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Configurar validación global
   app.useGlobalPipes(new ValidationPipe({
@@ -52,7 +57,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  
+
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 Swagger documentation: http://localhost:${port}/api`);
   console.log(`🔬 LIS Server listening on port: ${process.env.LIS_PORT ?? 5600}`);

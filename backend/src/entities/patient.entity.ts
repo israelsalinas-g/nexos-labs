@@ -5,12 +5,15 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Genres, GenresExample } from '../common/enums/genres.enums';
 import { BloodType, BloodTypeExample } from '../common/enums/blood-type.enums';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('patients')
+@Index(['name'])
+@Index(['dni'])
 export class Patient {
   @ApiProperty({
     description: 'ID único del paciente',
@@ -188,6 +191,19 @@ export class Patient {
     example: '2025-10-05T14:48:00Z',
     format: 'date-time'
   })
-  @UpdateDateColumn({name: 'updated_at'})
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  calculateAge(): number {
+    if (!this.birthDate) return 0;
+    const birthDate = new Date(this.birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
 }
