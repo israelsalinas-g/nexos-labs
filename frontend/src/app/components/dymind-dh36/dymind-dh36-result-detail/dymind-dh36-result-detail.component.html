@@ -1,0 +1,193 @@
+
+    <div class="container">
+      <div class="header">
+        <div class="header-left">
+          <button class="back-button" (click)="goBack()">
+            ← Volver a la lista
+          </button>
+          <h1>Resultado de Laboratorio</h1>
+        </div>
+        <button class="pdf-button" (click)="generatePdf()" *ngIf="dymindDh36Result && !loading && !error">
+          📄 Descargar PDF
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="loading">
+        Cargando detalles...
+      </div>
+
+      <div *ngIf="error" class="error">
+        Error al cargar el resultado: {{ error }}
+      </div>
+
+      <div *ngIf="dymindDh36Result && !loading && !error" class="lab-report">
+        <!-- Header Section - Similar to lab instrument -->
+        <div class="report-header">
+          <div class="header-row">
+            <div class="field-group">
+              <label>ID Muestra</label>
+              <span class="sample-id">{{ dymindDh36Result.sampleNumber }}</span>
+            </div>
+            <div class="field-group">
+              <label>Modo</label>
+              <span>{{ getShortMode(dymindDh36Result.analysisMode || '') }}</span>
+            </div>
+            <div class="field-group">
+              <label>Edad</label>
+              <span *ngIf="dymindDh36Result.patientId && dymindDh36Result.patient">
+                {{ dymindDh36Result.patient.age }} Año
+              </span>
+              <span *ngIf="!dymindDh36Result.patientId">
+                {{ dymindDh36Result.patientAgeDymind || 'N/A' }} Año
+              </span>
+            </div>
+          </div>
+          <div class="header-row">
+            <div class="field-group wide">
+              <label>Nombre</label>
+              <span *ngIf="dymindDh36Result.patientId && dymindDh36Result.patient">
+                {{ dymindDh36Result.patient.name }}
+              </span>
+              <span *ngIf="!dymindDh36Result.patientId">
+                {{ dymindDh36Result.patientNameDymind || 'Sin información de paciente' }}
+              </span>
+            </div>
+            <div class="field-group">
+              <label>Hora de análisis</label>
+              <span>{{ formatDateTime(dymindDh36Result.testDate) }}</span>
+            </div>
+            <div class="field-group">
+              <label>Género</label>
+              <span *ngIf="dymindDh36Result.patientId && dymindDh36Result.patient">
+                {{ dymindDh36Result.patient.sex }}
+              </span>
+              <span *ngIf="!dymindDh36Result.patientId">
+                {{ dymindDh36Result.patientSexDymind || 'N/A' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parameters Table -->
+        <div class="parameters-section">
+          <div class="parameters-grid">
+            <!-- Left Column -->
+            <div class="parameters-column">
+              <table class="parameters-table">
+                <thead>
+                  <tr>
+                    <th>Param.</th>
+                    <th>Resultado</th>
+                    <th>Unidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let param of getLeftColumnParams()" 
+                      [class]="getParameterRowClass(param.status)">
+                    <td class="param-name">{{ getParameterShortName(param.name) }}</td>
+                    <td class="param-result">{{ param.result }}</td>
+                    <td class="param-unit">{{ param.unit }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Right Column -->
+            <div class="parameters-column">
+              <table class="parameters-table">
+                <thead>
+                  <tr>
+                    <th>Param.</th>
+                    <th>Resultado</th>
+                    <th>Unidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let param of getRightColumnParams()" 
+                      [class]="getParameterRowClass(param.status)">
+                    <td class="param-name">{{ getParameterShortName(param.name) }}</td>
+                    <td class="param-result">{{ param.result }}</td>
+                    <td class="param-unit">{{ param.unit }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Additional Parameters if any -->
+          <div class="additional-params" *ngIf="getAdditionalParams().length > 0">
+            <h3>Parámetros Adicionales</h3>
+            <table class="parameters-table full-width">
+              <thead>
+                <tr>
+                  <th>Parámetro</th>
+                  <th>Resultado</th>
+                  <th>Unidad</th>
+                  <th>Rango de Referencia</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let param of getAdditionalParams()" 
+                    [class]="getParameterRowClass(param.status)">
+                  <td>{{ getParameterDisplayName(param.name) }}</td>
+                  <td class="param-result">{{ param.result }}</td>
+                  <td>{{ param.unit }}</td>
+                  <td>{{ param.referenceRange || 'N/A' }}</td>
+                  <td>
+                    <span class="status-indicator" [class]="getParameterStatusClass(param.status)">
+                      {{ getStatusDisplayText(param.status) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section" *ngIf="dymindDh36Result.parameters">
+          <h2>Análisis Gráfico</h2>
+          <div class="charts-grid">
+            <!-- Serie Blanca (WBC) Chart -->
+            <div class="chart-container" *ngIf="chartService.hasWBCData(dymindDh36Result.parameters)">
+              <canvas #wbcChart width="400" height="300"></canvas>
+            </div>
+            
+            <!-- Serie Roja (RBC) Chart -->
+            <div class="chart-container" *ngIf="chartService.hasRBCData(dymindDh36Result.parameters)">
+              <canvas #rbcChart width="400" height="300"></canvas>
+            </div>
+            
+            <!-- Plaquetas (PLT) Chart -->
+            <div class="chart-container" *ngIf="chartService.hasPLTData(dymindDh36Result.parameters)">
+              <canvas #pltChart width="400" height="300"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="summary-section">
+          <div class="summary-stats">
+            <div class="stat-box normal">
+              <span class="stat-number">{{ getNormalCount() }}</span>
+              <span class="stat-label">Normales</span>
+            </div>
+            <div class="stat-box abnormal">
+              <span class="stat-number">{{ getAbnormalCount() }}</span>
+              <span class="stat-label">Anómalos</span>
+            </div>
+            <div class="stat-box total">
+              <span class="stat-number">{{ dymindDh36Result.parameters.length || 0 }}</span>
+              <span class="stat-label">Total</span>
+            </div>
+          </div>
+          
+          <div class="instrument-info">
+            <p><strong>Instrumento:</strong> {{ dymindDh36Result.instrumentId }}</p>
+            <p><strong>Estado:</strong> {{ dymindDh36Result.processingStatus }}</p>
+            <p><strong>Procesado:</strong> {{ formatDateTime(dymindDh36Result.createdAt) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,78 @@
+
+    <div class="container">
+      <div class="header">
+        <h1>{{ isEditMode ? 'Editar Resultado' : 'Ver Resultado' }}</h1>
+        <button class="btn-secondary" (click)="goBack()">← Atrás</button>
+      </div>
+
+      <div *ngIf="loading" class="loading">Cargando resultado...</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+
+      <div *ngIf="!loading && result" class="form-wrapper">
+        <div class="result-detail">
+          <div class="detail-section">
+            <h3>Información General</h3>
+            <div class="detail-row">
+              <label>ID de Orden:</label>
+              <span>{{ result.orderTestId }}</span>
+            </div>
+            <div class="detail-row">
+              <label>Valor de Resultado:</label>
+              <span>{{ result.resultValue || result.resultNumeric || '-' }}</span>
+            </div>
+            <div class="detail-row">
+              <label>Rango de Referencia:</label>
+              <span>{{ result.referenceRange || '-' }}</span>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Análisis</h3>
+            <div class="detail-row">
+              <label>¿Es Anormal?:</label>
+              <span [ngClass]="result.isAbnormal ? 'text-warning' : 'text-success'">
+                {{ result.isAbnormal ? 'Sí' : 'No' }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <label>¿Es Crítico?:</label>
+              <span [ngClass]="result.isCritical ? 'text-danger' : 'text-success'">
+                {{ result.isCritical ? 'Sí' : 'No' }}
+              </span>
+            </div>
+            <div class="detail-row" *ngIf="result.observations">
+              <label>Observaciones:</label>
+              <span>{{ result.observations }}</span>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Auditoría</h3>
+            <div class="detail-row" *ngIf="result.testedBy">
+              <label>Realizado por:</label>
+              <span>{{ result.testedBy }}</span>
+            </div>
+            <div class="detail-row" *ngIf="result.testedAt">
+              <label>Fecha de la prueba:</label>
+              <span>{{ result.testedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="result.validatedBy">
+              <label>Validado por:</label>
+              <span>{{ result.validatedBy }}</span>
+            </div>
+            <div class="detail-row" *ngIf="result.validatedAt">
+              <label>Fecha de validación:</label>
+              <span>{{ result.validatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="detail-row">
+              <label>Creado:</label>
+              <span>{{ result.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-secondary" (click)="goBack()">Atrás</button>
+          </div>
+        </div>
+      </div>
+    </div>

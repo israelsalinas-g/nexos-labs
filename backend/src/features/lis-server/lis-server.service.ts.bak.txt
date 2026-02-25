@@ -1,0 +1,289 @@
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as net from 'net';
+import { LabResultsService } from '../lab-results/lab-results.service';
+
+@Injectable()
+export class LisServerService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(LisServerService.name);
+  private server: net.Server;
+  private readonly port: number;
+
+  constructor(
+    private configService: ConfigService,
+    private labResultsService: LabResultsService,
+  ) {
+    this.port = this.configService.get<number>('LIS_PORT', 5600);
+  }
+
+  onModuleInit() {
+    this.logger.log('Initializing LIS Server...');
+    this.startServer();
+  }
+
+  onModuleDestroy() {
+    if (this.server) {
+      this.server.close(() => {
+        this.logger.log('LIS Server stopped');
+      });
+    }
+  }
+
+  private startServer() {
+    this.server = net.createServer((socket) => {
+      const ipv4Address = socket.remoteAddress?.replace(/^::ffff:/, '') || 'unknown';
+      this.logger.log('==================== NUEVA CONEXIÓN ====================');
+      this.logger.log(`Conexión entrante desde ${ipv4Address}:${socket.remotePort}`);
+      
+      socket.setEncoding('utf8');
+      
+      let buffer = '';
+      let messageTimer: NodeJS.Timeout | null = null;
+
+      socket.on('data', (data: string) => {
+        this.logger.log(`Datos recibidos de ${ipv4Address}:${socket.remotePort}`);
+        this.logger.debug(data);
+        
+        // Agregar los datos al buffer
+        buffer += data;
+        
+        // Reiniciar el timer cada vez que llegan datos
+        if (messageTimer) {
+          clearTimeout(messageTimer);
+        }
+        
+        // Esperar 500ms después de recibir datos antes de procesarlos
+        messageTimer = setTimeout(() => {
+          this.processMessage(buffer, socket);
+          buffer = '';
+        }, 500);
+        
+        if (messageTimer) {
+          clearTimeout(messageTimer);
+        }
+
+        const cleanData = data
+          .replace(/\r/g, '')
+          .replace(/\n+/g, '\n')
+          .trim();
+
+        const segments = cleanData.split('\n');
+        
+        let patientInfo = {
+        name: '',
+        age: '',
+        refGroup: ''
+      };
+
+      for (const segment of segments) {
+        this.logger.debug(`Procesando segmento: ${segment}`);
+        
+        if (segment.startsWith('PID|')) {
+          const pidMatch = segment.match(/PID\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|([^|]*)/);
+          if (pidMatch) {
+            patientInfo.name = pidMatch[1];
+            this.logger.debug(`Nombre del paciente: ${patientInfo.name}`);
+          }
+        }
+        else if (segment.startsWith('OBX|')) {
+          // Extraer edad y grupo de referencia de los OBX especiales
+          if (segment.includes('Age^LN')) {
+            const ageMatch = segment.match(/OBX\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|([^|]*)\|([^|]*)/);
+            if (ageMatch) {
+              patientInfo.age = `${ageMatch[1]} ${ageMatch[2]}`;
+              this.logger.debug(`Edad del paciente: ${patientInfo.age}`);
+            }
+          }
+          else if (segment.includes('Ref Group^99MRC')) {
+            const groupMatch = segment.match(/OBX\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|([^|]*)/);
+            if (groupMatch) {
+              patientInfo.refGroup = groupMatch[1];
+              this.logger.debug(`Grupo de referencia: ${patientInfo.refGroup}`);
+            }
+          }
+        }
+        else if (segment.startsWith('OBR|')) {
+          if (currentResult.obr && currentResult.obxs.length > 0) {
+            const message = [currentResult.obr, ...currentResult.obxs].join('\n');
+            this.processMessage(message, socket, patientInfo);
+          }
+          
+          currentResult.obr = segment;
+          currentResult.obxs = [];
+          this.logger.debug('Nueva muestra iniciada');
+          
+        } else if (segment.startsWith('OBX|')) {
+          // Solo agregar los OBX que son resultados (no los de información del paciente)
+          if (segment.match(/OBX\|[^|]*\|NM\|/)) {
+            if (currentResult.obr) {
+              // Normalizar las comas a puntos en los valores numéricos
+              const normalizedSegment = segment.replace(/\|(\d+),(\d+)\|/g, '|$1.$2|');
+              currentResult.obxs.push(normalizedSegment);
+              this.logger.debug(`OBX agregado a la muestra (total: ${currentResult.obxs.length})`);
+            }
+          }
+        }
+        }
+        
+        messageTimer = setTimeout(() => {
+          if (currentResult.obr && currentResult.obxs.length > 0) {
+            const message = [currentResult.obr, ...currentResult.obxs].join('\n');
+            this.logger.debug('Procesando muestra final por timeout');
+            this.processMessage(message, socket);
+            currentResult = { obr: null, obxs: [] };
+          }
+        }, 1000);
+      });
+
+      socket.on('end', () => {
+        this.logger.debug(`Conexión finalizada: ${ipv4Address}:${socket.remotePort}`);
+      });
+
+      socket.on('error', (error) => {
+        this.logger.error(`Error de socket: ${error.message}`);
+      });
+
+      this.sendAcknowledgment(socket);
+    });
+
+    this.server.listen(this.port, '0.0.0.0', () => {
+      this.logger.log(`LIS Server escuchando en puerto ${this.port} (IPv4)`);
+    });
+  }
+
+  private async processMessage(message: string, socket: net.Socket, patientInfo?: any) {
+    try {
+      this.logger.debug('Procesando mensaje:', message);
+      this.logger.debug('Información del paciente:', patientInfo);
+      
+      // Determinar tipo de mensaje
+      const messageType = this.identifyMessageType(message);
+      this.logger.debug(`Tipo de mensaje: ${messageType}`);
+      
+      switch (messageType) {
+        case 'RESULT':
+          await this.processLabResult(message, socket);
+          break;
+        case 'QUERY':
+          await this.processQuery(message, socket);
+          break;
+        case 'HEARTBEAT':
+          this.processHeartbeat(socket);
+          break;
+        default:
+          this.sendNegativeAcknowledgment(socket, 'Tipo de mensaje no reconocido');
+      }
+    } catch (error) {
+      this.logger.error('Error procesando mensaje:', error);
+      this.sendNegativeAcknowledgment(socket, error.message);
+    }
+  }
+
+  private async processLabResult(message: string, socket: net.Socket, patientInfo?: any) {
+    try {
+      this.logger.debug('Procesando resultado de laboratorio');
+      this.logger.debug('Información del paciente para agregar:', patientInfo);
+      
+      // Agregar información del paciente al mensaje
+      if (patientInfo) {
+        message = `MSH|^~\\&|DH36|LAB|||${new Date().toISOString()}||ORU^R01|||||2.3.1\n` +
+                 `PID|1||${patientInfo.name || ''}||${patientInfo.age || ''}|${patientInfo.refGroup || ''}\n` +
+                 message;
+      }
+      
+      const results = await this.labResultsService.processHL7Data(message);
+      
+      if (results && results.length > 0) {
+        const sampleNumber = results[0].sampleNumber;
+        this.logger.debug(`Resultado guardado: ${sampleNumber}`);
+        this.sendPositiveAcknowledgment(socket, sampleNumber);
+      } else {
+        throw new Error('No se pudo procesar el resultado');
+      }
+    } catch (error) {
+      this.logger.error('Error procesando resultado:', error);
+      throw error;
+    }
+  }
+
+  private async processMessage(message: string, socket: net.Socket) {
+    try {
+      this.logger.debug('Procesando mensaje...');
+      this.logger.debug('Contenido del mensaje:');
+      this.logger.debug(message);
+
+      const results = await this.labResultsService.processHL7Data(message);
+      
+      if (results && results.length > 0) {
+        this.logger.log(`✅ Resultados procesados correctamente: ${results.length} muestras`);
+        results.forEach((result, index) => {
+          this.logger.log(`Muestra ${index + 1}:`);
+          this.logger.log(`- ID: ${result.id}`);
+          this.logger.log(`- Número de muestra: ${result.sampleNumber}`);
+          this.logger.log(`- Parámetros: ${result.parameters?.length || 0}`);
+        });
+        
+        // Enviar ACK
+        socket.write('MSH|^~\\&|||||||ACK^R01|1|P|2.3.1||||\nMSA|AA|1|Mensaje procesado correctamente\n');
+      } else {
+        this.logger.error('❌ No se pudieron procesar los resultados');
+        // Enviar NACK
+        socket.write('MSH|^~\\&|||||||ACK^R01|1|P|2.3.1||||\nMSA|AE|1|Error procesando el mensaje\n');
+      }
+    } catch (error) {
+      this.logger.error('❌ Error procesando el mensaje:', error);
+      this.logger.error('Detalles del error:', error.stack);
+      // Enviar NACK
+      socket.write('MSH|^~\\&|||||||ACK^R01|1|P|2.3.1||||\nMSA|AE|1|Error procesando el mensaje\n');
+    }
+  }
+
+  private async processQuery(message: string, socket: net.Socket) {
+    socket.write('QUERY_RESPONSE:OK\r\n');
+  }
+
+  private processHeartbeat(socket: net.Socket) {
+    socket.write('PONG\r\n');
+  }
+
+  private identifyMessageType(message: string): string {
+    if (message.includes('OBR|') && message.includes('OBX|')) {
+      return 'RESULT';
+    }
+    if (message.includes('PING') || message.includes('HEARTBEAT')) {
+      return 'HEARTBEAT';
+    }
+    if (message.includes('QUERY') || message.includes('REQUEST')) {
+      return 'QUERY';
+    }
+    return 'UNKNOWN';
+  }
+
+  private sendAcknowledgment(socket: net.Socket) {
+    socket.write('LIS_SERVER_READY\r\n');
+  }
+
+  private sendPositiveAcknowledgment(socket: net.Socket, sampleNumber?: string) {
+    const ack = sampleNumber ? `ACK:${sampleNumber}:SUCCESS\r\n` : 'ACK:SUCCESS\r\n';
+    socket.write(ack);
+  }
+
+  private sendNegativeAcknowledgment(socket: net.Socket, error: string) {
+    socket.write(`NACK:ERROR:${error}\r\n`);
+  }
+
+  getServerStatus() {
+    const status = {
+      isRunning: !!this.server?.listening,
+      port: this.port,
+      connections: this.server?.connections || 0,
+      startTime: this.server?.listening ? new Date() : null
+    };
+
+    return {
+      success: true,
+      message: 'LIS Server status retrieved successfully',
+      data: status
+    };
+  }
+}

@@ -1,0 +1,268 @@
+
+    <div class="stool-test-detail-container">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-left">
+          <button class="btn-back" (click)="goBack()">
+            <i class="fas fa-arrow-left"></i>
+            Volver
+          </button>
+          <div class="header-info">
+            <h2>🧪 Examen Coprológico</h2>
+            <p class="subtitle" *ngIf="stoolTest && stoolTest.patient">
+              Muestra: {{ stoolTest.sampleNumber }} | 
+              Paciente: {{ stoolTest.patient.name }}
+            </p>
+          </div>
+        </div>
+        <div class="header-actions" *ngIf="stoolTest && !isEditing">
+          <button class="btn-secondary" (click)="toggleEdit()">
+            <i class="fas fa-edit"></i>
+            Editar
+          </button>
+          <button class="btn-primary" (click)="generateReport()">
+            <i class="fas fa-file-pdf"></i>
+            Reporte
+          </button>
+        </div>
+        <div class="header-actions" *ngIf="isEditing">
+          <button class="btn-cancel" (click)="cancelEdit()">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+          <button class="btn-save" (click)="saveChanges()" [disabled]="saving">
+            <i class="fas fa-save"></i>
+            {{ saving ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading">
+        🔄 Cargando examen coprológico...
+      </div>
+      
+      <!-- Error State -->
+      <div *ngIf="error" class="error">
+        ❌ Error al cargar el examen: {{ error }}
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="success">
+        ✅ {{ successMessage }}
+      </div>
+
+      <!-- Test Details -->
+      <div *ngIf="stoolTest && !loading" class="content">
+        <!-- Patient Information -->
+        <div class="info-section">
+          <h3>👤 Información del Paciente</h3>
+          <div class="info-grid" *ngIf="stoolTest.patient; else noPatient">
+            <div class="info-item">
+              <label>Nombre:</label>
+              <span>{{ stoolTest.patient.name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Edad:</label>
+              <span>{{ stoolTest.patient.age || 'N/A' }} años</span>
+            </div>
+            <div class="info-item">
+              <label>Sexo:</label>
+              <span>{{ getSexLabel(stoolTest.patient.sex) || 'N/A' }}</span>
+            </div>
+          </div>
+          <ng-template #noPatient>
+            <p class="no-data">No se encontró información del paciente</p>
+          </ng-template>
+        </div>
+
+        <!-- Test Information -->
+        <div class="info-section">
+          <h3>🧪 Información del Examen</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Número de Muestra:</label>
+              <span>{{ stoolTest.sampleNumber }}</span>
+            </div>
+            <div class="info-item">
+              <label>Fecha del Examen:</label>
+              <span>{{ formatDateTime(stoolTest.testDate) }}</span>
+            </div>
+            <div class="info-item">
+              <label>Estado:</label>
+              <span class="status-badge" [ngClass]="getStatusClass(stoolTest.status)">
+                {{ getStatusText(stoolTest.status) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Médico:</label>
+              <span *ngIf="stoolTest.doctor">{{ stoolTest.doctor.firstName }} {{ stoolTest.doctor.lastName }}</span>
+              <span *ngIf="!stoolTest.doctor" class="no-value">No asignado</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Physical Examination -->
+        <div class="exam-section">
+          <h3>🔍 Examen Físico</h3>
+          <div class="exam-grid">
+            <div class="exam-item">
+              <label>Color:</label>
+              <select *ngIf="isEditing" [(ngModel)]="editForm.color" class="edit-select">
+                <option value="Amarillo">Amarillo</option>
+                <option value="Negro">Negro</option>
+                <option value="Blanco">Blanco</option>
+                <option value="Café">Café</option>
+                <option value="Verde">Verde</option>
+                <option value="Rojo">Rojo</option>
+              </select>
+              <span *ngIf="!isEditing" class="exam-value color-value">{{ stoolTest.color }}</span>
+            </div>
+
+            <div class="exam-item">
+              <label>Consistencia:</label>
+              <select *ngIf="isEditing" [(ngModel)]="editForm.consistency" class="edit-select">
+                <option value="Blanda">Blanda</option>
+                <option value="Formada">Formada</option>
+                <option value="Pastosa">Pastosa</option>
+                <option value="Líquida">Líquida</option>
+                <option value="Diarreica">Diarreica</option>
+              </select>
+              <span *ngIf="!isEditing" class="exam-value">{{ stoolTest.consistency }}</span>
+            </div>
+
+            <div class="exam-item">
+              <label>Forma/Cantidad:</label>
+              <select *ngIf="isEditing" [(ngModel)]="editForm.shape" class="edit-select">
+                <option value="Escaso">Escaso</option>
+                <option value="Moderado">Moderado</option>
+                <option value="Abundante">Abundante</option>
+              </select>
+              <span *ngIf="!isEditing" class="exam-value">{{ stoolTest.shape }}</span>
+            </div>
+
+            <div class="exam-item">
+              <label>Moco:</label>
+              <select *ngIf="isEditing" [(ngModel)]="editForm.mucus" class="edit-select">
+                <option value="Escaso">Escaso</option>
+                <option value="Moderado">Moderado</option>
+                <option value="Abundante">Abundante</option>
+                <option value="No se observa">No se observa</option>
+              </select>
+              <span *ngIf="!isEditing" class="exam-value">{{ stoolTest.mucus }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Microscopic Examination -->
+        <div class="exam-section">
+          <h3>🔬 Examen Microscópico</h3>
+          <div class="exam-grid">
+            <div class="exam-item">
+              <label>Leucocitos:</label>
+              <select *ngIf="isEditing" [(ngModel)]="editForm.leukocytes" class="edit-select">
+                <option value="Escaso">Escaso</option>
+                <option value="Moderado">Moderado</option>
+                <option value="Abundante">Abundante</option>
+                <option value="No se observa">No se observa</option>
+              </select>
+              <span *ngIf="!isEditing" class="exam-value" [ngClass]="getMicroscopicClass(stoolTest.leukocytes || '')">
+                {{ stoolTest.leukocytes || 'No especificado' }}
+              </span>
+            </div>
+
+            <div class="exam-item">
+              <label>Eritrocitos:</label>
+              <select *ngIf="isEditing" [(ngModel)]="editForm.erythrocytes" class="edit-select">
+                <option value="Escaso">Escaso</option>
+                <option value="Moderado">Moderado</option>
+                <option value="Abundante">Abundante</option>
+                <option value="No se observa">No se observa</option>
+              </select>
+              <span *ngIf="!isEditing" class="exam-value" [ngClass]="getMicroscopicClass(stoolTest.erythrocytes || '')">
+                {{ stoolTest.erythrocytes || 'No especificado' }}
+              </span>
+            </div>
+
+            <div class="exam-item full-width">
+              <label>Parásitos:</label>
+              <div *ngIf="!isEditing" class="parasites-list">
+                <div *ngFor="let parasite of stoolTest.parasites" class="parasite-item" [ngClass]="getParasiteItemClass(parasite.type)">
+                  <strong>{{ parasite.type }}</strong>: {{ parasite.quantity }}
+                </div>
+              </div>
+            </div>
+
+            <div class="exam-item full-width">
+              <label>Protozoos:</label>
+              <div *ngIf="!isEditing" class="parasites-list">
+                <div *ngFor="let protozoo of stoolTest.protozoos" class="parasite-item" [ngClass]="getParasiteItemClass(protozoo.type)">
+                  <strong>{{ protozoo.type }}</strong>: {{ protozoo.quantity }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observations -->
+        <div class="observations-section">
+          <h3>📝 Observaciones</h3>
+          <textarea 
+            *ngIf="isEditing" 
+            [(ngModel)]="editForm.observations" 
+            class="edit-textarea observations-textarea"
+            placeholder="Ingrese observaciones adicionales..."
+            rows="4">
+          </textarea>
+          <div *ngIf="!isEditing" class="observations-content">
+            {{ stoolTest.observations || 'Sin observaciones adicionales' }}
+          </div>
+        </div>
+
+        <!-- Status Update (for authorized users) -->
+        <div *ngIf="isEditing" class="status-section">
+          <h3>📊 Actualizar Estado y Médico</h3>
+          <div class="status-controls">
+            <div class="control-group">
+              <label>Estado:</label>
+              <select [(ngModel)]="editForm.status" class="edit-select">
+                <option value="pending">Pendiente</option>
+                <option value="completed">Completado</option>
+                <option value="reviewed">Revisado</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>Médico:</label>
+              <select [(ngModel)]="editForm.doctorId" class="edit-select">
+                <option value="">Seleccionar médico...</option>
+                <option *ngFor="let doctor of doctors" [value]="doctor.id">
+                  {{ doctor.firstName }} {{ doctor.lastName }}
+                </option>
+              </select>
+              <div *ngIf="loadingDoctors" class="loading-text">
+                <i class="fas fa-spinner fa-spin"></i> Cargando médicos...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Information -->
+        <div class="audit-section">
+          <h3>ℹ️ Información de Auditoría</h3>
+          <div class="audit-grid">
+            <div class="audit-item">
+              <label>Creado:</label>
+              <span>{{ formatDateTime(stoolTest.createdAt) }}</span>
+            </div>
+            <div class="audit-item">
+              <label>Actualizado:</label>
+              <span>{{ formatDateTime(stoolTest.updatedAt) }}</span>
+            </div>
+            <div class="audit-item" *ngIf="stoolTest.reviewedBy">
+              <label>Revisado por:</label>
+              <span>{{ stoolTest.reviewedBy.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

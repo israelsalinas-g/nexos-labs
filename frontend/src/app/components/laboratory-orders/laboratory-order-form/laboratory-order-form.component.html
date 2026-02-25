@@ -1,0 +1,90 @@
+
+    <div class="modal-overlay" (click)="onCancel()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ isEditMode ? 'Editar Orden' : 'Nueva Orden de Laboratorio' }}</h2>
+          <button class="close-btn" (click)="onCancel()">×</button>
+        </div>
+
+        <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="form">
+          <div class="form-group">
+            <label for="patientId">Paciente *</label>
+            <input 
+              type="text" 
+              id="patientId" 
+              formControlName="patientId"
+              placeholder="ID del paciente"
+              class="form-control">
+            <div class="error-text" *ngIf="orderForm.get('patientId')?.invalid && orderForm.get('patientId')?.touched">
+              Campo requerido
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="doctorId">Doctor</label>
+            <input 
+              type="text" 
+              id="doctorId" 
+              formControlName="doctorId"
+              placeholder="ID del doctor (opcional)"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="priority">Prioridad *</label>
+            <select formControlName="priority" id="priority" class="form-control">
+              <option value="">Seleccionar...</option>
+              <option [value]="OrderPriority.LOW">Baja</option>
+              <option [value]="OrderPriority.NORMAL">Normal</option>
+              <option [value]="OrderPriority.HIGH">Alta</option>
+              <option [value]="OrderPriority.STAT">STAT</option>
+            </select>
+            <div class="error-text" *ngIf="orderForm.get('priority')?.invalid && orderForm.get('priority')?.touched">
+              Campo requerido
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="clinicalIndication">Indicación Clínica</label>
+            <textarea 
+              id="clinicalIndication" 
+              formControlName="clinicalIndication"
+              placeholder="Motivo/Indicación clínica..."
+              class="form-control"
+              rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notas Adicionales</label>
+            <textarea 
+              id="notes" 
+              formControlName="notes"
+              placeholder="Notas adicionales..."
+              class="form-control"
+              rows="3"></textarea>
+          </div>
+
+          <div class="form-group" *ngIf="isEditMode">
+            <label for="status">Estado</label>
+            <select formControlName="status" id="status" class="form-control">
+              <option value="">Seleccionar...</option>
+              <option value="PENDING">Pendiente</option>
+              <option value="IN_PROGRESS">En Progreso</option>
+              <option value="COMPLETED">Completada</option>
+              <option value="ON_HOLD">En Espera</option>
+              <option value="CANCELLED">Cancelada</option>
+            </select>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="onCancel()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="!orderForm.valid || isSubmitting">
+              {{ isSubmitting ? 'Guardando...' : 'Guardar' }}
+            </button>
+          </div>
+
+          <div *ngIf="submitError" class="error-message">{{ submitError }}</div>
+          <div *ngIf="submitSuccess" class="success-message">{{ submitSuccess }}</div>
+        </form>
+      </div>
+    </div>

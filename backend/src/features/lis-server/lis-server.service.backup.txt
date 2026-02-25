@@ -1,0 +1,406 @@
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as net from 'net';
+import { LabResultsService } from '../lab-results/lab-results.service';
+
+@Injectable()
+export class LisServerService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(LisServerService.name, {
+    timestamp: true,
+  });
+  private server: net.Server;
+  private readonly port: number;
+
+  constructor(
+    private configService: ConfigService,
+    private labResultsService: LabResultsService,
+  ) {
+    this.port = this.configService.get<number>('LIS_PORT', 5600);
+  }
+
+  onModuleInit() {
+    this.logger.log('Initializing LIS Server...');
+    this.startServer();
+  }
+
+  onModuleDestroy() {
+    this.stopServer();
+  }
+
+  private startServer() {
+    this.server = net.createServer((socket) => {
+      // Extraer solo la dirección IPv4 sin el prefijo ::ffff:
+      const ipv4Address = socket.remoteAddress?.replace(/^::ffff:/, '') || 'unknown';
+      this.logger.log('==================== NUEVA CONEXIÓN ====================');
+      this.logger.log(`Conexión entrante desde ${ipv4Address}:${socket.remotePort}`);
+      this.logger.debug('Detalles de la conexión:');
+      this.logger.debug(`- Dirección IP: ${ipv4Address}`);
+      this.logger.debug(`- Puerto: ${socket.remotePort}`);
+      this.logger.debug(`- Timestamp: ${new Date().toISOString()}`);
+      this.logger.debug('====================================================');
+      
+      socket.setEncoding('utf8');
+      
+      let buffer = '';
+
+      let messageComplete = false;
+      let currentMessage = '';
+
+      let messageTimer: NodeJS.Timeout | null = null;
+      let currentResult: { obr: string | null; obxs: string[] } = {
+        obr: null,
+        obxs: []
+      };
+
+      socket.on('data', (data: string) => {
+        const ipv4Address = socket.remoteAddress?.replace(/^::ffff:/, '') || 'unknown';
+        console.log('\n🔵 ==================== DATOS RECIBIDOS ====================');
+        console.log(`🌐 Origen: ${ipv4Address}:${socket.remotePort}`);
+        console.log(`📦 Tamaño: ${data.length} bytes`);
+        console.log('📄 Datos raw recibidos:');
+        console.log(data);
+        console.log('=========================================================\n');
+        
+        // Limpiar el timer anterior si existe
+        if (messageTimer) {
+          clearTimeout(messageTimer);
+        }
+
+        // Limpiar caracteres no deseados y normalizar líneas
+        const cleanData = data
+          .replace(/\r/g, '')  // Eliminar retornos de carro
+          .replace(/\n+/g, '\n')  // Normalizar saltos de línea
+          .trim();  // Eliminar espacios en blanco al inicio y final
+
+        // Dividir en segmentos
+        const segments = cleanData.split('\n');
+        
+        // Procesar cada segmento
+        for (const segment of segments) {
+          console.log('\n📝 Procesando segmento:', segment);
+          
+          if (segment.startsWith('OBR|')) {
+            // Si ya tenemos una muestra anterior, procesarla
+            if (currentResult.obr && currentResult.obxs.length > 0) {
+              const previousMessage = [currentResult.obr, ...currentResult.obxs].join('\n');
+              console.log('\n📨 Procesando muestra anterior:');
+              console.log(previousMessage);
+              this.processMessage(previousMessage, socket);
+            }
+            
+            // Iniciar nueva muestra
+            currentResult.obr = segment;
+            currentResult.obxs = [];
+            console.log('🆕 Nueva muestra iniciada');
+            
+          } else if (segment.startsWith('OBX|')) {
+            if (currentResult.obr) {
+              currentResult.obxs.push(segment);
+              console.log('➕ OBX agregado a la muestra actual');
+            } else {
+              console.log('❌ OBX recibido sin OBR previo - ignorando');
+            }
+          }
+        }
+        
+        // Establecer timer para procesar la última muestra después de un tiempo
+        messageTimer = setTimeout(() => {
+          if (currentResult.obr && currentResult.obxs.length > 0) {
+            const finalMessage = [currentResult.obr, ...currentResult.obxs].join('\n');
+            console.log('\n📨 Procesando muestra final (por timeout):');
+            console.log(finalMessage);
+            this.processMessage(finalMessage, socket);
+            
+            // Reiniciar el resultado actual
+            currentResult = {
+              obr: null,
+              obxs: []
+            };
+          }
+        }, 1000); // 1 segundo de espera
+          this.processMessage(completeMessage, socket);
+        }
+
+        // Establecer un timer para procesar el resultado después de un tiempo sin recibir más datos
+        messageTimer = setTimeout(() => {
+          if (currentResult.obr && currentResult.obxs.length > 0) {
+            const completeMessage = [currentResult.obr, ...currentResult.obxs].join('\n');
+            console.log('\n📨 Mensaje completo acumulado:');
+            console.log(completeMessage);
+          
+            this.processMessage(completeMessage, socket);
+            // Reiniciar el resultado actual
+            currentResult = {
+              obr: null,
+              obxs: []
+            };
+          }
+        }, 1000); // Esperar 1 segundo después del último dato recibido
+      });
+
+      socket.on('end', () => {
+        const ipv4Address = socket.remoteAddress?.replace(/^::ffff:/, '') || 'unknown';
+        this.logger.debug('==================== CONEXIÓN FINALIZADA ====================');
+        this.logger.debug(`Cliente: ${ipv4Address}:${socket.remotePort}`);
+        this.logger.debug(`Timestamp: ${new Date().toISOString()}`);
+        
+        // Procesar cualquier dato restante en el buffer
+        if (buffer.trim()) {
+          this.logger.debug('Procesando datos restantes en el buffer...');
+          this.processMessage(buffer.trim(), socket);
+        }
+        this.logger.debug('========================================================');
+      });
+
+      socket.on('error', (error) => {
+        const ipv4Address = socket.remoteAddress?.replace(/^::ffff:/, '') || 'unknown';
+        this.logger.error('==================== ERROR DE SOCKET ====================');
+        this.logger.error(`Cliente: ${ipv4Address}:${socket.remotePort}`);
+        this.logger.error(`Error: ${error.message}`);
+        this.logger.error(`Stack: ${error.stack}`);
+        this.logger.error('======================================================');
+      });
+
+      socket.on('close', () => {
+        const ipv4Address = socket.remoteAddress?.replace(/^::ffff:/, '') || 'unknown';
+        this.logger.debug('==================== CONEXIÓN CERRADA ====================');
+        this.logger.debug(`Cliente: ${ipv4Address}:${socket.remotePort}`);
+        this.logger.debug(`Timestamp: ${new Date().toISOString()}`);
+        this.logger.debug('=======================================================');
+      });
+
+      // Enviar mensaje de bienvenida/confirmación
+      this.sendAcknowledgment(socket);
+    });
+
+    // Configurar para escuchar solo en IPv4
+    this.server.listen(this.port, '0.0.0.0', () => {
+      this.logger.log('=================================');
+      this.logger.log(`LIS Server listening on port ${this.port} (IPv4 only)`);
+      this.logger.log('Ready to receive connections');
+      this.logger.log('=================================');
+    });
+
+    this.server.on('error', (error) => {
+      this.logger.error(`Server error: ${error.message}`);
+    });
+  }
+
+  private async processMessage(message: string, socket: net.Socket) {
+    try {
+      console.log('\n🔄 ==================== NUEVO MENSAJE RECIBIDO ====================');
+      console.log('📨 Contenido del mensaje:');
+      console.log(message);
+      console.log('================================================================\n');
+      
+      // Determinar el tipo de mensaje basado en el protocolo del Dymind DH36
+      const messageType = this.identifyMessageType(message);
+      
+      console.log(`🔍 Tipo de mensaje identificado: ${messageType}`);
+      
+      switch (messageType) {
+        case 'RESULT':
+          console.log('✨ Procesando como resultado de laboratorio...');
+          await this.processLabResult(message, socket);
+          break;
+        case 'QUERY':
+          console.log('❓ Procesando como consulta...');
+          await this.processQuery(message, socket);
+          break;
+        case 'HEARTBEAT':
+          console.log('💓 Procesando como heartbeat...');
+          this.processHeartbeat(socket);
+          break;
+        default:
+          console.log('❌ Tipo de mensaje no reconocido');
+          console.log('📝 Formato esperado:');
+          console.log('SAMPLE:<número>\nTEST:<código>|<nombre>\nRESULT:<valor>|<unidad>|<rango>|<estado>');
+          this.sendNegativeAcknowledgment(socket, 'Unknown message type');
+      }
+    } catch (error) {
+      console.log('\n❌ ==================== ERROR DE PROCESAMIENTO ====================');
+      console.log('Error:', error.message);
+      console.log('Mensaje que causó el error:');
+      console.log(message);
+      console.log('================================================================\n');
+      this.sendNegativeAcknowledgment(socket, error.message);
+    }
+  }
+
+  private identifyMessageType(message: string): string {
+    console.log('\n🔍 ==================== IDENTIFICANDO MENSAJE ====================');
+    console.log('📝 Analizando formato del mensaje...');
+    
+    let messageType = 'UNKNOWN';
+    
+    // Imprimir el mensaje completo para depuración
+    console.log('\n📨 Mensaje a analizar:');
+    console.log(message);
+    console.log('\n🔎 Buscando patrones conocidos...');
+    
+    // Lista de verificación del formato
+    const hasPatterns = {
+      sample: message.includes('SAMPLE:'),
+      test: message.includes('TEST:'),
+      result: message.includes('RESULT:'),
+      date: message.includes('DATE:'),
+      pipedFormat: message.match(/\d+\^[A-Za-z]+\^/) !== null,
+      hl7Format: message.includes('OBR|') || message.includes('OBX|'),
+      multilineFormat: message.includes('\n'),
+    };
+    
+    console.log('\n✨ Patrones encontrados:');
+    Object.entries(hasPatterns).forEach(([pattern, found]) => {
+      console.log(`${found ? '✅' : '❌'} ${pattern}`);
+    });
+    
+    // Determinar el tipo basado en los patrones
+    if (hasPatterns.hl7Format) {
+      messageType = 'RESULT';
+      console.log('\n🎯 Detectado como RESULT - Formato HL7');
+    } else if (hasPatterns.sample && (hasPatterns.test || hasPatterns.result)) {
+      messageType = 'RESULT';
+      console.log('\n🎯 Detectado como RESULT - Formato de prueba');
+    } else if (hasPatterns.pipedFormat) {
+      messageType = 'RESULT';
+      console.log('\n🎯 Detectado como RESULT - Formato pipe-delimited');
+    } else if (message.includes('QUERY') || message.includes('REQUEST')) {
+      messageType = 'QUERY';
+      console.log('\n🎯 Detectado como QUERY');
+    } else if (message.includes('PING') || message.includes('HEARTBEAT')) {
+      messageType = 'HEARTBEAT';
+      console.log('\n🎯 Detectado como HEARTBEAT');
+    }
+    
+    console.log(`✨ Tipo de mensaje identificado: ${messageType}`);
+    console.log('============================================================\n');
+    
+    return messageType;
+  }
+
+  private async processLabResult(message: string, socket: net.Socket) {
+    try {
+      console.log('\n🔄 ==================== PROCESANDO RESULTADO ====================');
+      console.log('📥 Mensaje original recibido:');
+      console.log(message);
+      
+      // Normalizar saltos de línea y separar los segmentos
+      const normalizedMessage = message
+        .replace(/\r/g, '')
+        .replace(/\n+/g, '\n')
+        .trim();
+      
+      console.log('\n📝 Mensaje normalizado:');
+      console.log(normalizedMessage);
+      
+      // Procesar el resultado del laboratorio usando el servicio
+      console.log('\n🔄 Enviando datos al servicio de procesamiento...');
+      const labResults = await this.labResultsService.processHL7Data(normalizedMessage);
+      
+      console.log('\n✅ ==================== RESULTADO PROCESADO ====================');
+      console.log(`📌 Resultados procesados: ${labResults.length}`);
+      if (labResults.length > 0) {
+        const firstResult = labResults[0];
+        console.log(`🔖 Número de muestra: ${firstResult.sampleNumber}`);
+        console.log(`📊 Modo de análisis: ${firstResult.analysisMode}`);
+        console.log(`📈 Cantidad de parámetros: ${firstResult.parameters?.length || 0}`);
+      }
+      
+      if (labResults.length > 0 && labResults[0].parameters?.length > 0) {
+        console.log('\n📊 Parámetros procesados:');
+        labResults[0].parameters.forEach(param => {
+          console.log(`   - ${param.name}: ${param.result} ${param.unit} (${param.status || 'sin estado'})`);
+        });
+      }
+      
+      // Enviar confirmación positiva al equipo
+      const sampleNumber = labResults.length > 0 ? labResults[0].sampleNumber : 'UNKNOWN';
+      this.sendPositiveAcknowledgment(socket, sampleNumber);
+      console.log('\n✅ Confirmación enviada al equipo');
+      console.log('============================================================\n');
+      
+    } catch (error) {
+      console.log('\n❌ ==================== ERROR DE PROCESAMIENTO ====================');
+      console.log('❌ Error al procesar resultado:');
+      console.log(error.message);
+      console.log('\n📄 Datos que causaron el error:');
+      console.log(message);
+      console.log('==============================================================\n');
+      this.sendNegativeAcknowledgment(socket, error.message);
+    }
+  }
+
+  private async processQuery(message: string, socket: net.Socket) {
+    try {
+      this.logger.log('Processing query message');
+      
+      // Procesar consultas del equipo (por ejemplo, solicitud de configuración)
+      // Esto debe implementarse según las necesidades específicas del protocolo
+      
+      const response = this.generateQueryResponse(message);
+      socket.write(response);
+      
+    } catch (error) {
+      this.logger.error(`Error processing query: ${error.message}`);
+      this.sendNegativeAcknowledgment(socket, error.message);
+    }
+  }
+
+  private processHeartbeat(socket: net.Socket) {
+    this.logger.log('Processing heartbeat');
+    socket.write('PONG\r\n');
+  }
+
+  private sendAcknowledgment(socket: net.Socket) {
+    // Mensaje de bienvenida/confirmación de conexión
+    const welcome = 'LIS_SERVER_READY\r\n';
+    socket.write(welcome);
+    const ipv4Address = socket.remoteAddress?.replace(/^::ffff:/, '') || 'unknown';
+    this.logger.debug('==================== MENSAJE DE BIENVENIDA ====================');
+    this.logger.debug(`Cliente: ${ipv4Address}:${socket.remotePort}`);
+    this.logger.debug(`Mensaje enviado: ${welcome.trim()}`);
+    this.logger.debug(`Timestamp: ${new Date().toISOString()}`);
+    this.logger.debug('==========================================================');
+  }
+
+  private sendPositiveAcknowledgment(socket: net.Socket, sampleNumber?: string) {
+    const ack = sampleNumber 
+      ? `ACK:${sampleNumber}:SUCCESS\r\n`
+      : 'ACK:SUCCESS\r\n';
+    socket.write(ack);
+  }
+
+  private sendNegativeAcknowledgment(socket: net.Socket, error: string) {
+    const nack = `NACK:ERROR:${error}\r\n`;
+    socket.write(nack);
+  }
+
+  private generateQueryResponse(query: string): string {
+    // Generar respuesta a consultas del equipo
+    // Esto debe implementarse según el protocolo específico
+    
+    if (query.includes('CONFIG')) {
+      return 'CONFIG:OK:READY\r\n';
+    } else if (query.includes('STATUS')) {
+      return 'STATUS:OK:ONLINE\r\n';
+    }
+    
+    return 'QUERY:OK\r\n';
+  }
+
+  private stopServer() {
+    if (this.server) {
+      this.server.close(() => {
+        this.logger.log('LIS Server stopped');
+      });
+    }
+  }
+
+  getServerStatus() {
+    return {
+      isListening: this.server?.listening || false,
+      port: this.port,
+      address: this.server?.address(),
+    };
+  }
+}

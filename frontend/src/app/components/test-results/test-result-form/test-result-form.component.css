@@ -1,0 +1,143 @@
+
+    .container {
+      padding: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #333;
+    }
+
+    .btn-secondary {
+      padding: 10px 20px;
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .loading, .error {
+      text-align: center;
+      padding: 40px;
+      font-size: 16px;
+    }
+
+    .error {
+      color: #d32f2f;
+      background-color: #ffebee;
+      border-radius: 4px;
+      border: 1px solid #f5a5a5;
+    }
+
+    .form-wrapper {
+      background-color: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+
+    .result-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .detail-section {
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 20px;
+      background-color: #fafafa;
+    }
+
+    .detail-section h3 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-row label {
+      font-weight: 600;
+      color: #666;
+      min-width: 150px;
+    }
+
+    .detail-row span {
+      color: #333;
+      flex: 1;
+      text-align: right;
+    }
+
+    .text-success {
+      color: #4caf50;
+      font-weight: 600;
+    }
+
+    .text-warning {
+      color: #ff9800;
+      font-weight: 600;
+    }
+
+    .text-danger {
+      color: #f44336;
+      font-weight: 600;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .btn-primary {
+      padding: 12px 24px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+
+    .btn-primary:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }

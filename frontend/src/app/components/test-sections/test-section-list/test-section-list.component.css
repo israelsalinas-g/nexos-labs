@@ -1,0 +1,26 @@
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
+    .header h1 { color: #2c3e50; margin: 0; }
+    .search-controls { display: flex; gap: 10px; }
+    .search-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 300px; }
+    .loading, .error { text-align: center; padding: 40px; }
+    .error { color: #e74c3c; background-color: #fadbd8; border-radius: 4px; }
+    .table-container { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { background-color: #34495e; color: white; padding: 12px; text-align: left; }
+    .data-table td { padding: 12px; border-bottom: 1px solid #ecf0f1; }
+    .data-table tr:hover { background-color: #f8f9fa; }
+    .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+    .status-badge.active { background-color: #d4edda; color: #155724; }
+    .status-badge:not(.active) { background-color: #f8d7da; color: #721c24; }
+    .actions { display: flex; gap: 5px; }
+    .btn-primary { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+    .btn-secondary { background-color: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .btn-small { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; color: white; }
+    .btn-warning { background-color: #ffc107; color: #212529; }
+    .btn-danger { background-color: #dc3545; }
+    .pagination { display: flex; justify-content: space-between; padding: 20px; background-color: #f8f9fa; }
+    .btn-pagination { padding: 8px 16px; border: 1px solid #ddd; background-color: white; cursor: pointer; border-radius: 4px; }
+    .btn-pagination:disabled { opacity: 0.5; cursor: not-allowed; }
+    .no-data { padding: 40px; text-align: center; color: #6c757d; }

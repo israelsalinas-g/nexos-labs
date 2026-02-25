@@ -1,0 +1,61 @@
+
+    <div class="container">
+      <div class="header">
+        <h1>Resultados de Pruebas</h1>
+        <button class="btn-primary" (click)="navigateToCreate()">
+          + Nuevo Resultado
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="loading">Cargando resultados...</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+
+      <div *ngIf="!loading && !error && results.length === 0" class="no-data">
+        <p>No hay resultados registrados</p>
+      </div>
+
+      <div *ngIf="!loading && !error && results.length > 0" class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Valor del Resultado</th>
+              <th>Rango Referencia</th>
+              <th>¿Anormal?</th>
+              <th>¿Crítico?</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let result of results; trackBy: trackByResultId">
+              <td class="result-id">{{ result.id }}</td>
+              <td class="result-value">{{ result.resultValue || result.resultNumeric || '-' }}</td>
+              <td>{{ result.referenceRange || '-' }}</td>
+              <td>
+                <span class="badge" [ngClass]="result.isAbnormal ? 'badge-warning' : 'badge-success'">
+                  {{ result.isAbnormal ? 'Sí' : 'No' }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="result.isCritical ? 'badge-danger' : 'badge-info'">
+                  {{ result.isCritical ? 'Sí' : 'No' }}
+                </span>
+              </td>
+              <td>{{ result.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="actions">
+                <button class="btn-icon" title="Ver" (click)="viewResult(result)">👁️</button>
+                <button class="btn-icon" title="Editar" (click)="editResult(result)">✏️</button>
+                <button class="btn-icon btn-danger" title="Eliminar" (click)="deleteResult(result)">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button (click)="previousPage()" [disabled]="currentPage === 1">← Anterior</button>
+        <span>Página {{ currentPage }} de {{ totalPages }}</span>
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">Siguiente →</button>
+      </div>
+    </div>

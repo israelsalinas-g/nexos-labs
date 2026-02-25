@@ -1,0 +1,143 @@
+
+    <div class="container">
+      <div class="header">
+        <h1>Definiciones de Pruebas</h1>
+        <div class="search-controls">
+          <input 
+            type="text" 
+            placeholder="Buscar prueba..." 
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+            class="search-input">
+          <select [(ngModel)]="categoryFilter" (change)="onFilterChange()" class="filter-select">
+            <option value="">Todas las categorías</option>
+            <option *ngFor="let category of categories" [value]="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+          <button class="btn-secondary" (click)="clearSearch()">Limpiar</button>
+        </div>
+        <button class="btn-primary" (click)="openCreateModal()">
+          + Nueva Prueba
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="loading">Cargando pruebas...</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+
+      <div *ngIf="!loading && !error && tests.length === 0" class="no-data">
+        <p>No hay pruebas registradas.</p>
+        <button class="btn-primary" (click)="openCreateModal()">
+          + Crear Primera Prueba
+        </button>
+      </div>
+
+      <div *ngIf="!loading && !error && tests.length > 0" class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Sección</th>
+              <th>Tipo</th>
+              <th>Unidad</th>
+              <th>Precio</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let test of tests; trackBy: trackByTestId">
+              <td>{{ test.code || 'N/A' }}</td>
+              <td>{{ test.name }}</td>
+              <td>{{ test.section?.name || test.category || 'Sin sección' }}</td>
+              <td>{{ test.resultType || '-' }}</td>
+              <td>{{ test.unit || '-' }}</td>
+              <td>{{ test.price ? ('L. ' + test.price) : '-' }}</td>
+              <td>
+                <span class="status-badge" [class.active]="test.isActive">
+                  {{ test.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="btn-small btn-info" (click)="viewTest(test)">Ver</button>
+                <button class="btn-small btn-warning" (click)="openEditModal(test)">Editar</button>
+                <button class="btn-small btn-danger" (click)="deleteTest(test)">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button class="btn-pagination" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1">
+            ← Anterior
+          </button>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+          <button class="btn-pagination" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages">
+            Siguiente →
+          </button>
+        </div>
+
+        <div *ngIf="tests.length === 0" class="no-data">
+          <p>No hay pruebas registradas en esta búsqueda.</p>
+        </div>
+      </div>
+
+      <!-- Modal de formulario -->
+      <app-test-definition-form
+        *ngIf="showFormModal"
+        [testDefinition]="selectedTest"
+        [categories]="categories"
+        (saved)="onTestSaved($event)"
+        (cancelled)="onFormCancelled()">
+      </app-test-definition-form>
+
+      <!-- Modal de detalles -->
+      <div class="modal" *ngIf="selectedTestDetail" (click)="closeDetailModal()">
+        <div class="modal-content large" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Detalles de la Prueba</h3>
+            <button class="close-btn" (click)="closeDetailModal()">×</button>
+          </div>
+          
+          <div class="test-details">
+            <div class="detail-section">
+              <h4>Información General</h4>
+              <div class="detail-grid">
+                <div><strong>Nombre:</strong> {{ selectedTestDetail.name }}</div>
+                <div><strong>Código:</strong> {{ selectedTestDetail.code || 'No asignado' }}</div>
+                <div><strong>Sección:</strong> {{ selectedTestDetail.section?.name || selectedTestDetail.category || 'Sin sección' }}</div>
+                <div><strong>Tipo de Resultado:</strong> {{ selectedTestDetail.resultType || '-' }}</div>
+              </div>
+              <div class="detail-field" *ngIf="selectedTestDetail.description">
+                <strong>Descripción:</strong>
+                <p>{{ selectedTestDetail.description }}</p>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>Especificaciones Técnicas</h4>
+              <div class="detail-grid">
+                <div><strong>Unidad:</strong> {{ selectedTestDetail.unit || 'No especificada' }}</div>
+                <div><strong>Método:</strong> {{ selectedTestDetail.method || 'No especificado' }}</div>
+                <div><strong>Tipo de Muestra:</strong> {{ selectedTestDetail.sampleType || 'No especificado' }}</div>
+                <div><strong>Tiempo de Procesamiento:</strong> {{ selectedTestDetail.processingTime ? (selectedTestDetail.processingTime + ' horas') : 'No especificado' }}</div>
+              </div>
+              <div class="detail-field" *ngIf="selectedTestDetail.referenceRange">
+                <strong>Rango de Referencia:</strong>
+                <p>{{ selectedTestDetail.referenceRange }}</p>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>Información Comercial</h4>
+              <div class="detail-grid">
+                <div><strong>Precio:</strong> {{ selectedTestDetail.price ? ('L. ' + selectedTestDetail.price) : 'No definido' }}</div>
+                <div><strong>Orden de Visualización:</strong> {{ selectedTestDetail.displayOrder || 0 }}</div>
+                <div><strong>Estado:</strong> {{ selectedTestDetail.isActive ? 'Activo' : 'Inactivo' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

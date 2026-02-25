@@ -1,0 +1,384 @@
+
+    <div class="container">
+      <!-- Header and Filter Row -->
+      <div class="header-filter-row">
+        <div class="header-section">
+          <h1>Pruebas especiales (iChroma II)</h1>
+        </div>
+        
+        <!-- Filter Section inline -->
+        <div class="filter-section-inline">
+          <div class="filter-group-inline">
+            <label for="patientSearch">Buscar paciente:</label>
+            <input 
+              id="patientSearch" 
+              type="text" 
+              [(ngModel)]="patientSearchTerm" 
+              (input)="applyFilters()"
+              placeholder="Nombre del paciente..."
+            >
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">
+        🔄 Conectando con el servidor en http://localhost:3000/ichroma-results...
+      </div>
+      
+      <div *ngIf="error" class="error">
+        ❌ Error al cargar los resultados: {{ error }}
+        <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
+      </div>
+
+      <div *ngIf="successMessage" class="success">
+        ✅ {{ successMessage }}
+      </div>
+
+      <!-- Results Table -->
+      <div *ngIf="!loading && !error && paginatedResults.length > 0" class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th (click)="sort('patientName')">
+                Paciente
+                <span class="sort-indicator" [class.active]="sortField === 'patientName'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th (click)="sort('testName')">
+                Test
+                <span class="sort-indicator" [class.active]="sortField === 'testName'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th (click)="sort('result')">
+                Resultado
+                <span class="sort-indicator" [class.active]="sortField === 'result'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th (click)="sort('testDate')">
+                Fecha
+                <span class="sort-indicator" [class.active]="sortField === 'testDate'">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let result of paginatedResults; trackBy: trackByResultId">
+              <td>
+                <strong>{{ getPatientName(result) }}</strong>
+                <div class="patient-details">
+                  <small>{{ getPatientAge(result) }}{{ getPatientSex(result) ? ' años, ' + getPatientSex(result) : '' }}</small>
+                </div>
+              </td>
+              <td>
+                <span class="test-name">{{ result.testName }}</span>
+                <div *ngIf="result.cartridgeLot" class="cartridge-info">
+                  <small>Cartucho: {{ result.cartridgeLot }}</small>
+                </div>
+              </td>
+              <td>
+                <span class="result-value" [class.abnormal]="isAbnormalResult(result)">
+                  {{ result.result }} {{ result.unit }}
+                </span>
+              </td>
+              <td>
+                <span class="test-date">{{ formatDate(result.testDate) }}</span>
+                <div *ngIf="result.createdAt" class="received-date">
+                  <small>Creado: {{ formatDate(result.createdAt) }}</small>
+                </div>
+              </td>
+              <td>
+                <button 
+                  *ngIf="!result.patientId"
+                  class="action-btn assign-btn" 
+                  (click)="openAssignPatientModal(result, $event)"
+                  title="Asignar paciente">
+                  👤 Asignar
+                </button>
+                <button 
+                  *ngIf="result.patientId"
+                  class="action-btn assigned-btn" 
+                  disabled
+                  title="Paciente asignado">
+                  ✓ Asignado
+                </button>
+                <button class="action-btn view-btn" (click)="viewResult(result)" title="Ver detalle">
+                  👁️ Ver
+                </button>
+                <button class="action-btn edit-btn" (click)="editResult(result)" title="Editar resultado">
+                  ✏️ Editar
+                </button>
+                <button class="action-btn delete-btn" (click)="deleteResult(result.id)" title="Eliminar resultado">
+                  🗑️ Eliminar
+                </button>
+                <button class="action-btn pdf-btn" (click)="generatePdf(result)" title="Descargar PDF">
+                  🖨️ PDF
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
+        <button 
+          class="btn" 
+          [disabled]="currentPage === 1" 
+          (click)="goToPage(currentPage - 1)">
+          ← Anterior
+        </button>
+        
+        <span class="page-info">
+          Página {{ currentPage }} de {{ totalPages }} 
+          ({{ totalResults }} resultados totales)
+        </span>
+        
+        <button 
+          class="btn" 
+          [disabled]="currentPage === totalPages" 
+          (click)="goToPage(currentPage + 1)">
+          Siguiente →
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && !error && ichromaResults.length === 0" class="empty-state">
+        <p>📊 No hay resultados iChroma II disponibles</p>
+        <small>Los resultados aparecerán aquí cuando estén disponibles desde el equipo</small>
+      </div>
+
+      <!-- No Results After Filter -->
+      <div *ngIf="!loading && !error && ichromaResults.length > 0 && filteredResults.length === 0" class="no-results">
+        <p>🔍 No se encontraron resultados con los filtros aplicados</p>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar Filtros</button>
+      </div>
+    </div>
+
+    <!-- Modal de Creación Rápida de Paciente -->
+    <app-patient-quick-create-modal
+      *ngIf="showQuickCreatePatient"
+      (close)="closeQuickCreateModal()"
+      (patientCreated)="onPatientCreated()">
+    </app-patient-quick-create-modal>
+
+    <!-- Assign Patient Modal -->
+    <div *ngIf="showAssignPatientModal" class="modal-overlay" (click)="closeAssignPatientModal()">
+      <div class="modal-content assign-patient-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Asignar Paciente al Resultado</h2>
+          <button class="close-btn" (click)="closeAssignPatientModal()">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div *ngIf="selectedResultForAssignment" class="result-info">
+            <h3>Información del Resultado</h3>
+            <p><strong>Paciente (iChroma):</strong> {{ selectedResultForAssignment.patientNameIchroma2 || 'N/A' }}</p>
+            <p><strong>Test:</strong> {{ selectedResultForAssignment.testName }}</p>
+            <p><strong>Resultado:</strong> {{ selectedResultForAssignment.result }} {{ selectedResultForAssignment.unit }}</p>
+          </div>
+
+          <div class="search-section">
+            <label for="searchPatient">Buscar paciente por nombre:</label>
+            <div class="search-input-group">
+              <input 
+                id="searchPatient"
+                type="text" 
+                [(ngModel)]="searchPatientTerm" 
+                (input)="searchPatients()"
+                placeholder="Ingrese al menos 2 caracteres..."
+                class="form-control"
+                [disabled]="isAssigningPatient"
+              >
+              <span *ngIf="isSearchingPatients" class="search-spinner">🔄</span>
+            </div>
+            <small class="help-text">Ingrese al menos 2 caracteres para buscar</small>
+          </div>
+
+          <div *ngIf="searchedPatients.length > 0" class="patients-list">
+            <h4>Pacientes encontrados ({{ searchedPatients.length }})</h4>
+            <div class="patient-item" 
+                 *ngFor="let patient of searchedPatients"
+                 (click)="assignPatientToResult(patient)"
+                 [class.disabled]="isAssigningPatient">
+              <div class="patient-info">
+                <strong>{{ patient.name }}</strong>
+                <div class="patient-details">
+                  <span>DNI: {{ patient.dni || 'N/A' }}</span>
+                  <span *ngIf="patient.age">Edad: {{ patient.age }} años</span>
+                  <span *ngIf="patient.sex">Sexo: {{ patient.sex }}</span>
+                </div>
+              </div>
+              <button class="btn-select" [disabled]="isAssigningPatient">
+                {{ isAssigningPatient ? 'Asignando...' : 'Seleccionar' }}
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="searchPatientTerm && searchPatientTerm.length >= 2 && !isSearchingPatients && searchedPatients.length === 0" class="no-patients">
+            <p>😔 No se encontraron pacientes con ese nombre</p>
+            <small>Intente con otro nombre o verifique la ortografía</small>
+          </div>
+
+          <div *ngIf="!searchPatientTerm || searchPatientTerm.length < 2" class="search-hint">
+            <p>💡 Ingrese el nombre del paciente para buscar</p>
+            <p style="margin-top: 10px;">¿El paciente no está registrado?</p>
+            <button class="btn btn-create-patient" (click)="openCreateNewPatient()">
+              ➕ Crear Nuevo Paciente
+            </button>
+          </div>
+
+          <div *ngIf="searchPatientTerm && searchPatientTerm.length >= 2 && !isSearchingPatients && searchedPatients.length === 0" class="create-patient-suggestion">
+            <button class="btn btn-create-patient" (click)="openCreateNewPatient()">
+              ➕ Crear Nuevo Paciente
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeAssignPatientModal()" [disabled]="isAssigningPatient">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit/View Modal -->
+    <div *ngIf="isEditModalOpen" class="modal-overlay" (click)="closeEditModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ isViewMode ? 'Detalles del Resultado iChroma II' : 'Editar Resultado iChroma II' }}</h2>
+          <button class="close-btn" (click)="closeEditModal()">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Paciente:</label>
+            <input 
+              type="text" 
+              [(ngModel)]="editingResult.patientNameIchroma2" 
+              class="form-control"
+              [disabled]="true"
+            >
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Edad:</label>
+              <input 
+                type="number" 
+                [(ngModel)]="editingResult.patientAgeIchroma2" 
+                class="form-control"
+                [disabled]="true"
+              >
+            </div>
+            <div class="form-group">
+              <label>Sexo:</label>
+              <select [(ngModel)]="editingResult.patientSexIchroma2" class="form-control" [disabled]="true">
+                <option value="">Sin especificar</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tipo de Test:</label>
+              <input 
+                type="text" 
+                [(ngModel)]="editingResult.testType" 
+                class="form-control"
+                [disabled]="isViewMode"
+              >
+            </div>
+            <div class="form-group">
+              <label>Nombre del Test:</label>
+              <input 
+                type="text" 
+                [(ngModel)]="editingResult.testName" 
+                class="form-control"
+                [disabled]="isViewMode"
+              >
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Resultado:</label>
+              <input 
+                type="text" 
+                [(ngModel)]="editingResult.result" 
+                class="form-control"
+                [disabled]="isViewMode"
+              >
+            </div>
+            <div class="form-group">
+              <label>Unidad:</label>
+              <input 
+                type="text" 
+                [(ngModel)]="editingResult.unit" 
+                class="form-control"
+                [disabled]="isViewMode"
+              >
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Referencia Mín:</label>
+              <input 
+                type="number" 
+                [(ngModel)]="editingResult.referenceMin" 
+                class="form-control"
+                step="0.01"
+                [disabled]="isViewMode"
+              >
+            </div>
+            <div class="form-group">
+              <label>Referencia Máx:</label>
+              <input 
+                type="number" 
+                [(ngModel)]="editingResult.referenceMax" 
+                class="form-control"
+                step="0.01"
+                [disabled]="isViewMode"
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Estado:</label>
+            <select [(ngModel)]="editingResult.processingStatus" class="form-control" [disabled]="isViewMode">
+              <option value="PENDING">Pendiente</option>
+              <option value="IN_PROGRESS">En Proceso</option>
+              <option value="COMPLETED">Completado</option>
+              <option value="FAILED">Fallido</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Notas Técnicas:</label>
+            <textarea 
+              [(ngModel)]="editingResult.technicalNotes" 
+              class="form-control"
+              rows="3"
+              [disabled]="isViewMode"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEditModal()">
+            {{ isViewMode ? 'Cerrar' : 'Cancelar' }}
+          </button>
+          <button class="btn btn-primary" (click)="saveEdit()" [disabled]="isSaving" *ngIf="!isViewMode">
+            {{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}
+          </button>
+        </div>
+      </div>
+    </div>

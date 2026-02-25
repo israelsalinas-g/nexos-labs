@@ -1,0 +1,380 @@
+
+    <div class="stool-test-form-container">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-left">
+          <button class="btn-back" (click)="goBack()">
+            <i class="fas fa-arrow-left"></i>
+            Volver
+          </button>
+          <div class="header-info">
+            <h2>🧪 {{ isEditMode ? 'Editar' : 'Nuevo' }} Examen Coprológico</h2>
+            <p class="subtitle">{{ isEditMode ? 'Actualice los campos necesarios' : 'Complete todos los campos requeridos' }}</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-cancel" type="button" (click)="goBack()">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+          <button 
+            class="btn-save" 
+            type="button" 
+            (click)="onSubmit()" 
+            [disabled]="!stoolTestForm.valid || saving || loading">
+            <i class="fas fa-save"></i>
+            {{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Guardar') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Cargando datos del examen...</p>
+      </div>
+
+      <!-- Error Alert -->
+      <div *ngIf="errorMessage" class="alert alert-error">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''">×</button>
+      </div>
+
+      <!-- Success Alert -->
+      <div *ngIf="successMessage" class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''">×</button>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="stoolTestForm" *ngIf="!loading" class="form-content">
+        
+        <!-- Patient Information Section -->
+        <div class="form-section">
+          <h3>👤 Información del Paciente</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="patientId">Paciente *</label>
+              <div class="patient-selector-container">
+                <select 
+                  id="patientId"
+                  formControlName="patientId"
+                  class="form-select"
+                  [disabled]="isEditMode"
+                  (change)="onPatientSelected()">
+                  <option value="">Seleccionar paciente...</option>
+                  <option *ngFor="let patient of patients" [value]="patient.id">
+                    {{ patient.name }} - {{ patient.dni }}
+                  </option>
+                </select>
+                <button 
+                  *ngIf="!isEditMode"
+                  type="button" 
+                  class="btn-new-patient" 
+                  (click)="openPatientModal()"
+                  title="Crear nuevo paciente">
+                  <i class="fas fa-user-plus"></i>
+                  Nuevo Paciente
+                </button>
+              </div>
+              <div *ngIf="loadingPatients" class="loading-text">
+                <i class="fas fa-spinner fa-spin"></i> Cargando pacientes...
+              </div>
+              <div *ngIf="stoolTestForm.get('patientId')?.invalid && stoolTestForm.get('patientId')?.touched" 
+                   class="field-error">
+                Debe seleccionar un paciente
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="patientName">Nombre</label>
+              <input 
+                id="patientName"
+                type="text" 
+                formControlName="patientName"
+                class="form-input readonly-input"
+                readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="patientAge">Edad</label>
+              <input 
+                id="patientAge"
+                type="number" 
+                formControlName="patientAge"
+                class="form-input"
+                placeholder="Edad del paciente">
+            </div>
+
+            <div class="form-group">
+              <label for="patientSex">Sexo</label>
+              <input 
+                id="patientSex"
+                type="text" 
+                [value]="getGenreLabel(stoolTestForm.get('patientSex')?.value)"
+                class="form-input readonly-input"
+                readonly>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Information Section -->
+        <div class="form-section">
+          <h3>🧪 Información del Examen</h3>
+          <div class="form-grid">
+            <!-- <div class="form-group">
+              <label for="sampleNumber">Número de Muestra *</label>
+              <div class="input-with-button">
+                <input 
+                  id="sampleNumber"
+                  type="text" 
+                  formControlName="sampleNumber"
+                  class="form-input"
+                  [readonly]="isEditMode"
+                  placeholder="Ej: STOOL-2025-001">
+                <button 
+                  *ngIf="!isEditMode"
+                  type="button" 
+                  class="btn-generate" 
+                  (click)="generateSampleNumber()"
+                  [disabled]="generatingSample">
+                  <i class="fas" [class.fa-sync-alt]="!generatingSample" [class.fa-spinner]="generatingSample" [class.fa-spin]="generatingSample"></i>
+                  {{ generatingSample ? 'Generando...' : 'Generar' }}
+                </button>
+              </div>
+              <div *ngIf="stoolTestForm.get('sampleNumber')?.invalid && stoolTestForm.get('sampleNumber')?.touched" 
+                   class="field-error">
+                El número de muestra es requerido
+              </div>
+            </div> -->
+
+            <div class="form-group">
+              <label for="testDate">Fecha del Examen</label>
+              <input 
+                id="testDate"
+                type="datetime-local" 
+                formControlName="testDate"
+                class="form-input">
+            </div>
+
+            <div class="form-group">
+              <label for="status">Estado</label>
+              <select id="status" formControlName="status" class="form-select">
+                <option value="pending">Pendiente</option>
+                <option value="completed">Completado</option>
+                <option value="reviewed">Revisado</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="doctorId">Médico</label>
+              <div class="doctor-selector-container">
+                <select 
+                  id="doctorId"
+                  formControlName="doctorId"
+                  class="form-select">
+                  <option value="">Seleccionar médico...</option>
+                  <option *ngFor="let doctor of doctors" [value]="doctor.id">
+                    {{ doctor.firstName }} {{ doctor.lastName }}
+                  </option>
+                </select>
+                <button 
+                  *ngIf="!isEditMode"
+                  type="button" 
+                  class="btn-new-doctor" 
+                  (click)="openDoctorModal()"
+                  title="Crear nuevo médico">
+                  <i class="fas fa-user-plus"></i>
+                  Nuevo Médico
+                </button>
+              </div>
+              <div *ngIf="loadingDoctors" class="loading-text">
+                <i class="fas fa-spinner fa-spin"></i> Cargando médicos...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Physical Examination Section -->
+        <div class="form-section">
+          <h3>🔍 Examen Físico</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="color">Color</label>
+              <select id="color" formControlName="color" class="form-select">
+                <option value="">Seleccionar...</option>
+                <option *ngFor="let color of stoolColors" [value]="color">
+                  {{ color }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="consistency">Consistencia</label>
+              <select id="consistency" formControlName="consistency" class="form-select">
+                <option value="">Seleccionar...</option>
+                <option *ngFor="let consistency of stoolConsistencies" [value]="consistency">
+                  {{ consistency }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="shape">Forma/Cantidad</label>
+              <select id="shape" formControlName="shape" class="form-select">
+                <option value="">Seleccionar...</option>
+                <option *ngFor="let shape of stoolShapes" [value]="shape">
+                  {{ shape }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="mucus">Moco</label>
+              <select id="mucus" formControlName="mucus" class="form-select">
+                <option value="">Seleccionar...</option>
+                <option *ngFor="let mucus of stoolEscasaModeradaAbundanteAusenteQuantities" [value]="mucus">
+                  {{ mucus }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Microscopic Examination Section -->
+        <div class="form-section">
+          <h3>🔬 Examen Microscópico</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="leukocytes">Leucocitos</label>
+              <select id="leukocytes" formControlName="leukocytes" class="form-select">
+                <option value="">Seleccionar...</option>
+                <option *ngFor="let level of stoolEscasaModeradaAbundanteAusenteQuantities" [value]="level">
+                  {{ level }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="erythrocytes">Eritrocitos</label>
+              <select id="erythrocytes" formControlName="erythrocytes" class="form-select">
+                <option value="">Seleccionar...</option>
+                <option *ngFor="let level of stoolEscasaModeradaAbundanteAusenteQuantities" [value]="level">
+                  {{ level }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Parasites Section -->
+            <div class="form-group full-width">
+              <label>Parásitos</label>
+              <div class="array-container">
+                <div *ngFor="let parasite of parasitesArray.controls; let i = index" 
+                     class="array-item" 
+                     [formGroup]="getParasiteGroup(i)">
+                  <select formControlName="type" class="form-select">
+                    <option value="">Seleccionar parásito...</option>
+                    <option *ngFor="let type of parasiteTypes" [value]="type">
+                      {{ type }}
+                    </option>
+                  </select>
+                  <input 
+                    type="text" 
+                    formControlName="quantity" 
+                    placeholder="Cantidad"
+                    class="form-input">
+                  <button 
+                    type="button" 
+                    class="btn-remove" 
+                    (click)="removeParasite(i)"
+                    [disabled]="parasitesArray.length === 1">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <button type="button" class="btn-add" (click)="addParasite()">
+                  <i class="fas fa-plus"></i> Añadir Parásito
+                </button>
+              </div>
+            </div>
+
+            <!-- Protozoos Section -->
+            <div class="form-group full-width">
+              <label>Protozoos</label>
+              <div class="array-container">
+                <div *ngFor="let protozoo of protozoosArray.controls; let i = index" 
+                     class="array-item" 
+                     [formGroup]="getProtozooGroup(i)">
+                  <select formControlName="type" class="form-select">
+                    <option value="">Seleccionar protozoo...</option>
+                    <option *ngFor="let type of protozooTypes" [value]="type">
+                      {{ type }}
+                    </option>
+                  </select>
+                  <input 
+                    type="text" 
+                    formControlName="quantity" 
+                    placeholder="Cantidad"
+                    class="form-input">
+                  <button 
+                    type="button" 
+                    class="btn-remove" 
+                    (click)="removeProtozoo(i)"
+                    [disabled]="protozoosArray.length === 1">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <button type="button" class="btn-add" (click)="addProtozoo()">
+                  <i class="fas fa-plus"></i> Añadir Protozoo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observations Section -->
+        <div class="form-section">
+          <h3>📝 Observaciones</h3>
+          <div class="form-group full-width">
+            <label for="observations">Observaciones Adicionales</label>
+            <textarea 
+              id="observations"
+              formControlName="observations"
+              class="form-textarea"
+              rows="4"
+              placeholder="Ingrese observaciones adicionales sobre el examen...">
+            </textarea>
+          </div>
+
+          <div class="form-grid" *ngIf="currentStoolTest?.createdBy || currentStoolTest?.reviewedBy">
+            <div class="form-group" *ngIf="currentStoolTest?.createdBy">
+              <label>Creador</label>
+              <p class="form-control-static">
+                {{ currentStoolTest?.createdBy?.name }} {{ currentStoolTest?.createdBy?.lastName }}
+              </p>
+            </div>
+
+            <div class="form-group" *ngIf="currentStoolTest?.reviewedBy">
+              <label>Actualizador</label>
+              <p class="form-control-static">
+                {{ currentStoolTest?.reviewedBy?.name }} {{ currentStoolTest?.reviewedBy?.lastName }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- Patient Quick Create Modal -->
+      <app-patient-quick-create-modal
+        (patientCreated)="onPatientCreated($event)"
+        (modalClosed)="onModalClosed()">
+      </app-patient-quick-create-modal>
+
+      <!-- Doctor Quick Create Modal -->
+      <app-doctor-quick-create-modal
+        #doctorModal
+        (doctorCreated)="onDoctorCreated($event)">
+      </app-doctor-quick-create-modal>
+    </div>

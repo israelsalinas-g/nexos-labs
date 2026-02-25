@@ -1,0 +1,68 @@
+
+    <div class="container">
+      <div class="header">
+        <h1>Agregar Pruebas a Orden</h1>
+        <button class="btn-back" (click)="goBack()">← Volver</button>
+      </div>
+
+      <div *ngIf="loading" class="loading">Cargando pruebas...</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+
+      <div *ngIf="!loading && !error" class="content">
+        <!-- Búsqueda y filtros -->
+        <div class="search-section">
+          <input 
+            type="text" 
+            placeholder="Buscar pruebas..."
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+            class="search-input">
+          
+          <select [(ngModel)]="sectionFilter" (change)="onFilterChange()" class="filter-select">
+            <option value="">Todas las secciones</option>
+            <option *ngFor="let section of sections" [value]="section.id">
+              {{ section.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Lista de pruebas -->
+        <div class="tests-list">
+          <div *ngIf="filteredTests.length === 0" class="no-data">
+            No hay pruebas disponibles
+          </div>
+
+          <div *ngFor="let test of filteredTests" class="test-item">
+            <input 
+              type="checkbox" 
+              [id]="'test-' + test.id"
+              [checked]="isTestSelected(test.id)"
+              (change)="toggleTest(test)"
+              class="test-checkbox">
+            <label [for]="'test-' + test.id" class="test-label">
+              <div class="test-name">{{ test.name }}</div>
+              <div class="test-details">
+                <span class="test-code">{{ test.code }}</span>
+                <span class="test-type">{{ test.resultType }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Resumen de selección -->
+        <div class="summary">
+          <p>Pruebas seleccionadas: {{ selectedTests.length }}</p>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="actions">
+          <button class="btn-secondary" (click)="goBack()">Cancelar</button>
+          <button class="btn-primary" (click)="addSelectedTests()" [disabled]="selectedTests.length === 0 || isSubmitting">
+            {{ isSubmitting ? 'Agregando...' : 'Agregar Pruebas' }}
+          </button>
+        </div>
+
+        <div *ngIf="submitError" class="error-message">{{ submitError }}</div>
+        <div *ngIf="submitSuccess" class="success-message">{{ submitSuccess }}</div>
+      </div>
+    </div>

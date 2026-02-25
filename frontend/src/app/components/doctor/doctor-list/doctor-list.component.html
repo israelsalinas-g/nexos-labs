@@ -1,0 +1,313 @@
+
+    <div class="container">
+      <div class="header">
+        <div class="header-left">
+          <h1>Gestión de Médicos</h1>
+        </div>
+        
+        <div class="header-center">
+          <div class="search-controls">
+            <input 
+              type="text" 
+              placeholder="Buscar por nombre, especialidad o licencia..." 
+              [(ngModel)]="searchTerm"
+              (input)="onSearch()"
+              class="search-input">
+            <button class="btn-secondary" (click)="clearSearch()">Limpiar</button>
+            <select [(ngModel)]="statusFilter" (change)="onStatusFilterChange()" class="filter-select">
+              <option value="">Todos los estados</option>
+              <option value="active">Solo activos</option>
+              <option value="inactive">Solo inactivos</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <button class="btn-primary" (click)="openCreateModal()">
+            + Nuevo Médico
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="loading">
+        Cargando médicos...
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="error" class="error">
+        Error: {{ error }}
+      </div>
+
+      <!-- Tabla de médicos -->
+      <div *ngIf="!loading && !error" class="table-container">
+        <table class="doctors-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Especialidad</th>
+              <th>Teléfono</th>
+              <th>Staff</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let doctor of doctors" [class.inactive]="!doctor.isActive">
+              <td>{{ doctor.firstName }} {{ doctor.lastName }}</td>
+              <td>{{ doctor.specialty }}</td>
+              <td>{{ doctor.phone }}</td>
+              <td>
+                <span class="badge" [class]="doctor.isStaff ? 'badge-staff' : 'badge-external'">
+                  {{ doctor.isStaff ? 'Sí' : 'No' }}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [class]="doctor.isActive ? 'active' : 'inactive'">
+                  {{ doctor.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="action-btn view-btn" (click)="viewDoctor(doctor)" title="Ver detalles">👁️ Ver</button>
+                <button class="action-btn edit-btn" (click)="openEditModal(doctor)" title="Editar médico">✏️ Editar</button>
+                <button 
+                  class="action-btn" 
+                  [class.status-active-btn]="doctor.isActive"
+                  [class.status-inactive-btn]="!doctor.isActive"
+                  (click)="toggleStatus(doctor)"
+                  [title]="doctor.isActive ? 'Desactivar médico' : 'Activar médico'">
+                  {{ doctor.isActive ? '🔴 Desactivar' : '🟢 Activar' }}
+                </button>
+                <button 
+                  class="action-btn delete-btn" 
+                  (click)="deleteDoctor(doctor)" 
+                  *ngIf="!doctor.isActive"
+                  title="Eliminar médico permanentemente">
+                  🗑️ Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Controles de paginación -->
+        <div class="pagination" *ngIf="!loading && !error && totalPages > 1">
+          <button 
+            class="btn" 
+            (click)="goToPage(currentPage - 1)" 
+            [disabled]="currentPage === 1">
+            ← Anterior
+          </button>
+          
+          <span class="page-info">
+            Página {{ currentPage }} de {{ totalPages }} ({{ totalItems }} médicos totales)
+          </span>
+          
+          <button 
+            class="btn" 
+            (click)="goToPage(currentPage + 1)" 
+            [disabled]="currentPage === totalPages">
+            Siguiente →
+          </button>
+        </div>
+
+        <!-- Mensaje cuando no hay datos -->
+        <div *ngIf="!loading && totalItems === 0" class="no-data">
+          <p *ngIf="searchTerm">No se encontraron médicos que coincidan con "{{ searchTerm }}"</p>
+          <p *ngIf="!searchTerm">No hay médicos registrados.</p>
+          <button class="btn-primary" (click)="openCreateModal()">
+            + Registrar Primer Médico
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal de confirmación -->
+      <div class="modal" *ngIf="showConfirmModal" (click)="closeModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3>{{ confirmAction.title }}</h3>
+          <p>{{ confirmAction.message }}</p>
+          <div class="modal-actions">
+            <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
+            <button class="btn-danger" (click)="confirmAction.action()">Confirmar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de detalles del médico -->
+      <div class="modal" *ngIf="selectedDoctor && !isEditMode" (click)="closeDoctorModal()">
+        <div class="modal-content large" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Detalles del Médico</h3>
+            <button class="close-btn" (click)="closeDoctorModal()">×</button>
+          </div>
+          
+          <div class="doctor-details">
+            <div class="detail-section">
+              <h4>Información Personal</h4>
+              <div class="detail-grid">
+                <div><strong>Nombre:</strong> {{ selectedDoctor.firstName }}</div>
+                <div><strong>Apellido:</strong> {{ selectedDoctor.lastName }}</div>
+                <div><strong>Especialidad:</strong> {{ selectedDoctor.specialty }}</div>
+                <div><strong>Número de Licencia:</strong> {{ selectedDoctor.licenseNumber }}</div>
+                <div><strong>Teléfono:</strong> {{ selectedDoctor.phone }}</div>
+                <div><strong>Email:</strong> {{ selectedDoctor.email }}</div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>Información Profesional</h4>
+              <div class="detail-grid">
+                <div><strong>Institución:</strong> {{ selectedDoctor.institution }}</div>
+                <div><strong>Dirección:</strong> {{ selectedDoctor.address }}</div>
+                <div><strong>Miembro del Staff:</strong> {{ selectedDoctor.isStaff ? 'Sí' : 'No' }}</div>
+                <div><strong>Estado:</strong> {{ selectedDoctor.isActive ? 'Activo' : 'Inactivo' }}</div>
+              </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedDoctor.notes">
+              <h4>Notas</h4>
+              <div class="detail-field">
+                <p>{{ selectedDoctor.notes }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de crear/editar médico -->
+      <div class="modal" *ngIf="showFormModal" (click)="closeFormModal()">
+        <div class="modal-content large" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>{{ isEditMode ? 'Editar Médico' : 'Nuevo Médico' }}</h3>
+            <button class="close-btn" (click)="closeFormModal()">×</button>
+          </div>
+          
+          <form (ngSubmit)="saveDoctor()" #doctorForm="ngForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="firstName">Nombre *</label>
+                <input 
+                  type="text" 
+                  id="firstName" 
+                  name="firstName"
+                  [(ngModel)]="formData.firstName"
+                  required
+                  class="form-control">
+              </div>
+
+              <div class="form-group">
+                <label for="lastName">Apellido *</label>
+                <input 
+                  type="text" 
+                  id="lastName" 
+                  name="lastName"
+                  [(ngModel)]="formData.lastName"
+                  required
+                  class="form-control">
+              </div>
+
+              <div class="form-group">
+                <label for="specialty">Especialidad</label>
+                <input 
+                  type="text" 
+                  id="specialty" 
+                  name="specialty"
+                  [(ngModel)]="formData.specialty"
+                  class="form-control">
+              </div>
+
+              <div class="form-group">
+                <label for="licenseNumber">Número de Licencia</label>
+                <input 
+                  type="text" 
+                  id="licenseNumber" 
+                  name="licenseNumber"
+                  [(ngModel)]="formData.licenseNumber"
+                  class="form-control">
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Teléfono</label>
+                <input 
+                  type="tel" 
+                  id="phone" 
+                  name="phone"
+                  [(ngModel)]="formData.phone"
+                  class="form-control">
+              </div>
+
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email"
+                  [(ngModel)]="formData.email"
+                  class="form-control">
+              </div>
+
+              <div class="form-group full-width">
+                <label for="address">Dirección</label>
+                <input 
+                  type="text" 
+                  id="address" 
+                  name="address"
+                  [(ngModel)]="formData.address"
+                  class="form-control">
+              </div>
+
+              <div class="form-group full-width">
+                <label for="institution">Institución</label>
+                <input 
+                  type="text" 
+                  id="institution" 
+                  name="institution"
+                  [(ngModel)]="formData.institution"
+                  class="form-control">
+              </div>
+
+              <div class="form-group full-width">
+                <label for="notes">Notas</label>
+                <textarea 
+                  id="notes" 
+                  name="notes"
+                  [(ngModel)]="formData.notes"
+                  rows="3"
+                  class="form-control"></textarea>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    name="isStaff"
+                    [(ngModel)]="formData.isStaff">
+                  Miembro del Staff
+                </label>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    name="isActive"
+                    [(ngModel)]="formData.isActive">
+                  Activo
+                </label>
+              </div>
+            </div>
+
+            <div class="form-error" *ngIf="formError">
+              {{ formError }}
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn-secondary" (click)="closeFormModal()">Cancelar</button>
+              <button type="submit" class="btn-primary" [disabled]="!doctorForm.form.valid || saving">
+                {{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,118 @@
+
+    <div class="container">
+      <div class="header">
+        <button class="btn-back" (click)="goBack()">← Volver</button>
+        <h1>Detalles de Orden</h1>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="editOrder()" [disabled]="!order || order.status === 'COMPLETED'">
+            Editar
+          </button>
+          <button class="btn-danger" (click)="cancelOrder()" [disabled]="!order || order.status === 'COMPLETED' || order.status === 'CANCELLED'">
+            Cancelar Orden
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">Cargando información...</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+
+      <div *ngIf="!loading && order" class="detail-container">
+        <!-- Información básica -->
+        <div class="section">
+          <h2>Información de Orden</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Número de Orden:</label>
+              <span class="value">{{ order.orderNumber }}</span>
+            </div>
+            <div class="info-item">
+              <label>Estado:</label>
+              <span class="badge" [ngClass]="'badge-' + getStatusClass(order.status)">
+                {{ formatStatus(order.status) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Prioridad:</label>
+              <span class="badge badge-priority" [ngClass]="'priority-' + order.priority.toLowerCase()">
+                {{ formatPriority(order.priority) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Fecha de Solicitud:</label>
+              <span class="value">{{ order.orderDate | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-item" *ngIf="order.completedAt">
+              <label>Fecha de Finalización:</label>
+              <span class="value">{{ order.completedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información de Paciente y Doctor -->
+        <div class="section">
+          <h2>Información Clínica</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Paciente:</label>
+              <span class="value" *ngIf="order.patient">
+                {{ order.patient.firstName }} {{ order.patient.lastName }}
+                <br>
+                <small>{{ order.patient.documentNumber }}</small>
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Doctor Solicitante:</label>
+              <span class="value" *ngIf="order.doctor">
+                {{ order.doctor.firstName }} {{ order.doctor.lastName }}
+              </span>
+              <span class="value" *ngIf="!order.doctor">-</span>
+            </div>
+            <div class="info-item" *ngIf="order.clinicalIndication">
+              <label>Indicación Clínica:</label>
+              <span class="value">{{ order.clinicalIndication }}</span>
+            </div>
+            <div class="info-item" *ngIf="order.notes">
+              <label>Notas:</label>
+              <span class="value">{{ order.notes }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pruebas asociadas -->
+        <div class="section" *ngIf="order.tests && order.tests.length > 0">
+          <h2>Pruebas Ordenadas</h2>
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Prueba</th>
+                  <th>Tipo de Resultado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let test of order.tests">
+                  <td>{{ test.name }}</td>
+                  <td>{{ test.resultType }}</td>
+                  <td>
+                    <button class="btn-icon" (click)="removeTest(test)" [disabled]="order.status === 'COMPLETED'">
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn-secondary" (click)="addTests()" [disabled]="order.status === 'COMPLETED'">
+            + Agregar Pruebas
+          </button>
+        </div>
+
+        <div class="section" *ngIf="!order.tests || order.tests.length === 0">
+          <p class="no-data">No hay pruebas asociadas a esta orden</p>
+          <button class="btn-secondary" (click)="addTests()" [disabled]="order.status === 'COMPLETED'">
+            + Agregar Pruebas
+          </button>
+        </div>
+      </div>
+    </div>

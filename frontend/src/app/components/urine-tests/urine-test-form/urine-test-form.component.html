@@ -1,0 +1,437 @@
+
+    <div class="container">
+      <div class="header">
+        <h1>{{ readOnly ? 'Ver' : (isEditMode ? 'Editar' : 'Nuevo') }} Examen de Orina</h1>
+        <div class="header-actions">
+          <button *ngIf="readOnly" class="btn btn-warning" [routerLink]="['/urine-tests', testId, 'edit']">
+            ✏️ Editar
+          </button>
+          <button class="btn btn-secondary" routerLink="/urine-tests">
+            ← Volver a la Lista
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">
+        🔄 {{ isEditMode ? 'Cargando examen...' : 'Cargando formulario...' }}
+      </div>
+
+      <div *ngIf="error" class="error">
+        ❌ Error: {{ error }}
+      </div>
+
+      <div *ngIf="successMessage" class="success">
+        ✅ {{ successMessage }}
+      </div>
+
+      <form *ngIf="!loading" [formGroup]="urineTestForm" (ngSubmit)="onSubmit()" class="urine-test-form">
+        
+        <!-- Información Básica -->
+        <section class="form-section">
+          <h3>📋 Información Básica</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="testDate">Fecha del Examen *</label>
+              <input id="testDate" type="datetime-local" formControlName="testDate" class="form-control" required>
+              <div *ngIf="urineTestForm.get('testDate')?.invalid && urineTestForm.get('testDate')?.touched" class="error-message">
+                La fecha del examen es requerida
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="sampleNumber">Número de Muestra</label>
+              <input id="sampleNumber" type="text" formControlName="sampleNumber" class="form-control" 
+                     placeholder="ej: M-2025-001">
+              <small class="form-help">Número de identificación de la muestra</small>
+            </div>
+
+            <div class="form-group">
+              <label for="doctorId">Médico</label>
+              <div class="doctor-selector-container">
+                <select 
+                  id="doctorId"
+                  formControlName="doctorId"
+                  class="form-control"
+                  [disabled]="readOnly">
+                  <option value="">Seleccionar médico...</option>
+                  <option *ngFor="let doctor of doctors" [value]="doctor.id">
+                    {{ doctor.firstName }} {{ doctor.lastName }}
+                  </option>
+                </select>
+                <button 
+                  *ngIf="!isEditMode && !readOnly"
+                  type="button" 
+                  class="btn-new-doctor" 
+                  (click)="openDoctorModal()"
+                  title="Crear nuevo médico">
+                  <i class="fas fa-user-plus"></i>
+                  Nuevo Médico
+                </button>
+              </div>
+              <div *ngIf="loadingDoctors" class="loading-text">
+                <i class="fas fa-spinner fa-spin"></i> Cargando médicos...
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="patientId">Paciente *</label>
+              <div class="patient-select-container">
+                <select id="patientId" formControlName="patientId" class="form-control" required>
+                  <option value="">Seleccione un paciente...</option>
+                  <option *ngFor="let patient of patients" [value]="patient.id">
+                    {{ patient.name }} {{ patient.age ? '(' + patient.age + ' años)' : '' }}
+                  </option>
+                </select>
+                <button type="button" class="btn-add-patient" (click)="openPatientModal()" title="Crear nuevo paciente">
+                  ➕ Nuevo
+                </button>
+              </div>
+              <div *ngIf="urineTestForm.get('patientId')?.invalid && urineTestForm.get('patientId')?.touched" class="error-message">
+                Debe seleccionar un paciente
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="status">Estado</label>
+              <select id="status" formControlName="status" class="form-control">
+                <option [value]="TestStatus.PENDING">Pendiente</option>
+                <option [value]="TestStatus.COMPLETED">Completado</option>
+                <option [value]="TestStatus.FAILED">Revisado</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Examen Físico -->
+        <section class="form-section">
+          <h3>🔍 Examen Físico</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="volume">Volumen</label>
+              <input id="volume" type="text" formControlName="volume" class="form-control" 
+                     placeholder="ej: 60 ml">
+              <small class="form-help">Formato: "60 ml" o "50.5 mL"</small>
+            </div>
+
+            <div class="form-group">
+              <label for="color">Color</label>
+              <select id="color" formControlName="color" class="form-control">
+                <option *ngFor="let option of colorOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="aspect">Aspecto</label>
+              <select id="aspect" formControlName="aspect" class="form-control">
+                <option *ngFor="let option of aspectOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="sediment">Sedimento</label>
+              <select id="sediment" formControlName="sediment" class="form-control">
+                <option *ngFor="let option of sedimentOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Examen Químico -->
+        <section class="form-section">
+          <h3>🧪 Examen Químico</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="density">Densidad</label>
+              <select id="density" formControlName="density" class="form-control">
+                <option *ngFor="let option of densityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="ph">pH</label>
+              <select id="ph" formControlName="ph" class="form-control">
+                <option *ngFor="let option of phOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="protein">Proteína</label>
+              <select id="protein" formControlName="protein" class="form-control">
+                <option *ngFor="let option of negativePositive4PlusOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="glucose">Glucosa</label>
+              <select id="glucose" formControlName="glucose" class="form-control">
+                <option *ngFor="let option of negativePositive4PlusOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bilirubin">Bilirrubina</label>
+              <select id="bilirubin" formControlName="bilirubin" class="form-control">
+                <option *ngFor="let option of negativePositive3PlusOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="ketones">Cetonas</label>
+              <select id="ketones" formControlName="ketones" class="form-control">
+                <option *ngFor="let option of negativePositive3PlusOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="occultBlood">Sangre Oculta</label>
+              <select id="occultBlood" formControlName="occultBlood" class="form-control">
+                <option *ngFor="let option of negativePositive3PlusOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="nitrites">Nitritos</label>
+              <select id="nitrites" formControlName="nitrites" class="form-control">
+                <option *ngFor="let option of negativePositiveOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="urobilinogen">Urobilinógeno</label>
+              <select id="urobilinogen" formControlName="urobilinogen" class="form-control">
+                <option *ngFor="let option of urobilinogenOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="leukocytes">Leucocitos</label>
+              <select id="leukocytes" formControlName="leukocytes" class="form-control">
+                <option *ngFor="let option of negativePositive3PlusOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Examen Microscópico -->
+        <section class="form-section">
+          <h3>🔬 Examen Microscópico</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="epithelialCells">Células Epiteliales</label>
+              <select id="epithelialCells" formControlName="epithelialCells" class="form-control">
+                <option *ngFor="let option of quantityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="leukocytesField">Leucocitos por Campo</label>
+              <input id="leukocytesField" type="text" formControlName="leukocytesField" class="form-control" 
+                     placeholder="ej: 0-2 x campo">
+              <small class="form-help">Formato: "0-2 x campo"</small>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="erythrocytesField">Eritrocitos por Campo</label>
+              <input id="erythrocytesField" type="text" formControlName="erythrocytesField" class="form-control" 
+                     placeholder="ej: 0-2 x campo">
+              <small class="form-help">Formato: "0-2 x campo"</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="bacteria">Bacterias</label>
+              <select id="bacteria" formControlName="bacteria" class="form-control">
+                <option *ngFor="let option of quantityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="mucousFilaments">Filamentos Mucosos</label>
+              <select id="mucousFilaments" formControlName="mucousFilaments" class="form-control">
+                <option *ngFor="let option of quantityOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="yeasts">Levaduras</label>
+              <select id="yeasts" formControlName="yeasts" class="form-control">
+                <option *ngFor="let option of yeastOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cristales Array -->
+          <div class="form-group">
+            <label>Cristales</label>
+            <div formArrayName="crystals">
+              <div *ngFor="let crystal of crystals.controls; let i = index" [formGroupName]="i" class="array-item">
+                <div class="form-row">
+                  <div class="form-group">
+                    <select formControlName="type" class="form-control">
+                      <option value="">Seleccione tipo...</option>
+                      <option *ngFor="let option of crystalTypeOptions" [value]="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <input formControlName="quantity" type="text" class="form-control" 
+                           placeholder="ej: 2-3 por campo">
+                  </div>
+                  <button type="button" class="btn-remove" (click)="removeCrystal(i)" *ngIf="!readOnly">🗑️</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" (click)="addCrystal()" *ngIf="!readOnly">
+              ➕ Agregar Cristal
+            </button>
+          </div>
+
+          <!-- Cilindros Array -->
+          <div class="form-group">
+            <label>Cilindros</label>
+            <div formArrayName="cylinders">
+              <div *ngFor="let cylinder of cylinders.controls; let i = index" [formGroupName]="i" class="array-item">
+                <div class="form-row">
+                  <div class="form-group">
+                    <select formControlName="type" class="form-control">
+                      <option value="">Seleccione tipo...</option>
+                      <option *ngFor="let option of cylinderTypeOptions" [value]="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <input formControlName="quantity" type="text" class="form-control" 
+                           placeholder="ej: 0-2 por campo">
+                  </div>
+                  <button type="button" class="btn-remove" (click)="removeCylinder(i)" *ngIf="!readOnly">🗑️</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" (click)="addCylinder()" *ngIf="!readOnly">
+              ➕ Agregar Cilindro
+            </button>
+          </div>
+          
+          <div class="form-group">
+            <label for="others">Otros Hallazgos</label>
+            <textarea id="others" formControlName="others" class="form-control" rows="2" 
+                      placeholder="Otros hallazgos microscópicos..."></textarea>
+          </div>
+        </section>
+
+        <!-- Información Adicional -->
+        <section class="form-section">
+          <h3>📝 Información Adicional</h3>
+          
+          <div class="form-group">
+            <label for="observations">Observaciones</label>
+            <textarea id="observations" formControlName="observations" class="form-control" rows="4" 
+                      placeholder="Observaciones generales del examen..."></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group" *ngIf="currentUrineTest?.createdBy">
+              <label>Creador</label>
+              <p class="form-control-static">
+                {{ currentUrineTest?.createdBy?.name }} {{ currentUrineTest?.createdBy?.lastName }}
+              </p>
+            </div>
+            
+            <div class="form-group" *ngIf="currentUrineTest?.reviewedBy">
+              <label>Actualizador</label>
+              <p class="form-control-static">
+                {{ currentUrineTest?.reviewedBy?.name }} {{ currentUrineTest?.reviewedBy?.lastName }}
+              </p>
+            </div>
+
+            <div class="form-group" *ngIf="currentUrineTest?.doctor">
+              <label>Médico Asignado</label>
+              <p class="form-control-static">
+                {{ currentUrineTest?.doctor?.firstName }} {{ currentUrineTest?.doctor?.lastName }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Form Actions -->
+        <div class="form-actions" *ngIf="!readOnly">
+          <button type="button" class="btn btn-secondary" routerLink="/urine-tests">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-warning" (click)="saveAsDraft()" *ngIf="!isEditMode" [disabled]="saving">
+            📝 Guardar Borrador
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="urineTestForm.invalid || saving">
+            <span *ngIf="saving" class="spinner"></span>
+            {{ saving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Guardar') }} Examen
+          </button>
+        </div>
+      </form>
+
+      <!-- Patient Quick Create Modal -->
+      <app-patient-quick-create-modal
+        (patientCreated)="onPatientCreated($event)"
+        (modalClosed)="onModalClosed()">
+      </app-patient-quick-create-modal>
+
+      <!-- Doctor Quick Create Modal -->
+      <app-doctor-quick-create-modal
+        #doctorModal
+        (doctorCreated)="onDoctorCreated($event)">
+      </app-doctor-quick-create-modal>
+    </div>

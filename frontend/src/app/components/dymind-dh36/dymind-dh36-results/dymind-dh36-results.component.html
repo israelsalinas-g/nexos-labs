@@ -1,0 +1,360 @@
+
+    <div class="container">
+      <div class="header-filter-row">
+        <div class="header-section">
+          <h1>Hemogramas (Dymind DH36)</h1>
+        </div>
+        <div class="filter-section-inline">
+          <div class="filter-group-inline">
+            <label for="patientSearch">Buscar:</label>
+            <input 
+              id="patientSearch" 
+              type="text" 
+              [(ngModel)]="patientSearchTerm" 
+              (input)="applyFilters()"
+              placeholder="Nombre del paciente...">
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">
+        🔄 Conectando con el servidor en http://localhost:3000/dymind-dh36-result...
+      </div>
+      
+      <div *ngIf="error" class="error">
+        ❌ Error al cargar los resultados: {{ error }}
+        <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
+      </div>
+
+      <div *ngIf="successMessage" class="success">
+        ✅ {{ successMessage }}
+      </div>
+
+      <div *ngIf="!loading && !error && labResults.length === 0" class="no-data">
+        📋 No se encontraron resultados de laboratorio.
+        <br><small>Verifica que haya datos en la base de datos del backend.</small>
+      </div>
+      
+      <div *ngIf="!loading && !error && paginatedResults.length > 0" class="table-container">
+        <!-- Results Table -->
+        <div class="table-wrapper">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Muestra</th>
+                <th>Paciente</th>
+                <!-- <th>Edad</th> -->
+                <th>Fecha Análisis</th>
+                <th>Estado</th>
+                <th>Instrumento</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let result of paginatedResults; let i = index" 
+                  class="result-row">
+                <td class="sample-id" (click)="navigateToDetail(result.sampleNumber)">{{ result.sampleNumber }}</td>
+                <!-- <td class="patient-name" (click)="navigateToDetail(result.sampleNumber)">{{ getPatientName(result) }}</td> -->
+                <td class="patient-info" (click)="navigateToDetail(result.sampleNumber)">
+                  <div class="patient-details">
+                    <!-- Si tiene patientId, mostrar datos del patient -->
+                    <span class="patient-name" *ngIf="result.patientId && result.patient">
+                      {{ result.patient.name }}
+                    </span>
+                    <!-- Si no tiene patientId, mostrar datos del equipamiento -->
+                    <span class="patient-name" *ngIf="!result.patientId">
+                      {{ result.patientNameDymind || 'N/A' }}
+                    </span>
+                    <!-- Mostrar edad -->
+                    <span class="patient-age" *ngIf="result.patientId && result.patient">
+                      Edad: {{ result.patient.age }} años
+                    </span>
+                    <span class="patient-age" *ngIf="!result.patientId && result.patientAgeDymind">
+                      Edad: {{ result.patientAgeDymind }} años
+                    </span>
+                  </div>
+                </td>
+                <td class="analysis-date" (click)="navigateToDetail(result.testDate)">{{ formatDate(result.testDate) }}</td>
+                <td class="status" (click)="navigateToDetail(result.sampleNumber)">
+                  {{ result.processingStatus || 'N/A'}}
+                </td>
+                <td class="instrument" (click)="navigateToDetail(result.sampleNumber)">
+                  {{ result.instrumentId || 'N/A' }}
+                </td>
+                <td class="actions">
+                  <button 
+                    *ngIf="!result.patientId"
+                    class="action-btn assign-btn" 
+                    (click)="openAssignPatientModal(result, $event)"
+                    title="Asignar paciente">
+                    👤 Asignar
+                  </button>
+                  <button 
+                    *ngIf="result.patientId"
+                    class="action-btn assigned-btn" 
+                    disabled
+                    title="Paciente asignado">
+                    ✓ Asignado
+                  </button>
+                  <button 
+                    class="action-btn view-btn" 
+                    (click)="navigateToDetail(result.sampleNumber)"
+                    title="Ver detalle">
+                    👁️ Ver
+                  </button>
+                  <button 
+                    class="action-btn edit-btn" 
+                    (click)="editLabResult(result, $event)"
+                    title="Editar resultado">
+                    ✏️ Editar
+                  </button>
+                  <button 
+                    class="action-btn delete-btn" 
+                    (click)="deleteLabResult(result.id)"
+                    title="Eliminar resultado">
+                    🗑️ Eliminar
+                  </button>
+                  <button 
+                    class="action-btn pdf-btn" 
+                    (click)="generatePdf(result.sampleNumber, $event)"
+                    title="Descargar PDF">
+                    📄 PDF
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="!loading && !error && totalPages > 1" class="pagination">
+          <button 
+            class="btn" 
+            [disabled]="currentPage === 1" 
+            (click)="goToPage(currentPage - 1)">
+            ← Anterior
+          </button>
+          
+          <span class="page-info">
+            Página {{ currentPage }} de {{ totalPages }} 
+            ({{ totalResults }} resultados totales)
+          </span>
+          
+          <button 
+            class="btn" 
+            [disabled]="currentPage === totalPages" 
+            (click)="goToPage(currentPage + 1)">
+            Siguiente →
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal de Creación Rápida de Paciente -->
+      <app-patient-quick-create-modal
+        *ngIf="showQuickCreatePatient"
+        (close)="closeQuickCreateModal()"
+        (patientCreated)="onPatientCreated()">
+      </app-patient-quick-create-modal>
+
+      <!-- Assign Patient Modal -->
+      <div *ngIf="showAssignPatientModal" class="modal-overlay" (click)="closeAssignPatientModal()">
+        <div class="modal-content assign-patient-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Asignar Paciente al Resultado</h2>
+            <button class="close-btn" (click)="closeAssignPatientModal()">×</button>
+          </div>
+          
+          <div class="modal-body">
+            <div *ngIf="selectedResultForAssignment" class="result-info">
+              <h3>Información del Resultado</h3>
+              <p><strong>Muestra:</strong> {{ selectedResultForAssignment.sampleNumber }}</p>
+              <p><strong>Paciente (Dymind):</strong> {{ selectedResultForAssignment.patientNameDymind || 'N/A' }}</p>
+              <p><strong>Fecha:</strong> {{ formatDate(selectedResultForAssignment.testDate) }}</p>
+            </div>
+
+            <div class="search-section">
+              <label for="searchPatient">Buscar paciente por nombre:</label>
+              <div class="search-input-group">
+                <input 
+                  id="searchPatient"
+                  type="text" 
+                  [(ngModel)]="searchPatientTerm" 
+                  (input)="searchPatients()"
+                  placeholder="Ingrese al menos 2 caracteres..."
+                  class="form-control"
+                  [disabled]="isAssigningPatient"
+                >
+                <span *ngIf="isSearchingPatients" class="search-spinner">🔄</span>
+              </div>
+              <small class="help-text">Ingrese al menos 2 caracteres para buscar</small>
+            </div>
+
+            <div *ngIf="searchedPatients.length > 0" class="patients-list">
+              <h4>Pacientes encontrados ({{ searchedPatients.length }})</h4>
+              <div class="patient-item" 
+                   *ngFor="let patient of searchedPatients"
+                   (click)="assignPatientToResult(patient)"
+                   [class.disabled]="isAssigningPatient">
+                <div class="patient-info-modal">
+                  <strong>{{ patient.name }}</strong>
+                  <div class="patient-details-modal">
+                    <span>DNI: {{ patient.dni || 'N/A' }}</span>
+                    <span *ngIf="patient.age">Edad: {{ patient.age }} años</span>
+                    <span *ngIf="patient.sex">Sexo: {{ patient.sex }}</span>
+                  </div>
+                </div>
+                <button class="btn-select" [disabled]="isAssigningPatient">
+                  {{ isAssigningPatient ? 'Asignando...' : 'Seleccionar' }}
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="searchPatientTerm && searchPatientTerm.length >= 2 && !isSearchingPatients && searchedPatients.length === 0" class="no-patients">
+              <p>😔 No se encontraron pacientes con ese nombre</p>
+              <small>Intente con otro nombre o verifique la ortografía</small>
+            </div>
+
+            <div *ngIf="!searchPatientTerm || searchPatientTerm.length < 2" class="search-hint">
+              <p>💡 Ingrese el nombre del paciente para buscar</p>
+              <p style="margin-top: 10px;">¿El paciente no está registrado?</p>
+              <button class="btn btn-create-patient" (click)="openCreateNewPatient()">
+                ➕ Crear Nuevo Paciente
+              </button>
+            </div>
+
+            <div *ngIf="searchPatientTerm && searchPatientTerm.length >= 2 && !isSearchingPatients && searchedPatients.length === 0" class="create-patient-suggestion">
+              <button class="btn btn-create-patient" (click)="openCreateNewPatient()">
+                ➕ Crear Nuevo Paciente
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="closeAssignPatientModal()" [disabled]="isAssigningPatient">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Edición -->
+      <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Editar Resultado de Laboratorio</h3>
+            <button class="close-btn" (click)="closeEditModal()">×</button>
+          </div>
+          
+          <div class="modal-body" *ngIf="editingResult">
+            <div class="result-info">
+              <h4>Información General</h4>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Número de Muestra:</label>
+                  <span>{{ editingResult.sampleNumber }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Buscar paciente:</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="editingResult.patientNameDymind" 
+                    class="form-control"
+                    placeholder="Nombre del paciente"
+                    disabled>
+                </div>
+                <div class="info-item">
+                  <label>ID Paciente:</label>
+                  <div class="patient-assignment">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="editingResult.patientId" 
+                      class="form-control"
+                      placeholder="ID del paciente"
+                      disabled>
+                    <span *ngIf="editingResult.patientId" class="patient-id-badge">
+                      ✓ ID: {{ editingResult.patientId }}
+                    </span>
+                    <span *ngIf="!editingResult.patientId" class="no-patient-badge">
+                      ⚠️ Sin paciente asignado
+                    </span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <label>Edad:</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="editingResult.patientAgeDymind" 
+                    class="form-control"
+                    placeholder="Edad del paciente"
+                    disabled>
+                </div>
+                <div class="info-item">
+                  <label>Sexo:</label>
+                  <select [(ngModel)]="editingResult.patientSexDymind" class="form-control" disabled>
+                    <option value="">Seleccionar...</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                    <option value="O">Otro</option>
+                  </select>
+                </div>
+                <div class="info-item">
+                  <label>Grupo de Referencia:</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="editingResult.referenceGroupDymind" 
+                    class="form-control"
+                    placeholder="Grupo de referencia"
+                    disabled>
+                </div>
+              </div>
+            </div>
+
+            <div class="parameters-section">
+              <h4>Parámetros del Análisis</h4>
+              <div class="parameters-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Parámetro</th>
+                      <th>Resultado <span class="editable-indicator">✏️</span></th>
+                      <th>Unidad <span class="readonly-indicator">🔒</span></th>
+                      <th>Estado <span class="readonly-indicator">🔒</span></th>
+                      <th>Rango de Referencia <span class="readonly-indicator">🔒</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let param of editingResult.parameters; let i = index">
+                      <td>{{ param.name }}</td>
+                      <td>
+                        <input 
+                          type="text" 
+                          [(ngModel)]="param.result" 
+                          class="form-control small"
+                          placeholder="Resultado">
+                      </td>
+                      <td class="readonly-field">{{ param.unit || 'N/A' }}</td>
+                      <td class="readonly-field">
+                        <span class="status-badge" [class]="getParameterStatusClass(param.status)">
+                          {{ getParameterStatusText(param.status) }}
+                        </span>
+                      </td>
+                      <td class="readonly-field">{{ param.referenceRange || 'N/A' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button class="btn-debug" (click)="debugData()" type="button">
+              🔍 Ver Datos
+            </button>
+            <button class="btn-secondary" (click)="closeEditModal()">Cancelar</button>
+            <button class="btn-primary" (click)="saveLabResult()" [disabled]="saving">
+              {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,205 @@
+
+    .container {
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #333;
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #007bff;
+    }
+
+    .btn-back:hover {
+      color: #0056b3;
+    }
+
+    .loading, .error, .no-data {
+      text-align: center;
+      padding: 40px;
+      font-size: 16px;
+    }
+
+    .error {
+      color: #d32f2f;
+      background-color: #ffebee;
+      border-radius: 4px;
+    }
+
+    .no-data {
+      color: #666;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+    }
+
+    .content {
+      background-color: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+
+    .search-section {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-input, .filter-select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .search-input {
+      flex: 1;
+    }
+
+    .filter-select {
+      min-width: 200px;
+    }
+
+    .tests-list {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .test-item {
+      display: flex;
+      align-items: flex-start;
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+    }
+
+    .test-item:hover {
+      background-color: #f9f9f9;
+    }
+
+    .test-item:last-child {
+      border-bottom: none;
+    }
+
+    .test-checkbox {
+      margin-top: 3px;
+      margin-right: 12px;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+    }
+
+    .test-label {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .test-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .test-details {
+      display: flex;
+      gap: 15px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .test-code {
+      background-color: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .test-type {
+      background-color: #e3f2fd;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #1976d2;
+    }
+
+    .summary {
+      background-color: #f5f5f5;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn-secondary, .btn-primary {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #545b62;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      color: #d32f2f;
+      background-color: #ffebee;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 15px;
+    }
+
+    .success-message {
+      color: #2e7d32;
+      background-color: #e8f5e9;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 15px;
+    }

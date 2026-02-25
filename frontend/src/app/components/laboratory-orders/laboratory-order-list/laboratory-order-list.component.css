@@ -1,0 +1,265 @@
+
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    .search-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      min-width: 250px;
+    }
+
+    .filter-select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: white;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-secondary {
+      background-color: #95a5a6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      margin: 0 2px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .view-btn {
+      background-color: #27ae60;
+      color: white;
+    }
+
+    .view-btn:hover {
+      background-color: #229954;
+      transform: translateY(-1px);
+    }
+
+    .edit-btn {
+      background-color: #f39c12;
+      color: white;
+    }
+
+    .edit-btn:hover {
+      background-color: #d68910;
+      transform: translateY(-1px);
+    }
+
+    .delete-btn {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background-color: #c0392b;
+      transform: translateY(-1px);
+    }
+
+    .pdf-btn {
+      background-color: #34495e;
+      color: white;
+    }
+
+    .pdf-btn:hover {
+      background-color: #2c3e50;
+      transform: translateY(-1px);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid #ecf0f1;
+      border-radius: 4px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    .data-table thead {
+      background-color: #f8f9fa;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .data-table th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    .data-table tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .status-in-progress {
+      background-color: #cce5ff;
+      color: #004085;
+    }
+
+    .status-completed {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .status-cancelled {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .priority-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .priority-routine {
+      background-color: #e2e3e5;
+      color: #383d41;
+    }
+
+    .priority-urgent {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .priority-stat {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .actions {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .loading, .error {
+      text-align: center;
+      padding: 40px;
+      font-size: 16px;
+    }
+
+    .loading {
+      color: #3498db;
+    }
+
+    .error {
+      color: #dc3545;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+    }
+
+    .no-data {
+      padding: 40px;
+      text-align: center;
+      background-color: #f8f9fa;
+      border-top: 1px solid #dee2e6;
+    }
+
+    .no-data p {
+      color: #6c757d;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #dee2e6;
+    }
+
+    .btn-pagination {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      background-color: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .btn-pagination:hover:not(:disabled) {
+      background-color: #f8f9fa;
+    }
+
+    .btn-pagination:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .page-info {
+      font-size: 14px;
+      color: #6c757d;
+    }

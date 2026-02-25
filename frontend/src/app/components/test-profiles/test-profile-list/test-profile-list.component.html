@@ -1,0 +1,134 @@
+
+    <div class="container">
+      <div class="header">
+        <h1>Perfiles de Pruebas</h1>
+        <div class="search-controls">
+          <input 
+            type="text" 
+            placeholder="Buscar perfil..." 
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+            class="search-input">
+          <select [(ngModel)]="categoryFilter" (change)="onFilterChange()" class="filter-select">
+            <option value="">Todas las categorías</option>
+            <option *ngFor="let category of categories" [value]="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+          <button class="btn-secondary" (click)="clearSearch()">Limpiar</button>
+        </div>
+        <button class="btn-primary" (click)="openCreateModal()">
+          + Nuevo Perfil
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="loading">Cargando perfiles...</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+
+      <div *ngIf="!loading && !error" class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>N° Pruebas</th>
+              <th>Precio</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let profile of profiles; trackBy: trackByProfileId">
+              <td>{{ profile.code || 'N/A' }}</td>
+              <td>{{ profile.name }}</td>
+              <td>{{ profile.category || 'Sin categoría' }}</td>
+              <td>{{ profile.tests.length || 0 }}</td>
+              <td>{{ profile.price ? ('L. ' + profile.price) : '-' }}</td>
+              <td>
+                <span class="status-badge" [class.active]="profile.isActive">
+                  {{ profile.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="btn-small btn-info" (click)="viewProfile(profile)">Ver</button>
+                <button class="btn-small btn-warning" (click)="openEditModal(profile)">Editar</button>
+                <button class="btn-small btn-danger" (click)="deleteProfile(profile)">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button class="btn-pagination" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1">
+            ← Anterior
+          </button>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+          <button class="btn-pagination" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages">
+            Siguiente →
+          </button>
+        </div>
+
+        <div *ngIf="profiles.length === 0" class="no-data">
+          <p>No hay perfiles registrados.</p>
+        </div>
+      </div>
+
+      <!-- Modal de formulario -->
+      <app-test-profile-form
+        *ngIf="showFormModal"
+        [testProfile]="selectedProfile"
+        [categories]="categories"
+        (saved)="onProfileSaved($event)"
+        (cancelled)="onFormCancelled()">
+      </app-test-profile-form>
+
+      <!-- Modal de detalles -->
+      <div class="modal" *ngIf="selectedProfileDetail" (click)="closeDetailModal()">
+        <div class="modal-content large" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Detalles del Perfil</h3>
+            <button class="close-btn" (click)="closeDetailModal()">×</button>
+          </div>
+          
+          <div class="profile-details">
+            <div class="detail-section">
+              <h4>Información General</h4>
+              <div class="detail-grid">
+                <div><strong>Nombre:</strong> {{ selectedProfileDetail.name }}</div>
+                <div><strong>Código:</strong> {{ selectedProfileDetail.code || 'No asignado' }}</div>
+                <div><strong>Categoría:</strong> {{ selectedProfileDetail.category || 'Sin categoría' }}</div>
+                <div><strong>Precio:</strong> {{ selectedProfileDetail.price ? ('L. ' + selectedProfileDetail.price) : 'No definido' }}</div>
+              </div>
+              <div class="detail-field" *ngIf="selectedProfileDetail.description">
+                <strong>Descripción:</strong>
+                <p>{{ selectedProfileDetail.description }}</p>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>Pruebas Incluidas ({{ selectedProfileDetail.tests.length || 0 }})</h4>
+              <div class="tests-list" *ngIf="selectedProfileDetail.tests && selectedProfileDetail.tests.length > 0">
+                <div class="test-item" *ngFor="let test of selectedProfileDetail.tests; let i = index">
+                  <span class="test-number">{{ i + 1 }}.</span>
+                  <span class="test-name">{{ test.name || test }}</span>
+                </div>
+              </div>
+              <p *ngIf="!selectedProfileDetail.tests || selectedProfileDetail.tests.length === 0" class="no-tests">
+                No hay pruebas asociadas a este perfil
+              </p>
+            </div>
+
+            <div class="detail-section">
+              <h4>Información Adicional</h4>
+              <div class="detail-grid">
+                <div><strong>Orden de Visualización:</strong> {{ selectedProfileDetail.displayOrder || 0 }}</div>
+                <div><strong>Estado:</strong> {{ selectedProfileDetail.isActive ? 'Activo' : 'Inactivo' }}</div>
+                <div><strong>Fecha de Creación:</strong> {{ formatDate(selectedProfileDetail.createdAt) }}</div>
+                <div><strong>Última Actualización:</strong> {{ formatDate(selectedProfileDetail.updatedAt) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
