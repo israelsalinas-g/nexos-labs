@@ -1,226 +1,264 @@
 
-    <div class="modal-overlay" (click)="onCancel()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>{{ isEditMode ? 'Editar Prueba' : 'Nueva Prueba' }}</h2>
-          <button class="close-btn" (click)="onCancel()">&times;</button>
+<div class="modal-overlay" (click)="onCancel()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Editar Prueba' : 'Nueva Prueba' }}</h2>
+      <button class="close-btn" (click)="onCancel()">&times;</button>
+    </div>
+
+    <!-- Pestañas (solo en modo edición) -->
+    <div class="tab-bar" *ngIf="isEditMode">
+      <button class="tab-btn" [class.active]="activeTab === 'info'" (click)="activeTab = 'info'">
+        Información
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'ranges'" (click)="activeTab = 'ranges'">
+        Rangos de Referencia
+        <span class="range-count" *ngIf="referenceRanges.length > 0">{{ referenceRanges.length }}</span>
+      </button>
+    </div>
+
+    <!-- Pestaña: Información -->
+    <form [formGroup]="testForm" (ngSubmit)="onSubmit()" *ngIf="activeTab === 'info'">
+      <div class="form-body">
+        <!-- Categoría -->
+        <div class="form-group">
+          <label for="sectionId" class="required">Sección</label>
+          <select id="sectionId" formControlName="sectionId" class="form-control"
+            [class.invalid]="isFieldInvalid('sectionId')">
+            <option value="">Seleccione una sección</option>
+            <option *ngFor="let category of categories" [value]="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="isFieldInvalid('sectionId')">La sección es requerida</div>
         </div>
 
-        <form [formGroup]="testForm" (ngSubmit)="onSubmit()">
-          <div class="form-body">
-            <!-- Categoría -->
-            <div class="form-group">
-              <label for="sectionId" class="required">Sección</label>
-              <select
-                id="sectionId"
-                formControlName="sectionId"
-                class="form-control"
-                [class.invalid]="isFieldInvalid('sectionId')">
-                <option value="">Seleccione una sección</option>
-                <option *ngFor="let category of categories" [value]="category.id">
-                  {{ category.name }}
-                </option>
-              </select>
-              <div class="error-message" *ngIf="isFieldInvalid('sectionId')">
-                <span *ngIf="testForm.get('sectionId')?.errors?.['required']">La sección es requerida</span>
-              </div>
+        <!-- Nombre y Código -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name" class="required">Nombre</label>
+            <input id="name" type="text" formControlName="name" class="form-control"
+              placeholder="Ej: Creatinina" [class.invalid]="isFieldInvalid('name')">
+            <div class="error-message" *ngIf="isFieldInvalid('name')">
+              <span *ngIf="testForm.get('name')?.errors?.['required']">El nombre es requerido</span>
+              <span *ngIf="testForm.get('name')?.errors?.['minlength']">Mínimo 2 caracteres</span>
             </div>
+          </div>
+          <div class="form-group">
+            <label for="code">Código</label>
+            <input id="code" type="text" formControlName="code" class="form-control" placeholder="Ej: CREAT">
+          </div>
+        </div>
 
-            <!-- Nombre y Código -->
+        <!-- Descripción -->
+        <div class="form-group">
+          <label for="description">Descripción</label>
+          <textarea id="description" formControlName="description" class="form-control"
+            rows="2" placeholder="Descripción de la prueba"></textarea>
+        </div>
+
+        <!-- Tipo de Respuesta (nuevo sistema dinámico) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="responseTypeId">
+              Tipo de Respuesta
+              <span class="badge-new" *ngIf="activeResponseTypes.length > 0">Nuevo</span>
+            </label>
+            <select id="responseTypeId" formControlName="responseTypeId" class="form-control">
+              <option [ngValue]="null">— Usar tipo clásico —</option>
+              <option *ngFor="let rt of activeResponseTypes" [value]="rt.id">
+                {{ rt.name }} ({{ rt.inputType }})
+              </option>
+            </select>
+            <!-- Preview de opciones -->
+            <div class="options-preview" *ngIf="getSelectedResponseType()?.options?.length">
+              <span *ngFor="let opt of getSelectedResponseType()!.options | slice:0:5"
+                class="opt-chip" [style.backgroundColor]="opt.color || '#6c757d'">
+                {{ opt.value }}
+              </span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="resultType" class="required">Tipo Clásico (fallback)</label>
+            <select id="resultType" formControlName="resultType" class="form-control"
+              [class.invalid]="isFieldInvalid('resultType')">
+              <option value="">Seleccione un tipo</option>
+              <option *ngFor="let type of testResultTypes" [value]="type.value">
+                {{ type.label }}
+              </option>
+            </select>
+            <div class="error-message" *ngIf="isFieldInvalid('resultType')">Requerido</div>
+          </div>
+        </div>
+
+        <!-- Unidad y Rango de referencia texto (legado) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="unit">Unidad</label>
+            <input id="unit" type="text" formControlName="unit" class="form-control" placeholder="Ej: mg/dL">
+          </div>
+          <div class="form-group">
+            <label for="referenceRange">Rango Referencia (texto)</label>
+            <input id="referenceRange" type="text" formControlName="referenceRange" class="form-control"
+              placeholder="Ej: 0.7-1.3 mg/dL">
+          </div>
+        </div>
+
+        <!-- Método y Tipo de Muestra -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="method">Método</label>
+            <input id="method" type="text" formControlName="method" class="form-control"
+              placeholder="Ej: Espectrofotometría">
+          </div>
+          <div class="form-group">
+            <label for="sampleType">Tipo de Muestra</label>
+            <input id="sampleType" type="text" formControlName="sampleType" class="form-control"
+              placeholder="Ej: Suero">
+          </div>
+        </div>
+
+        <!-- Tiempo, Precio y Orden -->
+        <div class="form-row-3">
+          <div class="form-group">
+            <label for="processingTime">Tiempo (h)</label>
+            <input id="processingTime" type="number" formControlName="processingTime"
+              class="form-control" min="0" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label for="price">Precio (L.)</label>
+            <input id="price" type="number" formControlName="price"
+              class="form-control" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label for="displayOrder">Orden</label>
+            <input id="displayOrder" type="number" formControlName="displayOrder" class="form-control" min="0">
+          </div>
+        </div>
+
+        <!-- Estado Activo -->
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="isActive" class="checkbox-input">
+            <span>Prueba activa</span>
+          </label>
+        </div>
+
+        <div class="error-message" *ngIf="submitError">{{ submitError }}</div>
+        <div class="success-message" *ngIf="submitSuccess">{{ submitSuccess }}</div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="testForm.invalid || isSubmitting">
+          {{ isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Pestaña: Rangos de Referencia -->
+    <div class="ranges-tab" *ngIf="activeTab === 'ranges'">
+      <div class="ranges-body">
+        <div class="ranges-header">
+          <p class="ranges-hint">Configure los valores de referencia por sexo y edad para esta prueba.</p>
+          <button class="btn btn-primary" (click)="openRangeForm()" *ngIf="!showRangeForm">
+            + Agregar Rango
+          </button>
+        </div>
+
+        <div class="error-message" *ngIf="rangeError">{{ rangeError }}</div>
+        <div *ngIf="loadingRanges" class="loading">Cargando rangos...</div>
+
+        <!-- Formulario de nuevo rango -->
+        <div class="range-form-panel" *ngIf="showRangeForm && rangeForm">
+          <h4>Nuevo Rango de Referencia</h4>
+          <form [formGroup]="rangeForm">
             <div class="form-row">
               <div class="form-group">
-                <label for="name" class="required">Nombre</label>
-                <input 
-                  id="name"
-                  type="text" 
-                  formControlName="name"
-                  class="form-control"
-                  placeholder="Ej: Creatinina"
-                  [class.invalid]="isFieldInvalid('name')">
-                <div class="error-message" *ngIf="isFieldInvalid('name')">
-                  <span *ngIf="testForm.get('name')?.errors?.['required']">El nombre es requerido</span>
-                  <span *ngIf="testForm.get('name')?.errors?.['minlength']">Mínimo 2 caracteres</span>
-                  <span *ngIf="testForm.get('name')?.errors?.['maxlength']">Máximo 150 caracteres</span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="code">Código</label>
-                <input 
-                  id="code"
-                  type="text" 
-                  formControlName="code"
-                  class="form-control"
-                  placeholder="Ej: CREAT"
-                  [class.invalid]="isFieldInvalid('code')">
-                <div class="error-message" *ngIf="isFieldInvalid('code')">
-                  <span *ngIf="testForm.get('code')?.errors?.['maxlength']">Máximo 20 caracteres</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Descripción -->
-            <div class="form-group">
-              <label for="description">Descripción</label>
-              <textarea 
-                id="description"
-                formControlName="description"
-                class="form-control"
-                rows="2"
-                placeholder="Descripción de la prueba"></textarea>
-            </div>
-
-            <!-- Tipo de Resultado y Unidad -->
-            <div class="form-row">
-              <div class="form-group">
-                <label for="resultType" class="required">Tipo de Resultado</label>
-                <select 
-                  id="resultType"
-                  formControlName="resultType"
-                  class="form-control"
-                  [class.invalid]="isFieldInvalid('resultType')">
-                  <option value="">Seleccione un tipo</option>
-                  <option *ngFor="let type of testResultTypes" [value]="type.value">
-                    {{ type.label }}
-                  </option>
+                <label>Sexo</label>
+                <select formControlName="gender" class="form-control">
+                  <option *ngFor="let g of genderOptions" [value]="g.value">{{ g.label }}</option>
                 </select>
-                <div class="error-message" *ngIf="isFieldInvalid('resultType')">
-                  <span *ngIf="testForm.get('resultType')?.errors?.['required']">El tipo es requerido</span>
-                </div>
               </div>
-
               <div class="form-group">
-                <label for="unit">Unidad</label>
-                <input 
-                  id="unit"
-                  type="text" 
-                  formControlName="unit"
-                  class="form-control"
-                  placeholder="Ej: mg/dL"
-                  [class.invalid]="isFieldInvalid('unit')">
-                <div class="error-message" *ngIf="isFieldInvalid('unit')">
-                  <span *ngIf="testForm.get('unit')?.errors?.['maxlength']">Máximo 50 caracteres</span>
-                </div>
+                <label>Edad mín. (meses)</label>
+                <input type="number" formControlName="ageMinMonths" class="form-control" min="0" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label>Edad máx. (meses)</label>
+                <input type="number" formControlName="ageMaxMonths" class="form-control" min="0" placeholder="Sin límite">
               </div>
             </div>
-
-            <!-- Rango de Referencia -->
-            <div class="form-group">
-              <label for="referenceRange">Rango de Referencia</label>
-              <textarea 
-                id="referenceRange"
-                formControlName="referenceRange"
-                class="form-control"
-                rows="2"
-                placeholder="Ej: Hombres: 0.7-1.3 mg/dL, Mujeres: 0.6-1.1 mg/dL"></textarea>
-            </div>
-
-            <!-- Método y Tipo de Muestra -->
             <div class="form-row">
               <div class="form-group">
-                <label for="method">Método</label>
-                <input 
-                  id="method"
-                  type="text" 
-                  formControlName="method"
-                  class="form-control"
-                  placeholder="Ej: Espectrofotometría"
-                  [class.invalid]="isFieldInvalid('method')">
-                <div class="error-message" *ngIf="isFieldInvalid('method')">
-                  <span *ngIf="testForm.get('method')?.errors?.['maxlength']">Máximo 100 caracteres</span>
-                </div>
+                <label>Valor mín.</label>
+                <input type="number" formControlName="minValue" class="form-control" step="0.01" placeholder="—">
               </div>
-
               <div class="form-group">
-                <label for="sampleType">Tipo de Muestra</label>
-                <input 
-                  id="sampleType"
-                  type="text" 
-                  formControlName="sampleType"
-                  class="form-control"
-                  placeholder="Ej: Suero"
-                  [class.invalid]="isFieldInvalid('sampleType')">
-                <div class="error-message" *ngIf="isFieldInvalid('sampleType')">
-                  <span *ngIf="testForm.get('sampleType')?.errors?.['maxlength']">Máximo 50 caracteres</span>
-                </div>
+                <label>Valor máx.</label>
+                <input type="number" formControlName="maxValue" class="form-control" step="0.01" placeholder="—">
               </div>
-            </div>
-
-            <!-- Tiempo de Procesamiento, Precio y Orden -->
-            <div class="form-row-3">
               <div class="form-group">
-                <label for="processingTime">Tiempo (horas)</label>
-                <input 
-                  id="processingTime"
-                  type="number" 
-                  formControlName="processingTime"
-                  class="form-control"
-                  placeholder="0"
-                  min="0"
-                  [class.invalid]="isFieldInvalid('processingTime')">
-                <div class="error-message" *ngIf="isFieldInvalid('processingTime')">
-                  <span *ngIf="testForm.get('processingTime')?.errors?.['min']">Debe ser mayor o igual a 0</span>
-                </div>
+                <label>Unidad</label>
+                <input type="text" formControlName="unit" class="form-control" placeholder="mg/dL">
               </div>
-
+            </div>
+            <div class="form-row">
               <div class="form-group">
-                <label for="price">Precio (L.)</label>
-                <input 
-                  id="price"
-                  type="number" 
-                  formControlName="price"
-                  class="form-control"
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  [class.invalid]="isFieldInvalid('price')">
-                <div class="error-message" *ngIf="isFieldInvalid('price')">
-                  <span *ngIf="testForm.get('price')?.errors?.['min']">Debe ser mayor o igual a 0</span>
-                </div>
+                <label>Rango textual</label>
+                <input type="text" formControlName="textualRange" class="form-control" placeholder="Ej: Negativo">
               </div>
-
               <div class="form-group">
-                <label for="displayOrder">Orden</label>
-                <input 
-                  id="displayOrder"
-                  type="number" 
-                  formControlName="displayOrder"
-                  class="form-control"
-                  placeholder="0"
-                  min="0">
+                <label>Interpretación</label>
+                <input type="text" formControlName="interpretation" class="form-control" placeholder="Normal">
               </div>
             </div>
-
-            <!-- Estado Activo -->
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  formControlName="isActive"
-                  class="checkbox-input">
-                <span>Prueba activa</span>
-              </label>
+            <div class="range-form-actions">
+              <button type="button" class="btn btn-secondary" (click)="cancelRangeForm()">Cancelar</button>
+              <button type="button" class="btn btn-primary" (click)="submitRange()" [disabled]="isSubmittingRange">
+                {{ isSubmittingRange ? 'Guardando...' : 'Guardar Rango' }}
+              </button>
             </div>
+          </form>
+        </div>
 
-            <!-- Mensajes de error generales -->
-            <div class="error-message" *ngIf="submitError">
-              {{ submitError }}
-            </div>
+        <!-- Lista de rangos -->
+        <table class="ranges-table" *ngIf="!loadingRanges && referenceRanges.length > 0">
+          <thead>
+            <tr>
+              <th>Sexo</th>
+              <th>Edad</th>
+              <th>Mín.</th>
+              <th>Máx.</th>
+              <th>Textual / Unidad</th>
+              <th>Interpretación</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let range of referenceRanges">
+              <td>{{ getGenderLabel(range.gender) }}</td>
+              <td>{{ formatAge(range.ageMinMonths) }} – {{ formatAge(range.ageMaxMonths) }}</td>
+              <td>{{ range.minValue ?? '—' }}</td>
+              <td>{{ range.maxValue ?? '—' }}</td>
+              <td>{{ range.textualRange || '—' }} {{ range.unit ? '(' + range.unit + ')' : '' }}</td>
+              <td>{{ range.interpretation || '—' }}</td>
+              <td>
+                <button class="btn-small btn-danger" (click)="deleteRange(range)">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-            <!-- Mensaje de éxito -->
-            <div class="success-message" *ngIf="submitSuccess">
-              {{ submitSuccess }}
-            </div>
-          </div>
+        <div class="no-data" *ngIf="!loadingRanges && referenceRanges.length === 0 && !showRangeForm">
+          No hay rangos de referencia configurados para esta prueba.
+        </div>
+      </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="onCancel()">
-              Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary" [disabled]="testForm.invalid || isSubmitting">
-              {{ isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
-            </button>
-          </div>
-        </form>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()">Cerrar</button>
       </div>
     </div>
+  </div>
+</div>

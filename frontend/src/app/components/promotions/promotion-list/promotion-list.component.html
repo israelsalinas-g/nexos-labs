@@ -1,0 +1,121 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Promociones</h1>
+      <span class="total-badge">{{ totalItems() }} total</span>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">+ Nueva Promoción</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por nombre o descripción..."
+        [value]="searchTerm()"
+        (input)="onSearch(($event.target as HTMLInputElement).value)">
+    </div>
+    <label class="toggle-label">
+      <input type="checkbox" [checked]="includeInactive()" (change)="onToggleInactive()">
+      Mostrar inactivas
+    </label>
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="alert-error">{{ error() }}</div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading-state">Cargando promociones...</div>
+  }
+
+  <!-- Table -->
+  @if (!loading()) {
+    @if (promotions().length === 0) {
+      <div class="empty-state">
+        <p>No hay promociones registradas.</p>
+        <button class="btn btn-primary" (click)="openCreate()">+ Crear primera promoción</button>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Precio</th>
+              <th>Vigencia</th>
+              <th>Ítems</th>
+              <th>Estado</th>
+              <th class="actions-col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (promo of promotions(); track promo.id; let i = $index) {
+              <tr>
+                <td>
+                  <div class="promo-name">{{ promo.name }}</div>
+                  @if (promo.description) {
+                    <div class="promo-desc">{{ promo.description }}</div>
+                  }
+                </td>
+                <td class="price-cell">L. {{ promo.price | number:'1.2-2' }}</td>
+                <td>
+                  <div class="date-range">
+                    {{ formatDate(promo.validFrom) }} — {{ formatDate(promo.validTo) }}
+                  </div>
+                </td>
+                <td>
+                  <span class="items-info">{{ itemsCount(promo) }}</span>
+                </td>
+                <td>
+                  @if (!promo.isActive) {
+                    <span class="badge badge-inactive">Inactiva</span>
+                  } @else if (isCurrentlyActive(promo)) {
+                    <span class="badge badge-active">Vigente</span>
+                  } @else if (isExpired(promo)) {
+                    <span class="badge badge-expired">Expirada</span>
+                  } @else if (isFuture(promo)) {
+                    <span class="badge badge-future">Futura</span>
+                  }
+                </td>
+                <td class="actions-cell">
+                  <button class="btn-icon btn-edit" title="Editar" (click)="openEdit(promo)">✏️</button>
+                  <button class="btn-icon btn-toggle"
+                          [title]="promo.isActive ? 'Desactivar' : 'Activar'"
+                          (click)="toggleActive(promo)">
+                    {{ promo.isActive ? '🔴' : '🟢' }}
+                  </button>
+                  <button class="btn-icon btn-delete" title="Eliminar" (click)="delete(promo)">🗑️</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="btn-page" [disabled]="currentPage() <= 1" (click)="goToPage(currentPage() - 1)">← Anterior</button>
+          <span class="page-info">Página {{ currentPage() }} de {{ totalPages() }}</span>
+          <button class="btn-page" [disabled]="currentPage() >= totalPages()" (click)="goToPage(currentPage() + 1)">Siguiente →</button>
+        </div>
+      }
+    }
+  }
+
+</div>
+
+<!-- Form Modal -->
+@if (showForm()) {
+  <app-promotion-form
+    [promotion]="editingPromotion()"
+    (saved)="onSaved()"
+    (cancelled)="onCancelled()" />
+}

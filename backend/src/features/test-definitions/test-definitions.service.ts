@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, Logger } from '@nestj
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TestDefinition, TestSection } from '../../entities';
+import { TestResponseType } from '../../entities/test-response-type.entity';
 import { CreateTestDefinitionDto, UpdateTestDefinitionDto } from '../../dto';
 import { PaginationResult } from '../../common/interfaces';
 import { BaseService } from '../../common/bases/base.service';
@@ -15,8 +16,15 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
     private readonly testDefinitionRepository: Repository<TestDefinition>,
     @InjectRepository(TestSection)
     private readonly testSectionRepository: Repository<TestSection>,
+    @InjectRepository(TestResponseType)
+    private readonly responseTypeRepository: Repository<TestResponseType>,
   ) {
     super(testDefinitionRepository);
+  }
+
+  private async resolveResponseType(responseTypeId?: number): Promise<TestResponseType | null> {
+    if (!responseTypeId) return null;
+    return this.responseTypeRepository.findOne({ where: { id: responseTypeId } });
   }
 
   async create(createDto: CreateTestDefinitionDto): Promise<TestDefinition> {
@@ -28,8 +36,13 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
       if (existing) throw new ConflictException(`Ya existe una prueba con el código "${createDto.code}"`);
     }
 
-    const test = this.testDefinitionRepository.create(createDto);
+    const { responseTypeId, ...testData } = createDto as any;
+    const test = this.testDefinitionRepository.create(testData);
     test.section = section;
+
+    const responseType = await this.resolveResponseType(responseTypeId);
+    if (responseType) test.responseType = responseType;
+
     return await this.testDefinitionRepository.save(test);
   }
 
@@ -40,6 +53,8 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
     const query = this.testDefinitionRepository.createQueryBuilder('test')
       .leftJoinAndSelect('test.section', 'section')
       .leftJoinAndSelect('test.profiles', 'profiles')
+      .leftJoinAndSelect('test.responseType', 'responseType')
+      .leftJoinAndSelect('responseType.options', 'rtOptions')
       .orderBy('test.displayOrder', 'ASC')
       .addOrderBy('test.name', 'ASC');
 
@@ -56,7 +71,7 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
   }
 
   async findOne(id: string): Promise<TestDefinition> {
-    return super.findOne(id, { relations: ['section', 'profiles'] });
+    return super.findOne(id, { relations: ['section', 'profiles', 'responseType', 'responseType.options'] });
   }
 
   async update(id: string, updateDto: UpdateTestDefinitionDto): Promise<TestDefinition> {
@@ -75,7 +90,13 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
       }
     }
 
-    Object.assign(test, updateDto);
+    const { responseTypeId, ...updateData } = updateDto as any;
+    Object.assign(test, updateData);
+
+    const responseType = await this.resolveResponseType(responseTypeId);
+    if (responseType) test.responseType = responseType;
+    else if (responseTypeId === null) test.responseType = null;
+
     return await this.testDefinitionRepository.save(test);
   }
 
@@ -91,6 +112,45 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
     const test = await this.findOne(id);
     test.isActive = !test.isActive;
     return await this.testDefinitionRepository.save(test);
+  }
+
+  async search(searchTerm: string): Promise<TestDefinition[]> {
+    return this.testDefinitionRepository.createQueryBuilder('test')
+      .leftJoinAndSelect('test.section', 'section')
+      .leftJoinAndSelect('test.responseType', 'responseType')
+      .leftJoinAndSelect('responseType.options', 'rtOptions')
+      .where('test.isActive = true')
+      .andWhere(
+        '(LOWER(test.name) LIKE LOWER(:search) OR LOWER(test.code) LIKE LOWER(:search) OR LOWER(test.description) LIKE LOWER(:search))',
+        { search: `%${searchTerm}%` }
+      )
+      .orderBy('test.displayOrder', 'ASC')
+      .addOrderBy('test.name', 'ASC')
+      .getMany();
+  }
+
+  async findBySection(sectionId: string): Promise<TestDefinition[]> {
+    const section = await this.testSectionRepository.findOne({ where: { id: sectionId } });
+    if (!section) throw new NotFoundException(`Sección con ID ${sectionId} no encontrada`);
+
+    return this.testDefinitionRepository.createQueryBuilder('test')
+      .leftJoinAndSelect('test.section', 'section')
+      .leftJoinAndSelect('test.responseType', 'responseType')
+      .leftJoinAndSelect('responseType.options', 'rtOptions')
+      .where('test.section.id = :sectionId', { sectionId })
+      .andWhere('test.isActive = true')
+      .orderBy('test.displayOrder', 'ASC')
+      .addOrderBy('test.name', 'ASC')
+      .getMany();
+  }
+
+  async findByCode(code: string): Promise<TestDefinition> {
+    const test = await this.testDefinitionRepository.findOne({
+      where: { code },
+      relations: ['section', 'responseType', 'responseType.options'],
+    });
+    if (!test) throw new NotFoundException(`Prueba con código "${code}" no encontrada`);
+    return test;
   }
 
   async getStats(sectionId?: string) {

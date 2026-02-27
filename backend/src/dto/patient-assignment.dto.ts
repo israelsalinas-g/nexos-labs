@@ -212,57 +212,44 @@ export class PatientHistoryStatsDto {
  * El frontend puede hacer drill-down con el id si necesita más detalles
  */
 export class ExamSummaryDto {
-  @ApiProperty({
-    description: 'ID único del examen',
-    example: '123e4567-e89b-12d3-a456-426614174000'
-  })
+  @ApiProperty({ description: 'ID único del examen', example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
 
-  @ApiProperty({
-    description: 'ID del paciente',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-    nullable: true
-  })
+  @ApiProperty({ description: 'ID del paciente', nullable: true })
   patientId: string | null;
 
-  @ApiProperty({
-    description: 'Fecha y hora en que se realizó el examen',
-    example: '2025-02-08T11:20:05.000Z'
-  })
+  @ApiProperty({ description: 'Fecha y hora del examen', example: '2025-02-08T11:20:05.000Z' })
   testDate: Date;
 
-  @ApiProperty({
-    description: 'Tipo de sistema que generó el resultado',
-    enum: ['DH36', 'ICHROMA', 'URINE', 'HECES'],
-    example: 'ICHROMA'
-  })
-  testType: 'DH36' | 'ICHROMA' | 'URINE' | 'HECES';
+  @ApiProperty({ description: 'Tipo de fuente', enum: ['DH36', 'ICHROMA', 'URINE', 'HECES', 'LAB'] })
+  testType: 'DH36' | 'ICHROMA' | 'URINE' | 'HECES' | 'LAB';
 
-  @ApiProperty({
-    description: 'Nombre descriptivo del examen',
-    example: 'Prueba Especial - Insulin'
-  })
+  @ApiProperty({ description: 'Nombre descriptivo del examen' })
   testName: string;
 
-  @ApiProperty({
-    description: 'Número o código de la muestra',
-    example: 'INVAA12',
-    nullable: true
-  })
+  @ApiProperty({ description: 'Número de muestra', nullable: true })
   sampleNumber: string | null;
 
-  @ApiProperty({
-    description: 'Estado actual del examen',
-    example: 'completed'
-  })
+  @ApiProperty({ description: 'Estado del examen' })
   status: string;
 
   @ApiProperty({
-    description: 'Tabla de origen del resultado (para queries específicas)',
-    enum: ['dymind_dh36_results', 'ichroma_results', 'urine_tests', 'stool_tests'],
-    example: 'ichroma_results'
+    description: 'Tabla de origen',
+    enum: ['dymind_dh36_results', 'ichroma_results', 'urine_tests', 'stool_tests', 'unified_test_results'],
   })
-  sourceTable: 'dymind_dh36_results' | 'ichroma_results' | 'urine_tests' | 'stool_tests';
+  sourceTable: 'dymind_dh36_results' | 'ichroma_results' | 'urine_tests' | 'stool_tests' | 'unified_test_results';
+
+  // Campos adicionales solo presentes en resultados LAB (unified_test_results)
+  numericValue?: number;
+  isAbnormal?: boolean;
+  testDefinitionId?: number;
+}
+
+export class TestTrendPointDto {
+  date: Date;
+  value: number;
+  isAbnormal: boolean | null;
+  sampleNumber: string | null;
 }
 
 export class PatientBasicInfoDto {

@@ -1,68 +1,169 @@
+<div class="page">
 
-    <div class="container">
-      <div class="header">
-        <h1>Agregar Pruebas a Orden</h1>
-        <button class="btn-back" (click)="goBack()">← Volver</button>
+  <!-- Header -->
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">← Volver a la orden</button>
+    <h1>Agregar ítems a la orden</h1>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: Catalog -->
+    <div class="catalog-panel">
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab" [class.active]="activeTab() === 'tests'" (click)="setTab('tests')">
+          🔬 Pruebas
+          @if (allTests().length) { <span class="tab-count">{{ allTests().length }}</span> }
+        </button>
+        <button class="tab" [class.active]="activeTab() === 'profiles'" (click)="setTab('profiles')">
+          📋 Perfiles
+          @if (allProfiles().length) { <span class="tab-count">{{ allProfiles().length }}</span> }
+        </button>
+        <button class="tab" [class.active]="activeTab() === 'promotions'" (click)="setTab('promotions')">
+          🎁 Promociones
+          @if (allPromotions().length) { <span class="tab-count">{{ allPromotions().length }}</span> }
+        </button>
       </div>
 
-      <div *ngIf="loading" class="loading">Cargando pruebas...</div>
-      <div *ngIf="error" class="error">{{ error }}</div>
-
-      <div *ngIf="!loading && !error" class="content">
-        <!-- Búsqueda y filtros -->
-        <div class="search-section">
-          <input 
-            type="text" 
-            placeholder="Buscar pruebas..."
-            [(ngModel)]="searchTerm"
-            (input)="onSearch()"
-            class="search-input">
-          
-          <select [(ngModel)]="sectionFilter" (change)="onFilterChange()" class="filter-select">
-            <option value="">Todas las secciones</option>
-            <option *ngFor="let section of sections" [value]="section.id">
-              {{ section.name }}
-            </option>
-          </select>
+      <!-- Tab: Pruebas -->
+      @if (activeTab() === 'tests') {
+        <div class="search-row">
+          <input type="text" class="search-input" placeholder="Buscar prueba..."
+                 [value]="testSearch()" (input)="onSearch('tests', ($event.target as HTMLInputElement).value)">
         </div>
-
-        <!-- Lista de pruebas -->
-        <div class="tests-list">
-          <div *ngIf="filteredTests.length === 0" class="no-data">
-            No hay pruebas disponibles
+        @if (loadingTests()) {
+          <p class="loading-msg">Cargando pruebas...</p>
+        } @else {
+          <div class="items-list">
+            @for (t of filteredTests(); track t.id) {
+              <label class="item-row" [class.selected]="isSelected('test', t.id)">
+                <input type="checkbox" [checked]="isSelected('test', t.id)"
+                       (change)="toggle('test', t.id, t.name, t.price)">
+                <span class="item-info">
+                  <span class="item-name">{{ t.name }}</span>
+                  @if (t.code) { <span class="item-code">{{ t.code }}</span> }
+                  @if (t.unit) { <span class="item-unit">{{ t.unit }}</span> }
+                </span>
+                @if (t.price) {
+                  <span class="item-price">L. {{ t.price }}</span>
+                }
+              </label>
+            } @empty {
+              <p class="empty-msg">No se encontraron pruebas</p>
+            }
           </div>
+        }
+      }
 
-          <div *ngFor="let test of filteredTests" class="test-item">
-            <input 
-              type="checkbox" 
-              [id]="'test-' + test.id"
-              [checked]="isTestSelected(test.id)"
-              (change)="toggleTest(test)"
-              class="test-checkbox">
-            <label [for]="'test-' + test.id" class="test-label">
-              <div class="test-name">{{ test.name }}</div>
-              <div class="test-details">
-                <span class="test-code">{{ test.code }}</span>
-                <span class="test-type">{{ test.resultType }}</span>
-              </div>
-            </label>
+      <!-- Tab: Perfiles -->
+      @if (activeTab() === 'profiles') {
+        <div class="search-row">
+          <input type="text" class="search-input" placeholder="Buscar perfil..."
+                 [value]="profileSearch()" (input)="onSearch('profiles', ($event.target as HTMLInputElement).value)">
+        </div>
+        @if (loadingProfiles()) {
+          <p class="loading-msg">Cargando perfiles...</p>
+        } @else {
+          <div class="items-list">
+            @for (p of filteredProfiles(); track p.id) {
+              <label class="item-row" [class.selected]="isSelected('profile', p.id)">
+                <input type="checkbox" [checked]="isSelected('profile', p.id)"
+                       (change)="toggle('profile', p.id, p.name, p.price)">
+                <span class="item-info">
+                  <span class="item-name">{{ p.name }}</span>
+                  @if (p.code) { <span class="item-code">{{ p.code }}</span> }
+                  <span class="item-unit">{{ p.tests?.length || 0 }} pruebas</span>
+                </span>
+                @if (p.price) {
+                  <span class="item-price">L. {{ p.price }}</span>
+                }
+              </label>
+            } @empty {
+              <p class="empty-msg">No se encontraron perfiles</p>
+            }
           </div>
+        }
+      }
+
+      <!-- Tab: Promociones -->
+      @if (activeTab() === 'promotions') {
+        <div class="search-row">
+          <input type="text" class="search-input" placeholder="Buscar promoción..."
+                 [value]="promotionSearch()" (input)="onSearch('promotions', ($event.target as HTMLInputElement).value)">
+        </div>
+        @if (loadingPromotions()) {
+          <p class="loading-msg">Cargando promociones...</p>
+        } @else {
+          <div class="items-list">
+            @for (p of filteredPromotions(); track p.id) {
+              <label class="item-row promotion-row" [class.selected]="isSelected('promotion', p.id)">
+                <input type="checkbox" [checked]="isSelected('promotion', p.id)"
+                       (change)="toggle('promotion', p.id, p.name, p.price)">
+                <span class="item-info">
+                  <span class="item-name">{{ p.name }}</span>
+                  <span class="item-unit">Vigente hasta {{ p.validTo }}</span>
+                </span>
+                <span class="item-price">L. {{ p.price | number:'1.2-2' }}</span>
+              </label>
+            } @empty {
+              <p class="empty-msg">No hay promociones vigentes</p>
+            }
+          </div>
+        }
+      }
+
+    </div>
+
+    <!-- RIGHT: Selection summary -->
+    <div class="summary-panel">
+      <h3 class="summary-title">Ítems seleccionados <span class="badge">{{ selectedItems().length }}</span></h3>
+
+      @if (selectedItems().length === 0) {
+        <p class="empty-msg">Selecciona pruebas, perfiles o promociones del catálogo</p>
+      } @else {
+        <div class="selected-list">
+          @for (item of selectedItems(); track item.type + item.id) {
+            <div class="selected-item">
+              <span class="item-type-icon">
+                @if (item.type === 'test') { 🔬 }
+                @else if (item.type === 'profile') { 📋 }
+                @else { 🎁 }
+              </span>
+              <span class="selected-name">{{ item.name }}</span>
+              @if (item.price) {
+                <span class="selected-price">L. {{ item.price }}</span>
+              }
+              <button class="remove-btn" (click)="removeItem(item)">×</button>
+            </div>
+          }
         </div>
 
-        <!-- Resumen de selección -->
-        <div class="summary">
-          <p>Pruebas seleccionadas: {{ selectedTests.length }}</p>
-        </div>
+        @if (totalPrice() > 0) {
+          <div class="total-row">
+            <span>Total estimado:</span>
+            <strong>L. {{ totalPrice() | number:'1.2-2' }}</strong>
+          </div>
+        }
+      }
 
-        <!-- Botones de acción -->
-        <div class="actions">
-          <button class="btn-secondary" (click)="goBack()">Cancelar</button>
-          <button class="btn-primary" (click)="addSelectedTests()" [disabled]="selectedTests.length === 0 || isSubmitting">
-            {{ isSubmitting ? 'Agregando...' : 'Agregar Pruebas' }}
-          </button>
-        </div>
+      @if (error()) {
+        <p class="error-msg">{{ error() }}</p>
+      }
 
-        <div *ngIf="submitError" class="error-message">{{ submitError }}</div>
-        <div *ngIf="submitSuccess" class="success-message">{{ submitSuccess }}</div>
+      @if (success()) {
+        <p class="success-msg">✅ Ítems agregados. Redirigiendo...</p>
+      }
+
+      <div class="summary-actions">
+        <button class="btn btn-secondary" (click)="goBack()">Cancelar</button>
+        <button class="btn btn-primary"
+                [disabled]="selectedItems().length === 0 || submitting() || success()"
+                (click)="submit()">
+          @if (submitting()) { Guardando... }
+          @else { Agregar {{ selectedItems().length }} ítem(s) }
+        </button>
       </div>
     </div>
+  </div>
+</div>

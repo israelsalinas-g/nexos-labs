@@ -2,6 +2,7 @@ import { IsString, IsOptional, IsBoolean, IsInt, IsEnum, IsNumber, MinLength, Ma
 import { ApiProperty } from '@nestjs/swagger';
 import { TestResultType } from '../common/enums/test-result-type.enums';
 
+
 export class CreateTestDefinitionDto {
   @ApiProperty({
     description: 'ID de la sección a la que pertenece',
@@ -132,4 +133,13 @@ export class CreateTestDefinitionDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiProperty({
+    description: 'ID del tipo de respuesta dinámico (nuevo sistema)',
+    example: 3,
+    required: false
+  })
+  @IsOptional()
+  @IsInt()
+  responseTypeId?: number;
 }

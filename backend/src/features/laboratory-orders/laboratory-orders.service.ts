@@ -1,11 +1,14 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { LaboratoryOrder } from '../../entities/laboratory-order.entity';
 import { OrderTest } from '../../entities/order-test.entity';
 import { Patient } from '../../entities/patient.entity';
 import { Doctor } from '../../entities/doctor.entity';
 import { TestProfile } from '../../entities/test-profile.entity';
+import { Promotion } from '../../entities/promotion.entity';
+import { UnifiedTestResult } from '../../entities/unified-test-result.entity';
+import { Genres } from '../../common/enums/genres.enums';
 import { OrderStatus } from '../../common/enums/order-status.enums';
 import { OrderPriority } from '../../common/enums/order-priority.enums';
 import { PaginationResult } from '../../common/interfaces';
@@ -29,6 +32,10 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
     private readonly orderTestRepository: Repository<OrderTest>,
     @InjectRepository(TestProfile)
     private readonly testProfileRepository: Repository<TestProfile>,
+    @InjectRepository(Promotion)
+    private readonly promotionRepository: Repository<Promotion>,
+    @InjectRepository(UnifiedTestResult)
+    private readonly unifiedResultRepository: Repository<UnifiedTestResult>,
   ) {
     super(laboratoryOrderRepository);
   }
@@ -76,7 +83,72 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
   }
 
   async findOne(id: string): Promise<LaboratoryOrder> {
-    return super.findOne(id, { relations: ['patient', 'doctor', 'tests'] });
+    const order = await this.laboratoryOrderRepository.findOne({
+      where: { id },
+      relations: [
+        'patient', 'doctor',
+        'tests', 'tests.testDefinition',
+        'tests.testDefinition.responseType',
+      ],
+    });
+    if (!order) throw new NotFoundException(`Orden ${id} no encontrada`);
+    return order;
+  }
+
+  /**
+   * Devuelve todas las pruebas de una orden con su tipo de respuesta y opciones
+   * cargadas, más el resultado ya capturado si existe. Usado por la pantalla
+   * de captura de resultados.
+   */
+  async getPendingCapture(orderId: string): Promise<any> {
+    const order = await this.laboratoryOrderRepository.findOne({
+      where: { id: orderId },
+      relations: ['patient'],
+    });
+    if (!order) throw new NotFoundException(`Orden ${orderId} no encontrada`);
+
+    // Cargar order_tests con testDefinition → responseType → options (ordenadas)
+    const orderTests = await this.orderTestRepository.createQueryBuilder('ot')
+      .where('ot.orderId = :orderId', { orderId })
+      .leftJoinAndSelect('ot.testDefinition', 'td')
+      .leftJoinAndSelect('td.responseType', 'rt')
+      .leftJoinAndSelect('rt.options', 'rto')
+      .orderBy('ot.id', 'ASC')
+      .addOrderBy('rto.displayOrder', 'ASC')
+      .getMany();
+
+    // Cargar resultados ya capturados (para modo "edición")
+    const existingByOrderTestId = new Map<number, UnifiedTestResult>();
+    if (orderTests.length > 0) {
+      const existing = await this.unifiedResultRepository.find({
+        where: { orderTestId: In(orderTests.map(ot => ot.id)) },
+        relations: ['responseOption'],
+      });
+      existing.forEach(r => existingByOrderTestId.set(r.orderTestId, r));
+    }
+
+    // Mapear sexo del paciente a M/F/ANY (formato de test_reference_ranges)
+    const patient = order.patient;
+    let patientGender: 'M' | 'F' | 'ANY' = 'ANY';
+    if (patient?.sex === Genres.MALE) patientGender = 'M';
+    else if (patient?.sex === Genres.FEMALE) patientGender = 'F';
+    const patientAgeMonths = patient?.age ? Math.round(patient.age * 12) : undefined;
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      patientId: order.patientId,
+      patientName: patient?.name ?? null,
+      patientGender,
+      patientAgeMonths,
+      tests: orderTests.map(ot => ({
+        orderTestId: ot.id,
+        testDefinitionId: ot.testDefinitionId,
+        sampleNumber: ot.sampleNumber,
+        testDefinition: ot.testDefinition ?? null,
+        existingResult: existingByOrderTestId.get(ot.id) ?? null,
+      })),
+    };
   }
 
   async update(id: string, updateDto: UpdateLaboratoryOrderDto): Promise<LaboratoryOrder> {
@@ -142,6 +214,36 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
 
         for (let i = 0; i < (test.quantity || 1); i++) {
           for (const testDef of profile.tests) {
+            const orderTest = this.orderTestRepository.create({
+              orderId: order.id,
+              testDefinitionId: testDef.id as any,
+              sampleNumber: this.buildSampleNumber(addTestsDto.sampleNumberBase, sampleCounter++, order.id),
+              ...(addTestsDto.collectedBy && { collectedBy: addTestsDto.collectedBy }),
+            } as any);
+            createdTests.push(await this.orderTestRepository.save(orderTest) as unknown as OrderTest);
+          }
+        }
+      }
+
+      // Expansión de promoción: agrega todas las pruebas individuales y perfiles
+      if (test.promotionId) {
+        const promotion = await this.promotionRepository.findOne({
+          where: { id: test.promotionId },
+          relations: ['tests', 'profiles', 'profiles.tests'],
+        });
+        if (!promotion) continue;
+
+        for (const testDef of (promotion.tests ?? [])) {
+          const orderTest = this.orderTestRepository.create({
+            orderId: order.id,
+            testDefinitionId: testDef.id as any,
+            sampleNumber: this.buildSampleNumber(addTestsDto.sampleNumberBase, sampleCounter++, order.id),
+            ...(addTestsDto.collectedBy && { collectedBy: addTestsDto.collectedBy }),
+          } as any);
+          createdTests.push(await this.orderTestRepository.save(orderTest) as unknown as OrderTest);
+        }
+        for (const profile of (promotion.profiles ?? [])) {
+          for (const testDef of (profile.tests ?? [])) {
             const orderTest = this.orderTestRepository.create({
               orderId: order.id,
               testDefinitionId: testDef.id as any,

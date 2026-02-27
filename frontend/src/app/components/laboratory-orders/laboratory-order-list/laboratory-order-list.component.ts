@@ -1,36 +1,59 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LaboratoryOrder } from '../../../models/laboratory-order.interface';
 import { LaboratoryOrderService } from '../../../services/laboratory-order.service';
 import { LaboratoryOrderFormComponent } from '../laboratory-order-form/laboratory-order-form.component';
 import { ToastService } from '../../../services/toast.service';
+import {
+  OrderStatus,
+  OrderPriority,
+  OrderStatusLabels,
+  OrderPriorityLabels,
+} from '../../../enums/order-status.enums';
+
+// Opciones para el selector de estado
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'Todos los estados' },
+  { value: OrderStatus.PENDING,    label: OrderStatusLabels[OrderStatus.PENDING] },
+  { value: OrderStatus.PAID,       label: OrderStatusLabels[OrderStatus.PAID] },
+  { value: OrderStatus.IN_PROCESS, label: OrderStatusLabels[OrderStatus.IN_PROCESS] },
+  { value: OrderStatus.COMPLETED,  label: OrderStatusLabels[OrderStatus.COMPLETED] },
+  { value: OrderStatus.BILLED,     label: OrderStatusLabels[OrderStatus.BILLED] },
+  { value: OrderStatus.DELIVERED,  label: OrderStatusLabels[OrderStatus.DELIVERED] },
+  { value: OrderStatus.CANCELLED,  label: OrderStatusLabels[OrderStatus.CANCELLED] },
+];
 
 @Component({
   selector: 'app-laboratory-order-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule, FormsModule, LaboratoryOrderFormComponent],
   templateUrl: './laboratory-order-list.component.html',
   styleUrls: ['./laboratory-order-list.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LaboratoryOrderListComponent implements OnInit {
   private orderService = inject(LaboratoryOrderService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   orders = signal<LaboratoryOrder[]>([]);
   selectedOrder = signal<LaboratoryOrder | null>(null);
-  showFormModal = signal<boolean>(false);
-  isEditMode = signal<boolean>(false);
-  loading = signal<boolean>(false);
+  showFormModal = signal(false);
+  isEditMode = signal(false);
+  loading = signal(false);
   error = signal<string | null>(null);
 
-  searchTerm = signal<string>('');
-  statusFilter = signal<string>('');
-  currentPage = signal<number>(1);
-  pageSize = signal<number>(4);
-  totalPages = signal<number>(1);
+  searchTerm = signal('');
+  statusFilter = signal('');
+  currentPage = signal(1);
+  pageSize = signal(10);
+  totalPages = signal(1);
+
+  readonly statusOptions = STATUS_OPTIONS;
+  readonly OrderStatusLabels = OrderStatusLabels;
+  readonly OrderPriorityLabels = OrderPriorityLabels;
 
   ngOnInit(): void {
     this.loadOrders();
@@ -45,7 +68,7 @@ export class LaboratoryOrderListComponent implements OnInit {
       this.pageSize(),
       this.statusFilter() || undefined,
       undefined,
-      this.searchTerm() || undefined
+      this.searchTerm() || undefined,
     ).subscribe({
       next: (response) => {
         this.orders.set(response.data || []);
@@ -64,6 +87,11 @@ export class LaboratoryOrderListComponent implements OnInit {
     this.loadOrders();
   }
 
+  onStatusFilterChange(): void {
+    this.currentPage.set(1);
+    this.loadOrders();
+  }
+
   clearSearch(): void {
     this.searchTerm.set('');
     this.statusFilter.set('');
@@ -71,9 +99,8 @@ export class LaboratoryOrderListComponent implements OnInit {
     this.loadOrders();
   }
 
-  onStatusFilterChange(): void {
-    this.currentPage.set(1);
-    this.loadOrders();
+  viewOrder(order: LaboratoryOrder): void {
+    this.router.navigate(['/laboratory-orders', order.id]);
   }
 
   openCreateModal(): void {
@@ -88,18 +115,11 @@ export class LaboratoryOrderListComponent implements OnInit {
     this.showFormModal.set(true);
   }
 
-  viewOrder(order: LaboratoryOrder): void {
-    console.log('Ver orden:', order);
-  }
-
   deleteOrder(id: string): void {
     if (confirm('¿Está seguro de que desea eliminar esta orden?')) {
       this.orderService.deleteOrder(id).subscribe({
-        next: () => {
-          this.loadOrders();
-          this.toastService.success('Orden eliminada correctamente');
-        },
-        error: () => this.toastService.error('Error al eliminar la orden')
+        next: () => { this.loadOrders(); this.toastService.success('Orden eliminada correctamente'); },
+        error: () => this.toastService.error('Error al eliminar la orden'),
       });
     }
   }
@@ -120,16 +140,30 @@ export class LaboratoryOrderListComponent implements OnInit {
   }
 
   previousPage(): void {
-    if (this.currentPage() > 1) {
-      this.currentPage.update(p => p - 1);
-      this.loadOrders();
-    }
+    if (this.currentPage() > 1) { this.currentPage.update(p => p - 1); this.loadOrders(); }
   }
 
   nextPage(): void {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update(p => p + 1);
-      this.loadOrders();
+    if (this.currentPage() < this.totalPages()) { this.currentPage.update(p => p + 1); this.loadOrders(); }
+  }
+
+  getPatientName(order: LaboratoryOrder): string {
+    if (order.patient) {
+      return `${order.patient.firstName ?? ''} ${order.patient.lastName ?? ''}`.trim();
     }
+    return order.patientId ?? '—';
+  }
+
+  getStatusClass(status: string): string {
+    const map: Record<string, string> = {
+      'Pending': 'pending', 'Paid': 'paid', 'InProcess': 'in-process',
+      'Completed': 'completed', 'Billed': 'billed',
+      'Delivered': 'delivered', 'Cancelled': 'cancelled',
+    };
+    return map[status] ?? 'pending';
+  }
+
+  getPriorityClass(priority: string): string {
+    return priority.toLowerCase(); // 'normal', 'urgent', 'stat'
   }
 }

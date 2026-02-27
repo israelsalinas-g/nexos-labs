@@ -124,6 +124,16 @@ import { ThemeService } from '../services/theme.service';
                   <span class="item-icon">📋</span>
                   <span>Perfiles de Pruebas</span>
                 </button>
+                @if (canAccessAdmin) {
+                  <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/test-response-types')">
+                    <span class="item-icon">🎛️</span>
+                    <span>Tipos de Respuesta</span>
+                  </button>
+                  <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/promotions')">
+                    <span class="item-icon">🎁</span>
+                    <span>Promociones</span>
+                  </button>
+                }
               </div>
 
               <!-- Cerrar Sesión -->

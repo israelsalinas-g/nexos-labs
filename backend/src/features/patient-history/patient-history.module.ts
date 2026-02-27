@@ -7,6 +7,7 @@ import { DymindDh36Result } from '../../entities/dymind-dh36-result.entity';
 import { IChromaResult } from '../../entities/ichroma-result.entity';
 import { UrineTest } from '../../entities/urine-test.entity';
 import { StoolTest } from '../../entities/stool-test.entity';
+import { UnifiedTestResult } from '../../entities/unified-test-result.entity';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { StoolTest } from '../../entities/stool-test.entity';
       DymindDh36Result,
       IChromaResult,
       UrineTest,
-      StoolTest
+      StoolTest,
+      UnifiedTestResult,
     ])
   ],
   controllers: [PatientHistoryController],

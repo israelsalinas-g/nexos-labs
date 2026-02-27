@@ -1,0 +1,91 @@
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+}
+.modal-container {
+  background: white; border-radius: 8px; width: 100%; max-width: 680px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px; border-bottom: 1px solid #dee2e6;
+}
+.modal-header h2 { margin: 0; color: #2c3e50; font-size: 18px; }
+.btn-close {
+  background: none; border: none; font-size: 24px; cursor: pointer;
+  color: #6c757d; line-height: 1;
+}
+.btn-close:hover { color: #dc3545; }
+.form-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-weight: 600; font-size: 14px; color: #495057; }
+.required { color: #dc3545; }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;
+  font-size: 14px; transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: #3498db; outline: none; box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+}
+.form-group input.invalid, .form-group select.invalid { border-color: #dc3545; }
+.field-hint { font-size: 12px; color: #6c757d; }
+.field-error { font-size: 12px; color: #dc3545; }
+
+/* Options section */
+.options-section { border: 1px solid #dee2e6; border-radius: 6px; padding: 16px; }
+.options-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.options-header h3 { margin: 0; font-size: 15px; color: #2c3e50; }
+.btn-add-option {
+  background: #28a745; color: white; border: none; padding: 6px 12px;
+  border-radius: 4px; cursor: pointer; font-size: 13px;
+}
+.no-options { text-align: center; color: #6c757d; padding: 20px; font-style: italic; }
+.option-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  padding: 8px; background: #f8f9fa; border-radius: 4px;
+}
+.option-color { flex-shrink: 0; }
+.color-picker { width: 36px; height: 36px; padding: 2px; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; }
+.option-value { flex: 1; }
+.option-value input { width: 100%; }
+.option-order { display: flex; align-items: center; gap: 4px; }
+.btn-move {
+  background: #e9ecef; border: 1px solid #ced4da; border-radius: 3px;
+  padding: 2px 6px; cursor: pointer; font-size: 12px;
+}
+.btn-move:disabled { opacity: 0.4; cursor: not-allowed; }
+.order-num { font-size: 12px; color: #6c757d; min-width: 16px; text-align: center; }
+.option-default { flex-shrink: 0; }
+.default-label { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
+.btn-remove-option {
+  background: #dc3545; color: white; border: none; border-radius: 50%;
+  width: 24px; height: 24px; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* Preview */
+.options-preview-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #dee2e6; }
+.preview-title { font-size: 12px; color: #6c757d; margin: 0 0 8px; }
+.preview-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.preview-chip {
+  padding: 4px 10px; border-radius: 12px; color: white;
+  font-size: 12px; font-weight: 500;
+}
+
+/* Messages */
+.success-msg { padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; font-size: 14px; }
+.error-msg { padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px; font-size: 14px; }
+
+/* Actions */
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 8px; }
+.btn-cancel {
+  background: white; border: 1px solid #ced4da; padding: 10px 20px;
+  border-radius: 4px; cursor: pointer; color: #495057;
+}
+.btn-submit {
+  background: #3498db; color: white; border: none; padding: 10px 24px;
+  border-radius: 4px; cursor: pointer; font-weight: 600;
+}
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }

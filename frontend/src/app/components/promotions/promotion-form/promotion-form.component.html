@@ -1,0 +1,140 @@
+<div class="modal-overlay" (click)="onCancel()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Editar Promoción' : 'Nueva Promoción' }}</h2>
+      <button class="close-btn" type="button" (click)="onCancel()">×</button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+
+      <!-- Nombre -->
+      <div class="form-group">
+        <label for="name" class="required">Nombre</label>
+        <input id="name" type="text" formControlName="name" class="form-control"
+               placeholder="Ej: Promoción Día del Padre 2025"
+               [class.invalid]="isFieldInvalid('name')">
+        @if (isFieldInvalid('name')) {
+          <span class="error-msg">
+            @if (form.get('name')?.errors?.['required']) { El nombre es requerido }
+            @else if (form.get('name')?.errors?.['minlength']) { Mínimo 2 caracteres }
+            @else if (form.get('name')?.errors?.['maxlength']) { Máximo 200 caracteres }
+          </span>
+        }
+      </div>
+
+      <!-- Descripción -->
+      <div class="form-group">
+        <label for="description">Descripción</label>
+        <textarea id="description" formControlName="description" class="form-control" rows="2"
+                  placeholder="Descripción de la promoción"></textarea>
+      </div>
+
+      <!-- Precio + Estado -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="price" class="required">Precio (L.)</label>
+          <input id="price" type="number" formControlName="price" class="form-control"
+                 placeholder="0.00" step="0.01" min="0"
+                 [class.invalid]="isFieldInvalid('price')">
+          @if (totalIndividualValue() > 0) {
+            <span class="savings-hint">
+              Valor individual: L. {{ totalIndividualValue() | number:'1.2-2' }} —
+              @if (form.get('price')?.value < totalIndividualValue()) {
+                Ahorro: L. {{ (totalIndividualValue() - form.get('price')?.value) | number:'1.2-2' }}
+              } @else {
+                Sin descuento
+              }
+            </span>
+          }
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="switch-label">
+            <input type="checkbox" formControlName="isActive" class="switch-input">
+            <span class="switch-slider"></span>
+            Activa
+          </label>
+        </div>
+      </div>
+
+      <!-- Fechas de vigencia -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="validFrom" class="required">Vigencia desde</label>
+          <input id="validFrom" type="date" formControlName="validFrom" class="form-control"
+                 [class.invalid]="isFieldInvalid('validFrom')">
+          @if (isFieldInvalid('validFrom')) {
+            <span class="error-msg">La fecha de inicio es requerida</span>
+          }
+        </div>
+        <div class="form-group">
+          <label for="validTo" class="required">Vigencia hasta</label>
+          <input id="validTo" type="date" formControlName="validTo" class="form-control"
+                 [class.invalid]="isFieldInvalid('validTo')">
+          @if (isFieldInvalid('validTo')) {
+            <span class="error-msg">La fecha de fin es requerida</span>
+          }
+        </div>
+      </div>
+      @if (form.errors?.['dateRange'] && (form.get('validFrom')?.touched || form.get('validTo')?.touched)) {
+        <p class="error-msg">La fecha de fin debe ser posterior a la fecha de inicio</p>
+      }
+
+      <!-- Selección de Pruebas -->
+      <div class="selector-section">
+        <h4>Pruebas incluidas <span class="count-badge">{{ selectedTestIds().size }}</span></h4>
+        <input type="text" class="search-mini" placeholder="Buscar prueba..."
+               [value]="testSearch()" (input)="onTestSearch($event)">
+        <div class="items-grid">
+          @for (test of filteredTests(); track test.id) {
+            <label class="item-chip" [class.selected]="isTestSelected(test.id)">
+              <input type="checkbox" [checked]="isTestSelected(test.id)"
+                     (change)="toggleTest(test.id)">
+              <span class="item-name">{{ test.name }}</span>
+              @if (test.price) {
+                <span class="item-price">L. {{ test.price }}</span>
+              }
+            </label>
+          } @empty {
+            <p class="empty-msg">No hay pruebas disponibles</p>
+          }
+        </div>
+      </div>
+
+      <!-- Selección de Perfiles -->
+      <div class="selector-section">
+        <h4>Perfiles incluidos <span class="count-badge">{{ selectedProfileIds().size }}</span></h4>
+        <input type="text" class="search-mini" placeholder="Buscar perfil..."
+               [value]="profileSearch()" (input)="onProfileSearch($event)">
+        <div class="items-grid">
+          @for (profile of filteredProfiles(); track profile.id) {
+            <label class="item-chip" [class.selected]="isProfileSelected(profile.id)">
+              <input type="checkbox" [checked]="isProfileSelected(profile.id)"
+                     (change)="toggleProfile(profile.id)">
+              <span class="item-name">{{ profile.name }}</span>
+              @if (profile.price) {
+                <span class="item-price">L. {{ profile.price }}</span>
+              }
+            </label>
+          } @empty {
+            <p class="empty-msg">No hay perfiles disponibles</p>
+          }
+        </div>
+      </div>
+
+      @if (error()) {
+        <p class="submit-error">{{ error() }}</p>
+      }
+    </form>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancelar</button>
+      <button type="submit" class="btn btn-primary"
+              [disabled]="loading()" (click)="onSubmit()">
+        @if (loading()) { Guardando... } @else { {{ isEditMode ? 'Actualizar' : 'Crear' }} }
+      </button>
+    </div>
+
+  </div>
+</div>

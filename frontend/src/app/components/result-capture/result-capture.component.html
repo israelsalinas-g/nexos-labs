@@ -1,0 +1,134 @@
+<div class="page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">← Volver a la orden</button>
+    <div class="header-info">
+      <h1>Captura de Resultados</h1>
+      @if (order()) {
+        <span class="order-number">{{ (order())?.orderNumber }}</span>
+        @if ((order() as any)?.patient) {
+          <span class="patient-name">
+            {{ (order() as any).patient.firstName }} {{ (order() as any).patient.lastName }}
+          </span>
+        }
+      }
+    </div>
+    <div class="progress-info">
+      <span class="progress-badge completed">✅ {{ savedCount() }} guardados</span>
+      <span class="progress-badge pending">⏳ {{ pendingCount() }} pendientes</span>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">Cargando pruebas de la orden...</div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }}</div>
+  } @else if (items().length === 0) {
+    <div class="empty-state">
+      <p>Esta orden no tiene pruebas asignadas.</p>
+      <button class="btn btn-primary" (click)="goBack()">Volver</button>
+    </div>
+  } @else {
+    <div class="results-grid">
+      @for (item of items(); track item.orderTest.id) {
+        <div class="result-card" [class.saved]="item.saved" [class.abnormal]="isAbnormal(item) === true">
+          <!-- Test info -->
+          <div class="card-header">
+            <div class="test-info">
+              <span class="test-name">{{ item.orderTest.testDefinition?.name ?? 'Prueba #' + item.orderTest.id }}</span>
+              @if (item.orderTest.testDefinition?.code) {
+                <span class="test-code">{{ item.orderTest.testDefinition.code }}</span>
+              }
+              @if (getUnit(item)) {
+                <span class="test-unit">{{ getUnit(item) }}</span>
+              }
+            </div>
+            <div class="status-indicators">
+              @if (item.saved && isAbnormal(item) === true) {
+                <span class="abnormal-badge">🔴 Anormal</span>
+              } @else if (item.saved && isAbnormal(item) === false) {
+                <span class="normal-badge">🟢 Normal</span>
+              } @else if (item.saved) {
+                <span class="saved-badge">✅</span>
+              }
+            </div>
+          </div>
+
+          <!-- Input area (adaptive by type) -->
+          <div class="input-area">
+
+            <!-- NUMERIC -->
+            @if (item.inputType === 'numeric') {
+              <div class="numeric-input-group">
+                <input
+                  type="number"
+                  class="result-input"
+                  [class.abnormal-input]="isAbnormal(item) === true"
+                  [class.normal-input]="isAbnormal(item) === false"
+                  [value]="item.draftValue ?? ''"
+                  (input)="onNumericInput(item, ($event.target as HTMLInputElement).value)"
+                  placeholder="0.00"
+                  step="any">
+                @if (getUnit(item)) {
+                  <span class="input-unit">{{ getUnit(item) }}</span>
+                }
+              </div>
+            }
+
+            <!-- ENUM / Dropdown -->
+            @if (item.inputType === 'enum') {
+              <div class="enum-options">
+                @for (opt of getOptions(item); track opt.id) {
+                  <label class="option-btn"
+                         [class.selected]="item.draftOptionId === opt.id"
+                         [style.border-color]="item.draftOptionId === opt.id && opt.color ? opt.color : null"
+                         [style.background-color]="item.draftOptionId === opt.id && opt.color ? opt.color + '22' : null">
+                    <input type="radio" [name]="'opt-' + item.orderTest.id"
+                           [value]="opt.id"
+                           [checked]="item.draftOptionId === opt.id"
+                           (change)="onOptionSelect(item, String(opt.id))">
+                    @if (opt.color) {
+                      <span class="opt-dot" [style.background]="opt.color"></span>
+                    }
+                    {{ opt.label ?? opt.value }}
+                  </label>
+                } @empty {
+                  <p class="no-options">Sin opciones configuradas</p>
+                }
+              </div>
+            }
+
+            <!-- TEXT -->
+            @if (item.inputType === 'text') {
+              <textarea
+                class="result-textarea"
+                [value]="item.draftValue ?? ''"
+                (input)="onTextInput(item, ($event.target as HTMLTextAreaElement).value)"
+                rows="2"
+                placeholder="Ingrese el resultado..."></textarea>
+            }
+          </div>
+
+          <!-- Error message -->
+          @if (item.error) {
+            <p class="item-error">{{ item.error }}</p>
+          }
+
+          <!-- Save button -->
+          <div class="card-footer">
+            <button class="btn btn-save"
+                    [class.btn-saved]="item.saved"
+                    [disabled]="item.saving"
+                    (click)="saveResult(item)">
+              @if (item.saving) { Guardando... }
+              @else if (item.saved) { ✅ Guardado — Actualizar }
+              @else { Guardar resultado }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

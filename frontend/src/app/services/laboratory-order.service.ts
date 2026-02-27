@@ -90,4 +90,9 @@ export class LaboratoryOrderService extends BaseService {
     return this.http.delete<any>(`${this.endpoint}/${id}`)
       .pipe(catchError(err => this.handleError(err)));
   }
+
+  getPendingCapture(orderId: string): Observable<any> {
+    return this.http.get<any>(`${this.endpoint}/${orderId}/pending-capture`)
+      .pipe(catchError(err => this.handleError(err)));
+  }
 }

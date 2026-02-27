@@ -7,11 +7,9 @@
       <button class="btn-secondary" (click)="clearSearch()">Limpiar</button>
       <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); onStatusFilterChange()"
         class="filter-select">
-        <option value="">Todos los estados</option>
-        <option value="pending">Pendiente</option>
-        <option value="in-progress">En progreso</option>
-        <option value="completed">Completada</option>
-        <option value="cancelled">Cancelada</option>
+        @for (opt of statusOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
       </select>
     </div>
     <button class="btn-primary" (click)="openCreateModal()">
@@ -44,15 +42,15 @@
         @for (order of orders(); track order.id) {
         <tr>
           <td>{{ order.orderNumber }}</td>
-          <td>{{ order.patientId }}</td>
+          <td>{{ getPatientName(order) }}</td>
           <td>
-            <span class="status-badge" [class]="'status-' + order.status">
-              {{ order.status }}
+            <span class="status-badge" [ngClass]="'status-' + getStatusClass(order.status)">
+              {{ OrderStatusLabels[order.status] ?? order.status }}
             </span>
           </td>
           <td>
-            <span class="priority-badge" [class]="'priority-' + order.priority">
-              {{ order.priority }}
+            <span class="priority-badge" [ngClass]="'priority-' + getPriorityClass(order.priority)">
+              {{ OrderPriorityLabels[order.priority] ?? order.priority }}
             </span>
           </td>
           <td>{{ order.orderDate | date:'short' }}</td>

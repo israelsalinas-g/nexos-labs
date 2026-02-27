@@ -1,146 +1,164 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component, inject, signal, computed, OnInit,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
-import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TestDefinition } from '../../../models/test-definition.interface';
-import { TestSection } from '../../../models/test-section.interface';
+import { TestProfile } from '../../../models/test-profile.interface';
+import { Promotion } from '../../../models/promotion.interface';
 import { TestDefinitionService } from '../../../services/test-definition.service';
+import { TestProfileService } from '../../../services/test-profile.service';
+import { PromotionService } from '../../../services/promotion.service';
 import { LaboratoryOrderService } from '../../../services/laboratory-order.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
-interface OrderTest {
-  testId: string;
-  testName: string;
-  selected: boolean;
+type Tab = 'tests' | 'profiles' | 'promotions';
+
+interface SelectedItem {
+  type: 'test' | 'profile' | 'promotion';
+  id: string | number;
+  name: string;
+  price?: string | number;
 }
 
 @Component({
   selector: 'app-add-tests-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, FormsModule],
   templateUrl: './add-tests-dialog.component.html',
-  styleUrls: ['./add-tests-dialog.component.css']
+  styleUrls: ['./add-tests-dialog.component.css'],
 })
-export class AddTestsDialogComponent implements OnInit, OnDestroy {
-  tests: TestDefinition[] = [];
-  filteredTests: TestDefinition[] = [];
-  sections: TestSection[] = [];
-  
-  searchTerm = '';
-  sectionFilter = '';
-  selectedTests: TestDefinition[] = [];
-  
-  loading = false;
-  isSubmitting = false;
-  error: string | null = null;
-  submitError: string | null = null;
-  submitSuccess: string | null = null;
-  
-  private destroy$ = new Subject<void>();
-  private orderId: string | null = null;
+export class AddTestsDialogComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private testService = inject(TestDefinitionService);
+  private profileService = inject(TestProfileService);
+  private promotionService = inject(PromotionService);
+  private orderService = inject(LaboratoryOrderService);
 
-  constructor(
-    private testService: TestDefinitionService,
-    private orderService: LaboratoryOrderService,
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
+  orderId = signal<string | null>(null);
+  activeTab = signal<Tab>('tests');
+
+  allTests = signal<TestDefinition[]>([]);
+  allProfiles = signal<TestProfile[]>([]);
+  allPromotions = signal<Promotion[]>([]);
+
+  loadingTests = signal(true);
+  loadingProfiles = signal(false);
+  loadingPromotions = signal(false);
+
+  testSearch = signal('');
+  profileSearch = signal('');
+  promotionSearch = signal('');
+
+  selectedItems = signal<SelectedItem[]>([]);
+  submitting = signal(false);
+  error = signal<string | null>(null);
+  success = signal(false);
+
+  filteredTests = computed(() => {
+    const q = this.testSearch().toLowerCase();
+    return this.allTests().filter(t =>
+      t.name.toLowerCase().includes(q) || (t.code ?? '').toLowerCase().includes(q),
+    );
+  });
+
+  filteredProfiles = computed(() => {
+    const q = this.profileSearch().toLowerCase();
+    return this.allProfiles().filter(p =>
+      p.name.toLowerCase().includes(q) || (p.code ?? '').toLowerCase().includes(q),
+    );
+  });
+
+  filteredPromotions = computed(() => {
+    const q = this.promotionSearch().toLowerCase();
+    return this.allPromotions().filter(p => p.name.toLowerCase().includes(q));
+  });
+
+  totalPrice = computed(() =>
+    this.selectedItems().reduce((sum, i) => sum + parseFloat(String(i.price ?? 0)), 0),
+  );
 
   ngOnInit(): void {
-    this.route.params
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(params => {
-        this.orderId = params['id'];
-        this.loadTests();
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  loadTests(): void {
-    this.loading = true;
-    this.error = null;
-
-    this.testService.getTestDefinitions()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response: any) => {
-          this.tests = response.data;
-          this.filteredTests = [...this.tests];
-          this.loading = false;
-        },
-        error: (err: any) => {
-          this.error = 'Error cargando pruebas. Por favor, intente de nuevo.';
-          this.loading = false;
-          console.error('Error loading tests:', err);
-        }
-      });
-  }
-
-  onSearch(): void {
-    this.applyFilters();
-  }
-
-  onFilterChange(): void {
-    this.applyFilters();
-  }
-
-  applyFilters(): void {
-    this.filteredTests = this.tests.filter(test => {
-      const matchesSearch = !this.searchTerm || 
-        test.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        test.code?.toLowerCase().includes(this.searchTerm.toLowerCase());
-      
-      return matchesSearch;
+    this.route.params.subscribe(params => {
+      this.orderId.set(params['id']);
+      this.loadCatalog();
     });
   }
 
-  toggleTest(test: TestDefinition): void {
-    const index = this.selectedTests.findIndex(t => t.id === test.id);
-    if (index > -1) {
-      this.selectedTests.splice(index, 1);
+  private loadCatalog(): void {
+    this.loadingTests.set(true);
+    this.testService.getTestDefinitions({ limit: 999 }).subscribe({
+      next: r => { this.allTests.set(r.data); this.loadingTests.set(false); },
+      error: () => this.loadingTests.set(false),
+    });
+
+    this.loadingProfiles.set(true);
+    this.profileService.getTestProfiles({ limit: 999 }).subscribe({
+      next: r => { this.allProfiles.set(r.data); this.loadingProfiles.set(false); },
+      error: () => this.loadingProfiles.set(false),
+    });
+
+    this.loadingPromotions.set(true);
+    this.promotionService.getAllActive().subscribe({
+      next: promos => { this.allPromotions.set(promos); this.loadingPromotions.set(false); },
+      error: () => this.loadingPromotions.set(false),
+    });
+  }
+
+  setTab(tab: Tab): void { this.activeTab.set(tab); }
+
+  isSelected(type: 'test' | 'profile' | 'promotion', id: string | number): boolean {
+    return this.selectedItems().some(i => i.type === type && i.id === id);
+  }
+
+  toggle(type: 'test' | 'profile' | 'promotion', id: string | number, name: string, price?: string | number): void {
+    const current = this.selectedItems();
+    const idx = current.findIndex(i => i.type === type && i.id === id);
+    if (idx > -1) {
+      this.selectedItems.set(current.filter((_, i) => i !== idx));
     } else {
-      this.selectedTests.push(test);
+      this.selectedItems.set([...current, { type, id, name, price }]);
     }
   }
 
-  isTestSelected(testId: string): boolean {
-    return this.selectedTests.some(t => t.id === testId);
+  removeItem(item: SelectedItem): void {
+    this.selectedItems.set(this.selectedItems().filter(i => !(i.type === item.type && i.id === item.id)));
   }
 
-  addSelectedTests(): void {
-    if (!this.orderId || this.selectedTests.length === 0) return;
-
-    this.isSubmitting = true;
-    this.submitError = null;
-    this.submitSuccess = null;
-
-    const tests = this.selectedTests.map(t => ({
-      testDefinitionId: t.id
-    }));
-
-    this.orderService.addTestsToOrder(this.orderId, { tests })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.submitSuccess = 'Pruebas agregadas exitosamente';
-          setTimeout(() => {
-            this.router.navigate(['/laboratory-orders', this.orderId]);
-          }, 1500);
-        },
-        error: (err: any) => {
-          this.submitError = 'Error al agregar pruebas.';
-          this.isSubmitting = false;
-          console.error('Error adding tests:', err);
-        }
-      });
+  onSearch(tab: Tab, value: string): void {
+    if (tab === 'tests') this.testSearch.set(value);
+    else if (tab === 'profiles') this.profileSearch.set(value);
+    else this.promotionSearch.set(value);
   }
 
-  goBack(): void {
-    this.router.navigate(['/laboratory-orders', this.orderId]);
+  submit(): void {
+    const id = this.orderId();
+    if (!id || this.selectedItems().length === 0) return;
+
+    this.submitting.set(true);
+    this.error.set(null);
+
+    const tests = this.selectedItems().map(item => {
+      if (item.type === 'test') return { testDefinitionId: String(item.id) };
+      if (item.type === 'profile') return { testProfileId: String(item.id) };
+      return { promotionId: Number(item.id) };
+    });
+
+    this.orderService.addTestsToOrder(id, { tests }).subscribe({
+      next: () => {
+        this.success.set(true);
+        this.submitting.set(false);
+        setTimeout(() => this.router.navigate(['/laboratory-orders', id]), 1500);
+      },
+      error: (err: Error) => {
+        this.error.set(err.message);
+        this.submitting.set(false);
+      },
+    });
   }
+
+  goBack(): void { this.router.navigate(['/laboratory-orders', this.orderId()]); }
 }

@@ -1,118 +1,193 @@
+<div class="container">
+  <div class="header">
+    <button class="btn-back" (click)="goBack()">← Volver</button>
+    <h1>Detalles de Orden</h1>
+    <div class="header-actions">
+      @if (order()) {
+        <button class="btn-primary" (click)="captureResults()" [disabled]="!canCapture(order()!.status) || transitioning()">
+          🔬 Capturar Resultados
+        </button>
+        <button class="btn-secondary" (click)="editOrder()" [disabled]="!canEdit(order()!.status) || transitioning()">
+          Editar
+        </button>
+        <button class="btn-danger" (click)="cancelOrder()" [disabled]="!canCancel(order()!.status) || transitioning()">
+          Cancelar Orden
+        </button>
+      }
+    </div>
+  </div>
 
-    <div class="container">
-      <div class="header">
-        <button class="btn-back" (click)="goBack()">← Volver</button>
-        <h1>Detalles de Orden</h1>
-        <div class="header-actions">
-          <button class="btn-secondary" (click)="editOrder()" [disabled]="!order || order.status === 'COMPLETED'">
-            Editar
-          </button>
-          <button class="btn-danger" (click)="cancelOrder()" [disabled]="!order || order.status === 'COMPLETED' || order.status === 'CANCELLED'">
-            Cancelar Orden
-          </button>
+  @if (loading()) {
+    <div class="loading">Cargando información...</div>
+  }
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  @if (!loading() && order()) {
+    <div class="detail-container">
+
+      <!-- ── Flujo de estado (stepper) ── -->
+      <div class="section flow-section">
+        <div class="flow-header">
+          <h2>Estado de la Orden</h2>
+          @if (order()!.status === OrderStatus.CANCELLED) {
+            <span class="badge badge-cancelled">Cancelada</span>
+          }
+        </div>
+
+        <!-- Stepper visual -->
+        <div class="stepper">
+          @for (step of FLOW_STEPS; track step; let last = $last) {
+            <div class="step" [ngClass]="getStepClass(step)">
+              <div class="step-circle">
+                @if (getStepClass(step) === 'step-done') { ✓ }
+                @else { {{ $index + 1 }} }
+              </div>
+              <span class="step-label">{{ OrderStatusLabels[step] }}</span>
+            </div>
+            @if (!last) {
+              <div class="step-connector" [class.connector-done]="getStepClass(step) === 'step-done'"></div>
+            }
+          }
+        </div>
+
+        <!-- Botón de transición primaria -->
+        @if (nextAction() && order()!.status !== OrderStatus.CANCELLED) {
+          <div class="transition-row">
+            <button
+              [class]="nextAction()!.btnClass + ' btn-transition'"
+              (click)="transitionStatus(nextAction()!)"
+              [disabled]="transitioning()">
+              @if (transitioning()) { Procesando... }
+              @else { {{ nextAction()!.label }} → }
+            </button>
+            <span class="transition-hint">
+              Siguiente paso en el flujo de la orden
+            </span>
+          </div>
+        }
+        @if (order()!.status === OrderStatus.DELIVERED || order()!.status === OrderStatus.CANCELLED) {
+          <p class="flow-terminal">
+            @if (order()!.status === OrderStatus.DELIVERED) { ✅ Orden completada y entregada al paciente. }
+            @if (order()!.status === OrderStatus.CANCELLED) { ❌ Esta orden fue cancelada. }
+          </p>
+        }
+      </div>
+
+      <!-- ── Información básica ── -->
+      <div class="section">
+        <h2>Información de Orden</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Número de Orden:</label>
+            <span class="value">{{ order()!.orderNumber }}</span>
+          </div>
+          <div class="info-item">
+            <label>Estado:</label>
+            <span class="badge" [ngClass]="'badge-' + getStatusClass(order()!.status)">
+              {{ getStatusLabel(order()!.status) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Prioridad:</label>
+            <span class="badge badge-priority" [ngClass]="'priority-' + getPriorityClass(order()!.priority)">
+              {{ getPriorityLabel(order()!.priority) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Fecha de Solicitud:</label>
+            <span class="value">{{ order()!.orderDate | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          @if (order()!.completedAt) {
+            <div class="info-item">
+              <label>Fecha de Finalización:</label>
+              <span class="value">{{ order()!.completedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          }
         </div>
       </div>
 
-      <div *ngIf="loading" class="loading">Cargando información...</div>
-      <div *ngIf="error" class="error">{{ error }}</div>
-
-      <div *ngIf="!loading && order" class="detail-container">
-        <!-- Información básica -->
-        <div class="section">
-          <h2>Información de Orden</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Número de Orden:</label>
-              <span class="value">{{ order.orderNumber }}</span>
-            </div>
-            <div class="info-item">
-              <label>Estado:</label>
-              <span class="badge" [ngClass]="'badge-' + getStatusClass(order.status)">
-                {{ formatStatus(order.status) }}
+      <!-- ── Información Clínica ── -->
+      <div class="section">
+        <h2>Información Clínica</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Paciente:</label>
+            @if (order()!.patient) {
+              <span class="value">
+                {{ order()!.patient!.firstName }} {{ order()!.patient!.lastName }}
+                <br><small>{{ order()!.patient!.documentNumber }}</small>
               </span>
-            </div>
-            <div class="info-item">
-              <label>Prioridad:</label>
-              <span class="badge badge-priority" [ngClass]="'priority-' + order.priority.toLowerCase()">
-                {{ formatPriority(order.priority) }}
-              </span>
-            </div>
-            <div class="info-item">
-              <label>Fecha de Solicitud:</label>
-              <span class="value">{{ order.orderDate | date: 'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <div class="info-item" *ngIf="order.completedAt">
-              <label>Fecha de Finalización:</label>
-              <span class="value">{{ order.completedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
-            </div>
+            }
           </div>
-        </div>
-
-        <!-- Información de Paciente y Doctor -->
-        <div class="section">
-          <h2>Información Clínica</h2>
-          <div class="info-grid">
+          <div class="info-item">
+            <label>Doctor Solicitante:</label>
+            @if (order()!.doctor) {
+              <span class="value">{{ order()!.doctor!.firstName }} {{ order()!.doctor!.lastName }}</span>
+            } @else {
+              <span class="value">-</span>
+            }
+          </div>
+          @if (order()!.clinicalIndication) {
             <div class="info-item">
-              <label>Paciente:</label>
-              <span class="value" *ngIf="order.patient">
-                {{ order.patient.firstName }} {{ order.patient.lastName }}
-                <br>
-                <small>{{ order.patient.documentNumber }}</small>
-              </span>
-            </div>
-            <div class="info-item">
-              <label>Doctor Solicitante:</label>
-              <span class="value" *ngIf="order.doctor">
-                {{ order.doctor.firstName }} {{ order.doctor.lastName }}
-              </span>
-              <span class="value" *ngIf="!order.doctor">-</span>
-            </div>
-            <div class="info-item" *ngIf="order.clinicalIndication">
               <label>Indicación Clínica:</label>
-              <span class="value">{{ order.clinicalIndication }}</span>
+              <span class="value">{{ order()!.clinicalIndication }}</span>
             </div>
-            <div class="info-item" *ngIf="order.notes">
+          }
+          @if (order()!.notes) {
+            <div class="info-item">
               <label>Notas:</label>
-              <span class="value">{{ order.notes }}</span>
+              <span class="value">{{ order()!.notes }}</span>
             </div>
-          </div>
+          }
         </div>
+      </div>
 
-        <!-- Pruebas asociadas -->
-        <div class="section" *ngIf="order.tests && order.tests.length > 0">
-          <h2>Pruebas Ordenadas</h2>
+      <!-- ── Pruebas asociadas ── -->
+      @if (order()!.tests && order()!.tests!.length > 0) {
+        <div class="section">
+          <div class="section-header">
+            <h2>Pruebas Ordenadas ({{ order()!.tests!.length }})</h2>
+            <button class="btn-primary" (click)="captureResults()" [disabled]="!canCapture(order()!.status)">
+              🔬 Capturar Resultados
+            </button>
+          </div>
           <div class="table-container">
             <table class="table">
               <thead>
                 <tr>
                   <th>Prueba</th>
-                  <th>Tipo de Resultado</th>
-                  <th>Acciones</th>
+                  <th>Código</th>
+                  <th>Tipo de Respuesta</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let test of order.tests">
-                  <td>{{ test.name }}</td>
-                  <td>{{ test.resultType }}</td>
-                  <td>
-                    <button class="btn-icon" (click)="removeTest(test)" [disabled]="order.status === 'COMPLETED'">
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
+                @for (test of order()!.tests!; track test.id) {
+                  <tr>
+                    <td>{{ test.testDefinition?.name ?? test.name ?? '—' }}</td>
+                    <td>{{ test.testDefinition?.code ?? '—' }}</td>
+                    <td>{{ test.testDefinition?.responseType?.name ?? test.resultType ?? '—' }}</td>
+                  </tr>
+                }
               </tbody>
             </table>
           </div>
-          <button class="btn-secondary" (click)="addTests()" [disabled]="order.status === 'COMPLETED'">
-            + Agregar Pruebas
-          </button>
+          <div class="section-footer">
+            <button class="btn-secondary" (click)="addTests()" [disabled]="!canEdit(order()!.status)">
+              + Agregar Pruebas
+            </button>
+          </div>
         </div>
-
-        <div class="section" *ngIf="!order.tests || order.tests.length === 0">
+      } @else {
+        <div class="section">
           <p class="no-data">No hay pruebas asociadas a esta orden</p>
-          <button class="btn-secondary" (click)="addTests()" [disabled]="order.status === 'COMPLETED'">
+          <button class="btn-secondary" (click)="addTests()" [disabled]="!canEdit(order()!.status)">
             + Agregar Pruebas
           </button>
         </div>
-      </div>
+      }
+
     </div>
+  }
+</div>

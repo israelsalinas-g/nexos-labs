@@ -1,0 +1,107 @@
+<div class="modal-overlay" (click)="onCancel()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Editar Tipo de Respuesta' : 'Nuevo Tipo de Respuesta' }}</h2>
+      <button class="btn-close" (click)="onCancel()">×</button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-body">
+
+      <!-- Nombre -->
+      <div class="form-group">
+        <label for="name">Nombre <span class="required">*</span></label>
+        <input id="name" type="text" formControlName="name" placeholder="Ej. Negativo/Positivo"
+          [class.invalid]="isFieldInvalid('name')">
+        <span class="field-error" *ngIf="isFieldInvalid('name')">
+          El nombre es requerido (máx. 100 caracteres)
+        </span>
+      </div>
+
+      <!-- Slug -->
+      <div class="form-group" *ngIf="!isEditMode">
+        <label for="slug">Slug (identificador único) <span class="required">*</span></label>
+        <input id="slug" type="text" formControlName="slug" placeholder="positive_negative"
+          [class.invalid]="isFieldInvalid('slug')">
+        <span class="field-hint">Solo letras minúsculas, números y guión bajo. Se genera automáticamente.</span>
+        <span class="field-error" *ngIf="isFieldInvalid('slug')">
+          Slug requerido. Solo letras minúsculas, números y guión bajo.
+        </span>
+      </div>
+
+      <!-- Tipo de entrada -->
+      <div class="form-group" *ngIf="!isEditMode">
+        <label for="inputType">Tipo de entrada <span class="required">*</span></label>
+        <select id="inputType" formControlName="inputType">
+          <option value="enum">Opciones (enum)</option>
+          <option value="numeric">Numérico</option>
+          <option value="text">Texto libre</option>
+        </select>
+      </div>
+
+      <!-- Descripción -->
+      <div class="form-group">
+        <label for="description">Descripción</label>
+        <textarea id="description" formControlName="description" rows="2"
+          placeholder="Descripción opcional del tipo de respuesta"></textarea>
+      </div>
+
+      <!-- Opciones (solo para enum) -->
+      <div class="options-section" *ngIf="showOptions" formArrayName="options">
+        <div class="options-header">
+          <h3>Opciones de respuesta</h3>
+          <button type="button" class="btn-add-option" (click)="addOption()">+ Agregar opción</button>
+        </div>
+
+        <div *ngIf="options.length === 0" class="no-options">
+          No hay opciones. Haz clic en "Agregar opción" para comenzar.
+        </div>
+
+        <div class="option-row" *ngFor="let opt of options.controls; let i = index" [formGroupName]="i">
+          <div class="option-color">
+            <input type="color" formControlName="color" class="color-picker">
+          </div>
+          <div class="option-value">
+            <input type="text" formControlName="value" placeholder="Valor (ej. Negativo)"
+              [class.invalid]="isOptionFieldInvalid(i, 'value')">
+            <span class="field-error" *ngIf="isOptionFieldInvalid(i, 'value')">Requerido</span>
+          </div>
+          <div class="option-order">
+            <button type="button" class="btn-move" (click)="moveOption(i, 'up')" [disabled]="i === 0">↑</button>
+            <span class="order-num">{{ i + 1 }}</span>
+            <button type="button" class="btn-move" (click)="moveOption(i, 'down')" [disabled]="i === options.length - 1">↓</button>
+          </div>
+          <div class="option-default">
+            <label class="default-label">
+              <input type="checkbox" formControlName="isDefault">
+              Por defecto
+            </label>
+          </div>
+          <button type="button" class="btn-remove-option" (click)="removeOption(i)">✕</button>
+        </div>
+
+        <!-- Preview -->
+        <div class="options-preview-section" *ngIf="options.length > 0">
+          <p class="preview-title">Vista previa:</p>
+          <div class="preview-chips">
+            <span *ngFor="let opt of options.controls" class="preview-chip"
+              [style.backgroundColor]="opt.get('color')?.value || '#6c757d'">
+              {{ opt.get('value')?.value || '...' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensajes -->
+      <div class="success-msg" *ngIf="submitSuccess">{{ submitSuccess }}</div>
+      <div class="error-msg" *ngIf="submitError">{{ submitError }}</div>
+
+      <!-- Acciones -->
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="onCancel()">Cancelar</button>
+        <button type="submit" class="btn-submit" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

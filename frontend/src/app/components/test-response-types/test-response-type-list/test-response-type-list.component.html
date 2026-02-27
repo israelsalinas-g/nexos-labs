@@ -1,0 +1,106 @@
+<div class="container">
+  <div class="header">
+    <h1>Tipos de Respuesta</h1>
+    <div class="search-controls">
+      <input
+        type="text"
+        placeholder="Buscar tipo..."
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+        class="search-input">
+      <label class="toggle-label">
+        <input type="checkbox" [(ngModel)]="includeInactive" (change)="loadTypes()">
+        Mostrar inactivos
+      </label>
+      <button class="btn-secondary" (click)="clearSearch()">Limpiar</button>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">+ Nuevo Tipo</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando tipos de respuesta...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Slug</th>
+          <th>Tipo de entrada</th>
+          <th>Opciones</th>
+          <th>Sistema</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let type of responseTypes">
+          <td>{{ type.name }}</td>
+          <td class="slug-cell">{{ type.slug }}</td>
+          <td>
+            <span class="badge" [ngClass]="getInputTypeBadgeClass(type.inputType)">
+              {{ getInputTypeLabel(type.inputType) }}
+            </span>
+          </td>
+          <td>
+            <span *ngIf="type.inputType === 'enum'" class="options-preview">
+              <span *ngFor="let opt of (type.options | slice:0:3)" class="option-chip"
+                [style.backgroundColor]="opt.color || '#6c757d'">
+                {{ opt.value }}
+              </span>
+              <span *ngIf="type.options.length > 3" class="option-more">
+                +{{ type.options.length - 3 }} más
+              </span>
+            </span>
+            <span *ngIf="type.inputType !== 'enum'" class="text-muted">—</span>
+          </td>
+          <td>
+            <span class="system-badge" [class.is-system]="type.isSystem">
+              {{ type.isSystem ? 'Sistema' : 'Usuario' }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="type.isActive">
+              {{ type.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="btn-small btn-warning" (click)="openEditModal(type)">Editar</button>
+            <button class="btn-small"
+              [class.btn-secondary]="type.isActive"
+              [class.btn-success]="!type.isActive"
+              (click)="toggleActive(type)">
+              {{ type.isActive ? 'Desactivar' : 'Activar' }}
+            </button>
+            <button class="btn-small btn-danger"
+              [disabled]="type.isSystem"
+              (click)="deleteType(type)">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="btn-pagination" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1">
+        ← Anterior
+      </button>
+      <span class="page-info">Página {{ currentPage }} de {{ totalPages }} ({{ totalItems }} tipos)</span>
+      <button class="btn-pagination" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages">
+        Siguiente →
+      </button>
+    </div>
+
+    <div *ngIf="responseTypes.length === 0" class="no-data">
+      <p>No hay tipos de respuesta registrados.</p>
+    </div>
+  </div>
+
+  <app-test-response-type-form
+    *ngIf="showFormModal"
+    [responseType]="selectedType"
+    (saved)="onSaved()"
+    (cancelled)="onCancelled()">
+  </app-test-response-type-form>
+</div>

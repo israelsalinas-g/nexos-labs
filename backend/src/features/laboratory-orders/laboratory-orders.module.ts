@@ -10,7 +10,9 @@ Patient,
 TestResult,
 TestDefinition,
 TestSection,
-TestProfile } from '../../entities';
+TestProfile,
+Promotion } from '../../entities';
+import { UnifiedTestResult } from '../../entities/unified-test-result.entity';
 
 @Module({
   imports: [
@@ -25,7 +27,9 @@ TestProfile } from '../../entities';
       TestResult,
       TestDefinition,
       TestSection,
-      TestProfile
+      TestProfile,
+      Promotion,
+      UnifiedTestResult,
     ])
   ],
   controllers: [LaboratoryOrdersController],

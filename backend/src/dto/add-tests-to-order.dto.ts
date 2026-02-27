@@ -1,4 +1,4 @@
-import { IsUUID, IsArray, IsOptional, IsString, IsObject, ValidateNested } from 'class-validator';
+import { IsUUID, IsArray, IsOptional, IsString, IsObject, IsInt, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -23,6 +23,15 @@ export class AddTestItemDto {
   @IsOptional()
   @IsUUID()
   testProfileId?: string;
+
+  @ApiProperty({
+    description: 'ID de la promoción (expande todas las pruebas y perfiles que incluye)',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  promotionId?: number;
 
   @ApiProperty({
     description: 'Cantidad de veces que se realiza esta prueba',

@@ -195,6 +195,54 @@
       background-color: #7f8c8d;
     }
 
+    /* Pestañas */
+    .tab-bar { display: flex; border-bottom: 2px solid #dee2e6; padding: 0 20px; }
+    .tab-btn {
+      padding: 10px 20px; border: none; background: none; cursor: pointer;
+      font-size: 14px; color: #6c757d; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn.active { color: #3498db; border-bottom-color: #3498db; font-weight: 600; }
+    .range-count {
+      background: #3498db; color: white; border-radius: 10px;
+      padding: 1px 6px; font-size: 11px;
+    }
+
+    /* Rangos tab */
+    .ranges-body { padding: 20px; }
+    .ranges-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .ranges-hint { margin: 0; color: #6c757d; font-size: 14px; }
+    .ranges-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .ranges-table th { background: #34495e; color: white; padding: 8px 10px; text-align: left; font-size: 12px; }
+    .ranges-table td { padding: 8px 10px; border-bottom: 1px solid #ecf0f1; font-size: 13px; }
+    .ranges-table tr:hover { background: #f8f9fa; }
+    .no-data { text-align: center; padding: 30px; color: #6c757d; font-style: italic; }
+    .loading { text-align: center; padding: 20px; color: #6c757d; }
+
+    /* Formulario inline de rango */
+    .range-form-panel {
+      background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;
+      padding: 16px; margin-bottom: 16px;
+    }
+    .range-form-panel h4 { margin: 0 0 12px; color: #2c3e50; font-size: 15px; }
+    .range-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+    .btn-small { padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; color: white; }
+    .btn-danger { background-color: #dc3545; }
+
+    /* Badge nuevo */
+    .badge-new {
+      background: #28a745; color: white; border-radius: 8px;
+      padding: 1px 6px; font-size: 10px; margin-left: 4px;
+    }
+
+    /* Preview de opciones en el selector */
+    .options-preview { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .opt-chip {
+      padding: 2px 8px; border-radius: 10px; font-size: 11px;
+      color: white; font-weight: 500;
+    }
+
     @media (max-width: 768px) {
       .modal-content {
         max-width: 100%;

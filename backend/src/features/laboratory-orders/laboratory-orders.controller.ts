@@ -64,6 +64,15 @@ export class LaboratoryOrdersController {
     return this.laboratoryOrdersService.getStats();
   }
 
+  @Get(':id/pending-capture')
+  @ApiOperation({ summary: 'Pruebas de la orden con tipos de respuesta y resultados previos (para captura)' })
+  @ApiParam({ name: 'id', description: 'ID de la orden de laboratorio' })
+  @ApiResponse({ status: 200, description: 'Datos de captura con responseType, opciones y resultado previo por prueba' })
+  @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+  getPendingCapture(@Param('id') id: string): Promise<any> {
+    return this.laboratoryOrdersService.getPendingCapture(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener una orden por su ID' })
   @ApiResponse({ status: 200, description: 'Orden encontrada', type: LaboratoryOrder })

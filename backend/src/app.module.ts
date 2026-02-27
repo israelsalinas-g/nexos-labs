@@ -26,6 +26,22 @@ import { AuthModule } from './features/auth/auth.module';
 import { UsersModule } from './features/users/users.module';
 import { RolesModule } from './features/roles/roles.module';
 import { UploadModule } from './features/upload/upload.module';
+import { TestResponseTypesModule } from './features/test-response-types/test-response-types.module';
+import { TestReferenceRangesModule } from './features/test-reference-ranges/test-reference-ranges.module';
+import { PromotionsModule } from './features/promotions/promotions.module';
+import { UnifiedTestResultsModule } from './features/unified-test-results/unified-test-results.module';
+import { SeedResponseTypes } from './seed/seed.response-types';
+import { SeedPromotions } from './seed/seed.promotions';
+import { SeedDemoData } from './seed/seed.demo-data';
+import { TestResponseType } from './entities/test-response-type.entity';
+import { TestResponseOption } from './entities/test-response-option.entity';
+import { Promotion } from './entities/promotion.entity';
+import { TestProfile } from './entities/test-profile.entity';
+import { TestSection } from './entities/test-section.entity';
+import { TestDefinition } from './entities/test-definition.entity';
+import { TestReferenceRange } from './entities/test-reference-range.entity';
+import { Doctor } from './entities/doctor.entity';
+import { Patient } from './entities/patient.entity';
 
 import { getDatabaseConfig } from './config/database.config';
 
@@ -40,7 +56,13 @@ import { getDatabaseConfig } from './config/database.config';
       useFactory: getDatabaseConfig,
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Role, User]),
+    TypeOrmModule.forFeature([
+      Role, User,
+      TestResponseType, TestResponseOption,
+      Promotion, TestProfile,
+      TestSection, TestDefinition, TestReferenceRange,
+      Doctor, Patient,
+    ]),
     DymindDh36ResultsModule,
     LisServerModule,
     PatientsModule,
@@ -60,8 +82,12 @@ import { getDatabaseConfig } from './config/database.config';
     UsersModule,
     RolesModule,
     UploadModule,
+    TestResponseTypesModule,
+    TestReferenceRangesModule,
+    PromotionsModule,
+    UnifiedTestResultsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, SeedRolesAndUsers],
+  providers: [AppService, SeedRolesAndUsers, SeedResponseTypes, SeedPromotions, SeedDemoData],
 })
 export class AppModule {}

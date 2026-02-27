@@ -108,22 +108,34 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./components/stool-tests/stool-test-detail/stool-test-detail.component').then(m => m.StoolTestDetailComponent)
   },
-  { 
+  {
     path: 'test-sections',
     canActivate: [authGuard],
     loadComponent: () => import('./components/test-sections/test-section-list/test-section-list.component').then(m => m.TestSectionListComponent)
+  },
+  {
+    path: 'test-response-types',
+    canActivate: [authGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.SUPERADMIN] },
+    loadComponent: () => import('./components/test-response-types/test-response-type-list/test-response-type-list.component').then(m => m.TestResponseTypeListComponent)
   },
   { 
     path: 'test-definitions',
     canActivate: [authGuard],
     loadComponent: () => import('./components/test-definitions/test-definition-list/test-definition-list.component').then(m => m.TestDefinitionListComponent)
   },
-  { 
+  {
     path: 'test-profiles',
     canActivate: [authGuard],
     loadComponent: () => import('./components/test-profiles/test-profile-list/test-profile-list.component').then(m => m.TestProfileListComponent)
   },
-  { 
+  {
+    path: 'promotions',
+    canActivate: [authGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.SUPERADMIN] },
+    loadComponent: () => import('./components/promotions/promotion-list/promotion-list.component').then(m => m.PromotionListComponent)
+  },
+  {
     path: 'laboratory-orders',
     canActivate: [authGuard],
     loadComponent: () => import('./components/laboratory-orders/laboratory-order-list/laboratory-order-list.component').then(m => m.LaboratoryOrderListComponent)
@@ -138,7 +150,17 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./components/laboratory-orders/laboratory-order-detail/laboratory-order-detail.component').then(m => m.LaboratoryOrderDetailComponent)
   },
-  { 
+  {
+    path: 'laboratory-orders/:id/results',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/result-capture/result-capture.component').then(m => m.ResultCaptureComponent)
+  },
+  {
+    path: 'laboratory-orders/:id/add-tests',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/laboratory-orders/add-tests-dialog/add-tests-dialog.component').then(m => m.AddTestsDialogComponent)
+  },
+  {
     path: 'laboratory-orders/:id/edit',
     canActivate: [authGuard],
     loadComponent: () => import('./components/laboratory-orders/laboratory-order-form/laboratory-order-form.component').then(m => m.LaboratoryOrderFormComponent)

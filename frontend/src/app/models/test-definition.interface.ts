@@ -1,4 +1,5 @@
 import { TestProfile } from './test-profile.interface';
+import { TestResponseType } from './test-response-type.interface';
 
 export interface ReferenceRange {
   gender?: 'M' | 'F';
@@ -17,7 +18,8 @@ export interface TestDefinition {
   sectionId?: string;  // ID de la sección relacionada
   section?: { id: string; name: string };  // Objeto sección completo
   description: string | null;
-  resultType: string; // TestResultType enum serializado como string
+  resultType: string; // TestResultType enum serializado como string (legado)
+  responseType?: TestResponseType; // Nuevo tipo de respuesta dinámico
   unit: string | null;
   referenceRange: string | null;
   method: string | null;
@@ -39,7 +41,8 @@ export interface CreateTestDefinitionDto {
   method?: string;
   unit?: string;
   referenceRanges?: ReferenceRange[];
-  resultType?: string;  // Enum string values: 'numeric', 'text', 'positive_negative', etc.
+  resultType?: string;  // Enum string values: 'numeric', 'text', 'positive_negative', etc. (legado)
+  responseTypeId?: number; // ID del nuevo tipo de respuesta dinámico
   sampleType?: string;
   processingTime?: number;
   price?: number;

@@ -13,3 +13,8 @@ export * from './urine-test.entity';
 export * from './role.entity';
 export * from './user.entity';
 export * from './permission.entity';
+export * from './test-response-type.entity';
+export * from './test-response-option.entity';
+export * from './test-reference-range.entity';
+export * from './promotion.entity';
+export * from './unified-test-result.entity';

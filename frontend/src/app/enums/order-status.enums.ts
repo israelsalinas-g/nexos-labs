@@ -1,14 +1,32 @@
+// Valores deben coincidir con el enum de PostgreSQL del backend
 export enum OrderStatus {
-  PENDING = 'PENDING',              // Orden creada, esperando procesamiento
-  IN_PROGRESS = 'IN_PROGRESS',      // Pruebas en procesamiento
-  COMPLETED = 'COMPLETED',          // Todos los resultados disponibles
-  CANCELLED = 'CANCELLED',          // Orden cancelada
-  ON_HOLD = 'ON_HOLD'               // En espera (requiere acción)
+  PENDING = 'Pending',
+  PAID = 'Paid',
+  IN_PROCESS = 'InProcess',
+  COMPLETED = 'Completed',
+  BILLED = 'Billed',
+  DELIVERED = 'Delivered',
+  CANCELLED = 'Cancelled',
 }
 
+export const OrderStatusLabels: Record<OrderStatus, string> = {
+  [OrderStatus.PENDING]: 'Pendiente',
+  [OrderStatus.PAID]: 'Pagada',
+  [OrderStatus.IN_PROCESS]: 'En Proceso',
+  [OrderStatus.COMPLETED]: 'Completada',
+  [OrderStatus.BILLED]: 'Facturada',
+  [OrderStatus.DELIVERED]: 'Entregada',
+  [OrderStatus.CANCELLED]: 'Cancelada',
+};
+
 export enum OrderPriority {
-  LOW = 'LOW',                      // Resultado dentro de 48-72 horas
-  NORMAL = 'NORMAL',               // Resultado dentro de 24 horas (por defecto)
-  HIGH = 'HIGH',                   // Resultado dentro de 4-6 horas
-  STAT = 'STAT'                    // Resultado dentro de 1 hora (crítico)
+  NORMAL = 'Normal',
+  URGENT = 'Urgent',
+  STAT = 'Stat',
 }
+
+export const OrderPriorityLabels: Record<OrderPriority, string> = {
+  [OrderPriority.NORMAL]: 'Normal',
+  [OrderPriority.URGENT]: 'Urgente',
+  [OrderPriority.STAT]: 'STAT (Inmediato)',
+};

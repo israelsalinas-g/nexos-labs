@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { TestSection } from './test-section.entity';
 import { TestProfile } from './test-profile.entity';
 import { TestResultType } from '../common/enums/test-result-type.enums';
+import { TestResponseType } from './test-response-type.entity';
 
 /**
  * Entidad para la definición de pruebas individuales de laboratorio
@@ -127,7 +128,16 @@ export class TestDefinition {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Tipo de respuesta dinámico (nuevo sistema configurable)',
+    type: () => TestResponseType,
+    required: false
+  })
+  @ManyToOne(() => TestResponseType, { nullable: true, onDelete: 'RESTRICT', eager: false })
+  @JoinColumn({ name: 'response_type_id' })
+  responseType: TestResponseType;
+
+  @ApiProperty({
     description: 'Perfiles a los que pertenece esta prueba',
     type: () => [TestProfile]
   })
