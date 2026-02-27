@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { LabSettingsService } from './services/lab-settings.service';
 
 @Component({
   selector: 'app-root',
@@ -54,6 +55,11 @@ import { RouterOutlet } from '@angular/router';
     }
   `]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  private labSettings = inject(LabSettingsService);
   title = 'Sistema de Laboratorio';
+
+  ngOnInit(): void {
+    this.labSettings.loadSettings();
+  }
 }

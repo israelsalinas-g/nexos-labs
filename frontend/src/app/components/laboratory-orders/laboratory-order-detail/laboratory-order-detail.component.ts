@@ -4,6 +4,9 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { LaboratoryOrder } from '../../../models/laboratory-order.interface';
 import { LaboratoryOrderService } from '../../../services/laboratory-order.service';
 import { OrderStatus, OrderPriority, OrderStatusLabels, OrderPriorityLabels } from '../../../enums/order-status.enums';
+import { SendResultsDialogComponent, SendResultsClosedEvent } from '../send-results-dialog/send-results-dialog.component';
+import { PdfUnifiedResultsService } from '../../../services/pdf/pdf-unified-results.service';
+import { LabSettingsService } from '../../../services/lab-settings.service';
 
 interface StatusAction {
   label: string;
@@ -53,7 +56,7 @@ const STATUS_TRANSITIONS: Partial<Record<OrderStatus, StatusAction>> = {
   selector: 'app-laboratory-order-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SendResultsDialogComponent],
   templateUrl: './laboratory-order-detail.component.html',
   styleUrls: ['./laboratory-order-detail.component.css']
 })
@@ -61,11 +64,15 @@ export class LaboratoryOrderDetailComponent implements OnInit {
   private orderService = inject(LaboratoryOrderService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private pdfService = inject(PdfUnifiedResultsService);
+  private labSettings = inject(LabSettingsService);
 
   order = signal<LaboratoryOrder | null>(null);
   loading = signal(false);
   error = signal<string | null>(null);
   transitioning = signal(false);
+  showSendDialog = signal(false);
+  generatingPdf = signal(false);
 
   readonly OrderStatus = OrderStatus;
   readonly OrderStatusLabels = OrderStatusLabels;
@@ -149,6 +156,17 @@ export class LaboratoryOrderDetailComponent implements OnInit {
     }
   }
 
+  openSendDialog(): void { this.showSendDialog.set(true); }
+
+  onSendDialogClosed(event: SendResultsClosedEvent): void {
+    this.showSendDialog.set(false);
+    if (event.refreshOrder) this.loadOrder();
+  }
+
+  canSendResults(status: OrderStatus): boolean {
+    return status === OrderStatus.COMPLETED || status === OrderStatus.DELIVERED;
+  }
+
   goBack(): void {
     this.router.navigate(['/laboratory-orders']);
   }
@@ -175,6 +193,27 @@ export class LaboratoryOrderDetailComponent implements OnInit {
     if (stepIdx < currentIdx) return 'step-done';
     if (stepIdx === currentIdx) return 'step-active';
     return 'step-pending';
+  }
+
+  async downloadPdf(): Promise<void> {
+    const order = this.order();
+    if (!order || this.generatingPdf()) return;
+    this.generatingPdf.set(true);
+    try {
+      await this.pdfService.downloadForOrder(order, this.labSettings.settingsMap());
+    } catch (err) {
+      console.error('Error generando PDF:', err);
+      this.error.set('Error al generar el PDF. Intente de nuevo.');
+    } finally {
+      this.generatingPdf.set(false);
+    }
+  }
+
+  /** Genera el PDF en base64 para enviarlo por email/WhatsApp */
+  async generatePdfBase64(): Promise<string> {
+    const order = this.order();
+    if (!order) return '';
+    return this.pdfService.generateForOrder(order, this.labSettings.settingsMap());
   }
 
   canCapture(status: OrderStatus): boolean {

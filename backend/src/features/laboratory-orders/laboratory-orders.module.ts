@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LaboratoryOrdersController } from './laboratory-orders.controller';
 import { LaboratoryOrdersService } from './laboratory-orders.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 import { OrderTest,
 LaboratoryOrder,
@@ -16,6 +17,7 @@ import { UnifiedTestResult } from '../../entities/unified-test-result.entity';
 
 @Module({
   imports: [
+    NotificationsModule,
     TypeOrmModule.forFeature([
       // Entidades principales
       LaboratoryOrder,

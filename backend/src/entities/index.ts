@@ -18,3 +18,4 @@ export * from './test-response-option.entity';
 export * from './test-reference-range.entity';
 export * from './promotion.entity';
 export * from './unified-test-result.entity';
+export * from './lab-setting.entity';

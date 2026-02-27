@@ -211,6 +211,14 @@ export const routes: Routes = [
     loadComponent: () => import('./components/doctor/doctor-list/doctor-list.component').then(m => m.DoctorListComponent)
   },
 
+  // Configuración del laboratorio (ADMIN / SUPERADMIN)
+  {
+    path: 'settings',
+    canActivate: [authGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.SUPERADMIN] },
+    loadComponent: () => import('./components/settings/lab-settings/lab-settings.component').then(m => m.LabSettingsComponent)
+  },
+
   // Ruta wildcard - redirige a dashboard
   { path: '**', redirectTo: '/dashboard' }
 ];

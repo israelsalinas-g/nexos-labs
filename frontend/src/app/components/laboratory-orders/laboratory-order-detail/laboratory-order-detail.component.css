@@ -331,3 +331,48 @@
     .transition-hint { font-size: 12px; color: #9ca3af; }
 
     .flow-terminal { margin: 8px 0 0; font-size: 14px; color: #4b5563; font-weight: 500; }
+
+    /* ── PDF y Envío de resultados ── */
+    .btn-pdf {
+      padding: 8px 16px;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+    .btn-pdf:hover:not(:disabled) { opacity: 0.88; }
+    .btn-pdf:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-send {
+      padding: 8px 16px;
+      background: #0891b2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+    .btn-send:hover:not(:disabled) { opacity: 0.88; }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .delivery-badges {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .delivery-badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 500;
+      cursor: default;
+    }
+    .email-badge { background: #dbeafe; color: #1e40af; }
+    .whatsapp-badge { background: #dcfce7; color: #166534; }

@@ -133,6 +133,10 @@ import { ThemeService } from '../services/theme.service';
                     <span class="item-icon">🎁</span>
                     <span>Promociones</span>
                   </button>
+                  <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/settings')">
+                    <span class="item-icon">⚙️</span>
+                    <span>Configuración del Laboratorio</span>
+                  </button>
                 }
               </div>
 

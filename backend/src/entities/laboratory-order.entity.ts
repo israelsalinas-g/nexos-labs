@@ -111,12 +111,20 @@ export class LaboratoryOrder {
   @Column({ name: 'estimated_delivery', type: 'timestamp', nullable: true })
   estimatedDelivery: Date;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Fecha real de entrega de resultados',
     required: false
   })
   @Column({ name: 'delivered_at', type: 'timestamp', nullable: true })
   deliveredAt: Date;
+
+  @ApiProperty({ description: 'Fecha en que se enviaron los resultados por email', required: false })
+  @Column({ name: 'results_sent_email_at', type: 'timestamp', nullable: true })
+  resultsSentEmailAt: Date | null;
+
+  @ApiProperty({ description: 'Fecha en que se enviaron los resultados por WhatsApp', required: false })
+  @Column({ name: 'results_sent_whatsapp_at', type: 'timestamp', nullable: true })
+  resultsSentWhatsappAt: Date | null;
 
   @ApiProperty({ 
     description: 'Costo total de la orden',

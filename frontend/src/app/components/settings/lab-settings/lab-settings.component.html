@@ -1,0 +1,140 @@
+<div class="container">
+  <div class="page-header">
+    <h1>⚙️ Configuración del Laboratorio</h1>
+    <p class="subtitle">Personalice el nombre, logo y datos del laboratorio. Los cambios se reflejan en los PDF generados.</p>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">Cargando configuración...</div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (saved()) {
+    <div class="alert alert-success">✅ Configuración guardada correctamente.</div>
+  }
+
+  @if (!loading()) {
+    <div class="settings-layout">
+
+      <!-- ── Grupos de settings ── -->
+      @for (group of groups; track group) {
+        @if (settingsByGroup()[group]?.length) {
+          <div class="settings-card">
+            <div class="card-header">
+              <h2>{{ groupLabels[group] }}</h2>
+            </div>
+            <div class="card-body">
+              @for (setting of settingsByGroup()[group]; track setting.key) {
+
+                @if (setting.key === 'lab_logo_base64') {
+                  <!-- Logo upload especial -->
+                  <div class="field-row">
+                    <label class="field-label">{{ setting.label }}</label>
+                    <div class="logo-section">
+                      @if (logoPreview()) {
+                        <div class="logo-preview">
+                          <img [src]="logoPreview()!" alt="Logo del laboratorio">
+                          <button class="btn-icon-danger" (click)="removeLogo()" title="Eliminar logo">✕</button>
+                        </div>
+                      } @else {
+                        <div class="logo-placeholder">Sin logo</div>
+                      }
+                      <label class="btn-upload">
+                        Subir imagen (PNG/JPG ≤ 200 KB)
+                        <input type="file" accept="image/png,image/jpeg" (change)="onLogoUpload($event)" hidden>
+                      </label>
+                    </div>
+                  </div>
+
+                } @else if (setting.type === 'textarea') {
+                  <div class="field-row">
+                    <label class="field-label" [for]="setting.key">{{ setting.label }}</label>
+                    <textarea
+                      [id]="setting.key"
+                      class="field-input"
+                      [class.dirty]="setting.isDirty"
+                      rows="3"
+                      [value]="setting.currentValue"
+                      (input)="onValueChange(setting, $any($event.target).value)">
+                    </textarea>
+                  </div>
+
+                } @else if (setting.type === 'color') {
+                  <div class="field-row">
+                    <label class="field-label" [for]="setting.key">{{ setting.label }}</label>
+                    <div class="color-row">
+                      <input
+                        type="color"
+                        [id]="setting.key"
+                        class="color-picker"
+                        [class.dirty]="setting.isDirty"
+                        [value]="setting.currentValue || '#1d4ed8'"
+                        (input)="onValueChange(setting, $any($event.target).value)">
+                      <span class="color-value">{{ setting.currentValue }}</span>
+                    </div>
+                  </div>
+
+                } @else {
+                  <div class="field-row">
+                    <label class="field-label" [for]="setting.key">{{ setting.label }}</label>
+                    <input
+                      type="text"
+                      [id]="setting.key"
+                      class="field-input"
+                      [class.dirty]="setting.isDirty"
+                      [value]="setting.currentValue"
+                      (input)="onValueChange(setting, $any($event.target).value)">
+                  </div>
+                }
+
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <!-- ── Integraciones ── -->
+      @if (integrations()) {
+        <div class="settings-card">
+          <div class="card-header">
+            <h2>Integraciones</h2>
+            <small class="card-hint">Estado de las credenciales configuradas en el servidor (.env)</small>
+          </div>
+          <div class="card-body">
+            <div class="integration-row">
+              <span class="integration-label">📧 Email SMTP</span>
+              <span class="badge" [class.badge-ok]="integrations()!.smtp" [class.badge-err]="!integrations()!.smtp">
+                {{ integrations()!.smtp ? 'Configurado' : 'No configurado' }}
+              </span>
+            </div>
+            <div class="integration-row">
+              <span class="integration-label">📱 WhatsApp (Twilio)</span>
+              <span class="badge" [class.badge-ok]="integrations()!.twilio" [class.badge-err]="!integrations()!.twilio">
+                {{ integrations()!.twilio ? 'Configurado' : 'No configurado' }}
+              </span>
+            </div>
+            @if (!integrations()!.smtp || !integrations()!.twilio) {
+              <p class="integration-hint">
+                Para configurar estas integraciones, edite el archivo <code>.env</code> en el servidor.
+              </p>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── Botón Guardar ── -->
+      <div class="save-bar">
+        <button class="btn-primary" (click)="save()" [disabled]="!hasDirty() || saving()">
+          @if (saving()) { Guardando... } @else { Guardar Cambios }
+        </button>
+        @if (hasDirty()) {
+          <span class="unsaved-hint">Hay cambios sin guardar</span>
+        }
+      </div>
+
+    </div>
+  }
+</div>

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseEnumPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { LaboratoryOrdersService } from './laboratory-orders.service';
+import { SendResultsDto } from '../../dto/send-results.dto';
 import { CreateLaboratoryOrderDto } from '../../dto/create-laboratory-order.dto';
 import { UpdateLaboratoryOrderDto } from '../../dto/update-laboratory-order.dto';
 import { AddTestsToOrderDto } from '../../dto/add-tests-to-order.dto';
@@ -71,6 +72,21 @@ export class LaboratoryOrdersController {
   @ApiResponse({ status: 404, description: 'Orden no encontrada' })
   getPendingCapture(@Param('id') id: string): Promise<any> {
     return this.laboratoryOrdersService.getPendingCapture(id);
+  }
+
+  @Post(':id/send-results')
+  @ApiOperation({ summary: 'Enviar resultados al paciente por email y/o WhatsApp' })
+  @ApiParam({ name: 'id', description: 'ID de la orden de laboratorio' })
+  @ApiBody({ type: SendResultsDto })
+  @ApiResponse({ status: 201, description: 'Resultados enviados', schema: {
+    example: { emailSent: true, whatsappSent: true, errors: [] }
+  }})
+  @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+  sendResults(
+    @Param('id') id: string,
+    @Body() dto: SendResultsDto,
+  ) {
+    return this.laboratoryOrdersService.sendResults(id, dto);
   }
 
   @Get(':id')

@@ -6,3 +6,4 @@ export { PdfDymindDh36Service } from './pdf-dymind-dh36.service';
 export { PdfIchromaService } from './pdf-ichroma.service';
 export { PdfUrineTestService } from './pdf-urine-test.service';
 export { PdfStoolTestService } from './pdf-stool-test.service';
+export { PdfUnifiedResultsService } from './pdf-unified-results.service';

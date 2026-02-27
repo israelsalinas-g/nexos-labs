@@ -30,6 +30,9 @@ import { TestResponseTypesModule } from './features/test-response-types/test-res
 import { TestReferenceRangesModule } from './features/test-reference-ranges/test-reference-ranges.module';
 import { PromotionsModule } from './features/promotions/promotions.module';
 import { UnifiedTestResultsModule } from './features/unified-test-results/unified-test-results.module';
+import { NotificationsModule } from './features/notifications/notifications.module';
+import { LabSettingsModule } from './features/lab-settings/lab-settings.module';
+import { LabSetting } from './entities/lab-setting.entity';
 import { SeedResponseTypes } from './seed/seed.response-types';
 import { SeedPromotions } from './seed/seed.promotions';
 import { SeedDemoData } from './seed/seed.demo-data';
@@ -62,6 +65,7 @@ import { getDatabaseConfig } from './config/database.config';
       Promotion, TestProfile,
       TestSection, TestDefinition, TestReferenceRange,
       Doctor, Patient,
+      LabSetting,
     ]),
     DymindDh36ResultsModule,
     LisServerModule,
@@ -86,6 +90,8 @@ import { getDatabaseConfig } from './config/database.config';
     TestReferenceRangesModule,
     PromotionsModule,
     UnifiedTestResultsModule,
+    NotificationsModule,
+    LabSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedRolesAndUsers, SeedResponseTypes, SeedPromotions, SeedDemoData],

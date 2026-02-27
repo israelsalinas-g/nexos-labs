@@ -95,4 +95,14 @@ export class LaboratoryOrderService extends BaseService {
     return this.http.get<any>(`${this.endpoint}/${orderId}/pending-capture`)
       .pipe(catchError(err => this.handleError(err)));
   }
+
+  sendResults(
+    orderId: string,
+    channels: ('email' | 'whatsapp')[],
+    pdfBase64?: string,
+    orderNumber?: string,
+  ): Observable<any> {
+    return this.http.post<any>(`${this.endpoint}/${orderId}/send-results`, { channels, pdfBase64, orderNumber })
+      .pipe(catchError(err => this.handleError(err)));
+  }
 }

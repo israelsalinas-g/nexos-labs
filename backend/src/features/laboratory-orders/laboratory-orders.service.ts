@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { NotificationsService, SendResultsResponse } from '../notifications/notifications.service';
+import { SendResultsDto } from '../../dto/send-results.dto';
 import { LaboratoryOrder } from '../../entities/laboratory-order.entity';
 import { OrderTest } from '../../entities/order-test.entity';
 import { Patient } from '../../entities/patient.entity';
@@ -22,6 +24,7 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
   protected readonly logger = new Logger(LaboratoryOrdersService.name);
 
   constructor(
+    private readonly notificationsService: NotificationsService,
     @InjectRepository(LaboratoryOrder)
     private readonly laboratoryOrderRepository: Repository<LaboratoryOrder>,
     @InjectRepository(Patient)
@@ -257,6 +260,23 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
     }
 
     return { orderId: order.id, totalTestsAdded: createdTests.length, tests: createdTests };
+  }
+
+  async sendResults(id: string, dto: SendResultsDto): Promise<SendResultsResponse & { order: LaboratoryOrder }> {
+    const orderForNumber = await this.laboratoryOrderRepository.findOne({ where: { id } });
+    const result = await this.notificationsService.sendOrderResults(
+      id, dto.channels, dto.pdfBase64, dto.orderNumber ?? orderForNumber?.orderNumber,
+    );
+
+    const order = await this.laboratoryOrderRepository.findOne({ where: { id } });
+    if (order) {
+      if (result.emailSent) order.resultsSentEmailAt = new Date();
+      if (result.whatsappSent) order.resultsSentWhatsappAt = new Date();
+      await this.laboratoryOrderRepository.save(order);
+    }
+
+    const updatedOrder = await this.findOne(id);
+    return { ...result, order: updatedOrder };
   }
 
   private async generateOrderNumber(): Promise<string> {

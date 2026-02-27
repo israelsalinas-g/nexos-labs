@@ -7,6 +7,14 @@
         <button class="btn-primary" (click)="captureResults()" [disabled]="!canCapture(order()!.status) || transitioning()">
           🔬 Capturar Resultados
         </button>
+        @if (canSendResults(order()!.status)) {
+          <button class="btn-pdf" (click)="downloadPdf()" [disabled]="generatingPdf()">
+            @if (generatingPdf()) { Generando PDF... } @else { 🖨️ Descargar PDF }
+          </button>
+          <button class="btn-send" (click)="openSendDialog()" [disabled]="transitioning()">
+            📤 Enviar Resultados
+          </button>
+        }
         <button class="btn-secondary" (click)="editOrder()" [disabled]="!canEdit(order()!.status) || transitioning()">
           Editar
         </button>
@@ -116,8 +124,23 @@
             <label>Paciente:</label>
             @if (order()!.patient) {
               <span class="value">
-                {{ order()!.patient!.firstName }} {{ order()!.patient!.lastName }}
-                <br><small>{{ order()!.patient!.documentNumber }}</small>
+                {{ order()!.patient!.name ?? (order()!.patient!.firstName + ' ' + order()!.patient!.lastName) }}
+                @if (order()!.patient!.documentNumber) {
+                  <br><small>{{ order()!.patient!.documentNumber }}</small>
+                }
+                <!-- Badges de notificación enviada -->
+                <span class="delivery-badges">
+                  @if (order()!.resultsSentEmailAt) {
+                    <span class="delivery-badge email-badge" [title]="'Email enviado: ' + (order()!.resultsSentEmailAt | date:'dd/MM HH:mm')">
+                      📧 {{ order()!.resultsSentEmailAt | date:'dd/MM HH:mm' }}
+                    </span>
+                  }
+                  @if (order()!.resultsSentWhatsappAt) {
+                    <span class="delivery-badge whatsapp-badge" [title]="'WhatsApp enviado: ' + (order()!.resultsSentWhatsappAt | date:'dd/MM HH:mm')">
+                      📱 {{ order()!.resultsSentWhatsappAt | date:'dd/MM HH:mm' }}
+                    </span>
+                  }
+                </span>
               </span>
             }
           </div>
@@ -190,4 +213,11 @@
 
     </div>
   }
+
+  <!-- Dialog de envío de resultados -->
+  <app-send-results-dialog
+    [order]="order()"
+    [visible]="showSendDialog()"
+    (closed)="onSendDialogClosed($event)">
+  </app-send-results-dialog>
 </div>
