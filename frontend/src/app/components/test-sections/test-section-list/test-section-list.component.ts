@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,8 @@ import { TestSectionFormComponent } from '../test-section-form/test-section-form
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, TestSectionFormComponent],
   templateUrl: './test-section-list.component.html',
-  styleUrls: ['./test-section-list.component.css']
+  styleUrls: ['./test-section-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TestSectionListComponent implements OnInit {
   sections: TestSection[] = [];
@@ -27,7 +28,7 @@ export class TestSectionListComponent implements OnInit {
   showFormModal = false;
   selectedSection?: TestSection;
 
-  constructor(private sectionService: TestSectionService) {}
+  constructor(private sectionService: TestSectionService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadSections();
@@ -48,10 +49,12 @@ export class TestSectionListComponent implements OnInit {
         this.totalPages = response.totalPages;
         this.currentPage = response.page;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.message;
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -103,6 +106,7 @@ export class TestSectionListComponent implements OnInit {
         },
         error: (err) => {
           this.error = err.message;
+          this.cdr.markForCheck();
         }
       });
     }

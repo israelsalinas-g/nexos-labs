@@ -53,10 +53,13 @@ export class PromotionsService extends BaseService<Promotion> {
   }
 
   async findAll(
-    page = 1, limit = 10,
-    includeInactive = false,
-    search?: string,
+    page = 1,
+    limit = 10,
+    options?: any,
   ): Promise<PaginationResult<Promotion>> {
+    const includeInactive = options?.includeInactive === true;
+    const search = options?.search;
+
     const query = this.promotionRepository.createQueryBuilder('promo')
       .leftJoinAndSelect('promo.tests', 'tests')
       .leftJoinAndSelect('promo.profiles', 'profiles')
@@ -86,16 +89,16 @@ export class PromotionsService extends BaseService<Promotion> {
       .getMany();
   }
 
-  async findOne(id: number): Promise<Promotion> {
+  async findOne(id: string): Promise<Promotion> {
     const promotion = await this.promotionRepository.findOne({
-      where: { id },
+      where: { id: id as any },
       relations: ['tests', 'profiles'],
     });
     if (!promotion) throw new NotFoundException(`Promoción con ID ${id} no encontrada`);
     return promotion;
   }
 
-  async update(id: number, dto: UpdatePromotionDto): Promise<Promotion> {
+  async update(id: string, dto: UpdatePromotionDto): Promise<Promotion> {
     const promotion = await this.findOne(id);
 
     const validFrom = dto.validFrom ?? promotion.validFrom;
@@ -119,13 +122,13 @@ export class PromotionsService extends BaseService<Promotion> {
     return this.promotionRepository.save(promotion);
   }
 
-  async toggleActive(id: number): Promise<Promotion> {
+  async toggleActive(id: string): Promise<Promotion> {
     const promotion = await this.findOne(id);
     promotion.isActive = !promotion.isActive;
     return this.promotionRepository.save(promotion);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const promotion = await this.findOne(id);
     await this.promotionRepository.remove(promotion);
   }

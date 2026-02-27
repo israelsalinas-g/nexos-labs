@@ -37,7 +37,7 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
     }
 
     const { responseTypeId, ...testData } = createDto as any;
-    const test = this.testDefinitionRepository.create(testData);
+    const test = this.testDefinitionRepository.create(testData as any) as any;
     test.section = section;
 
     const responseType = await this.resolveResponseType(responseTypeId);
@@ -47,9 +47,11 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
   }
 
   async findAll(
-    page = 1, limit = 10, sectionId?: string,
-    includeInactive = false, search?: string,
+    page: number = 1,
+    limit: number = 10,
+    options?: any,
   ): Promise<PaginationResult<TestDefinition>> {
+    const { sectionId, includeInactive = false, search } = options || {};
     const query = this.testDefinitionRepository.createQueryBuilder('test')
       .leftJoinAndSelect('test.section', 'section')
       .leftJoinAndSelect('test.profiles', 'profiles')
@@ -94,8 +96,8 @@ export class TestDefinitionsService extends BaseService<TestDefinition> {
     Object.assign(test, updateData);
 
     const responseType = await this.resolveResponseType(responseTypeId);
-    if (responseType) test.responseType = responseType;
-    else if (responseTypeId === null) test.responseType = null;
+    if (responseType) (test as any).responseType = responseType;
+    else if (responseTypeId === null) (test as any).responseType = null;
 
     return await this.testDefinitionRepository.save(test);
   }

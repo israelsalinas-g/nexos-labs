@@ -13,7 +13,7 @@ import { PaginationResult } from '../../common/interfaces';
 @ApiTags('Laboratory Orders')
 @Controller('laboratory-orders')
 export class LaboratoryOrdersController {
-  constructor(private readonly laboratoryOrdersService: LaboratoryOrdersService) {}
+  constructor(private readonly laboratoryOrdersService: LaboratoryOrdersService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear una nueva orden de laboratorio' })
@@ -50,11 +50,13 @@ export class LaboratoryOrdersController {
     return this.laboratoryOrdersService.findAll(
       pageNum,
       limitNum,
-      status,
-      priority,
-      search,
-      startDateObj,
-      endDateObj
+      {
+        status,
+        priority,
+        search,
+        startDate: startDateObj,
+        endDate: endDateObj
+      }
     );
   }
 
@@ -78,9 +80,11 @@ export class LaboratoryOrdersController {
   @ApiOperation({ summary: 'Enviar resultados al paciente por email y/o WhatsApp' })
   @ApiParam({ name: 'id', description: 'ID de la orden de laboratorio' })
   @ApiBody({ type: SendResultsDto })
-  @ApiResponse({ status: 201, description: 'Resultados enviados', schema: {
-    example: { emailSent: true, whatsappSent: true, errors: [] }
-  }})
+  @ApiResponse({
+    status: 201, description: 'Resultados enviados', schema: {
+      example: { emailSent: true, whatsappSent: true, errors: [] }
+    }
+  })
   @ApiResponse({ status: 404, description: 'Orden no encontrada' })
   sendResults(
     @Param('id') id: string,
@@ -89,20 +93,20 @@ export class LaboratoryOrdersController {
     return this.laboratoryOrdersService.sendResults(id, dto);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtener una orden por su ID' })
-  @ApiResponse({ status: 200, description: 'Orden encontrada', type: LaboratoryOrder })
-  @ApiResponse({ status: 404, description: 'Orden no encontrada' })
-  findOne(@Param('id') id: string): Promise<LaboratoryOrder> {
-    return this.laboratoryOrdersService.findOne(id);
-  }
-
   @Get('number/:orderNumber')
   @ApiOperation({ summary: 'Obtener una orden por su número' })
   @ApiResponse({ status: 200, description: 'Orden encontrada', type: LaboratoryOrder })
   @ApiResponse({ status: 404, description: 'Orden no encontrada' })
   findByOrderNumber(@Param('orderNumber') orderNumber: string): Promise<LaboratoryOrder> {
     return this.laboratoryOrdersService.findByOrderNumber(orderNumber);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener una orden por su ID' })
+  @ApiResponse({ status: 200, description: 'Orden encontrada', type: LaboratoryOrder })
+  @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+  findOne(@Param('id') id: string): Promise<LaboratoryOrder> {
+    return this.laboratoryOrdersService.findOne(id);
   }
 
   @Patch(':id')

@@ -30,10 +30,10 @@ import { StoolTest } from '../../entities/stool-test.entity';
 @ApiTags('Stool Tests - (Coprológicos)')
 @Controller('stool-tests')
 export class StoolTestsController {
-  constructor(private readonly stoolTestsService: StoolTestsService) {}
+  constructor(private readonly stoolTestsService: StoolTestsService) { }
 
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Crear nuevo examen coprológico',
     description: 'Crea un nuevo examen de heces. Requiere un patientId válido para vincular con la tabla de pacientes. La información del paciente (nombre y sexo) se obtiene automáticamente.'
   })
@@ -42,7 +42,7 @@ export class StoolTestsController {
     description: 'Examen coprológico creado exitosamente',
     type: StoolTest,
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateStoolTestDto,
     description: 'Datos del examen coprológico',
     examples: {
@@ -91,7 +91,7 @@ export class StoolTestsController {
   }
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar exámenes coprológicos',
     description: 'Obtiene una lista paginada de exámenes de heces con filtros opcionales'
   })
@@ -117,9 +117,7 @@ export class StoolTestsController {
     @Query('dateTo') dateTo?: string,
   ) {
     try {
-      return await this.stoolTestsService.findAll({
-        page,
-        limit,
+      return await this.stoolTestsService.findAll(page, limit, {
         search,
         patientId,
         status,
@@ -135,7 +133,7 @@ export class StoolTestsController {
   }
 
   @Get('statistics')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Estadísticas de exámenes coprológicos',
     description: 'Obtiene estadísticas generales de los exámenes de heces'
   })
@@ -155,7 +153,7 @@ export class StoolTestsController {
   }
 
   @Get('pending-review')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Exámenes pendientes de revisión',
     description: 'Obtiene exámenes que están pendientes de revisión médica'
   })
@@ -176,7 +174,7 @@ export class StoolTestsController {
   }
 
   @Get('patient/:patientId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Exámenes por paciente',
     description: 'Obtiene todos los exámenes coprológicos de un paciente específico, incluyendo información básica del paciente (nombre, edad y sexo)'
   })
@@ -198,7 +196,7 @@ export class StoolTestsController {
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener examen por ID',
     description: 'Obtiene un examen coprológico específico por su ID, incluyendo información básica del paciente (nombre, edad y sexo)'
   })
@@ -210,7 +208,7 @@ export class StoolTestsController {
   })
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<StoolTest> {
     try {
-      const stoolTest = await this.stoolTestsService.findOne(id);
+      const stoolTest = await this.stoolTestsService.findOne(id as any);
       if (!stoolTest) {
         throw new NotFoundException(`Examen coprológico con ID ${id} no encontrado`);
       }
@@ -227,7 +225,7 @@ export class StoolTestsController {
   }
 
   @Get(':id/medical-report')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Generar reporte médico',
     description: 'Genera un reporte médico formateado del examen coprológico, incluyendo la información completa del paciente obtenida de la base de datos.'
   })
@@ -238,7 +236,7 @@ export class StoolTestsController {
   })
   async getMedicalReport(@Param('id', ParseIntPipe) id: number) {
     try {
-      return await this.stoolTestsService.generateMedicalReport(id);
+      return await this.stoolTestsService.generateMedicalReport(id as any);
     } catch (error) {
       throw new HttpException(
         `Error al generar reporte: ${error.message}`,
@@ -248,7 +246,7 @@ export class StoolTestsController {
   }
 
   @Patch(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Actualizar examen coprológico',
     description: 'Actualiza los datos de un examen coprológico existente'
   })
@@ -264,7 +262,7 @@ export class StoolTestsController {
     @Body() updateStoolTestDto: UpdateStoolTestDto,
   ): Promise<StoolTest> {
     try {
-      return await this.stoolTestsService.update(id, updateStoolTestDto);
+      return await this.stoolTestsService.update(id as any, updateStoolTestDto);
     } catch (error) {
       throw new HttpException(
         `Error al actualizar examen: ${error.message}`,
@@ -274,7 +272,7 @@ export class StoolTestsController {
   }
 
   @Patch(':id/complete')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Completar examen',
     description: 'Marca un examen como completado y listo para revisión'
   })
@@ -286,7 +284,7 @@ export class StoolTestsController {
   })
   async completeTest(@Param('id', ParseIntPipe) id: number): Promise<StoolTest> {
     try {
-      return await this.stoolTestsService.completeTest(id);
+      return await this.stoolTestsService.completeTest(id as any);
     } catch (error) {
       throw new HttpException(
         `Error al completar examen: ${error.message}`,
@@ -298,7 +296,7 @@ export class StoolTestsController {
 
 
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Eliminar examen coprológico',
     description: 'Elimina un examen coprológico del sistema'
   })
@@ -309,7 +307,7 @@ export class StoolTestsController {
   })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
     try {
-      await this.stoolTestsService.remove(id);
+      await this.stoolTestsService.remove(id as any);
       return { message: `Examen coprológico con ID ${id} eliminado exitosamente` };
     } catch (error) {
       throw new HttpException(
@@ -324,20 +322,20 @@ export class StoolTestsController {
   // ============================================================
 
   @Get('active/list')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar exámenes coprológicos activos',
     description: 'Obtiene una lista paginada de todos los exámenes coprológicos activos (isActive = true). Útil para vistas normales del sistema.'
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number,
     description: 'Número de página (por defecto: 1)',
     example: 1
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number,
     description: 'Cantidad de registros por página (por defecto: 10)',
     example: 10
@@ -356,19 +354,19 @@ export class StoolTestsController {
   }
 
   @Get('admin/all')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar todos los exámenes coprológicos (Administrador)',
     description: 'Obtiene una lista paginada de TODOS los exámenes coprológicos, incluyendo los desactivados. Solo para administradores. Útil para auditorías y administración.'
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number,
     description: 'Número de página (por defecto: 1)'
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number,
     description: 'Cantidad de registros por página (por defecto: 10)'
   })
@@ -386,19 +384,19 @@ export class StoolTestsController {
   }
 
   @Get('admin/inactive')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar exámenes coprológicos inactivos (Administrador)',
     description: 'Obtiene una lista paginada de todos los exámenes coprológicos desactivados (isActive = false). Útil para auditoría y recuperación.'
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number,
     description: 'Número de página (por defecto: 1)'
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number,
     description: 'Cantidad de registros por página (por defecto: 10)'
   })
@@ -416,25 +414,25 @@ export class StoolTestsController {
   }
 
   @Get('patient/:patientId/active')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar exámenes coprológicos activos por paciente',
     description: 'Obtiene todos los exámenes coprológicos activos para un paciente específico'
   })
-  @ApiParam({ 
-    name: 'patientId', 
+  @ApiParam({
+    name: 'patientId',
     description: 'ID del paciente',
     type: 'string',
     example: '550e8400-e29b-41d4-a716-446655440000'
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number,
     description: 'Número de página (por defecto: 1)'
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number,
     description: 'Cantidad de registros por página (por defecto: 10)'
   })
@@ -457,12 +455,12 @@ export class StoolTestsController {
   }
 
   @Patch(':id/deactivate')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Desactivar examen coprológico (Soft Delete)',
     description: 'Desactiva un examen coprológico marcándolo como inactivo (isActive = false). No elimina datos, permite recuperación.'
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'ID del examen a desactivar',
     type: 'number',
     example: 1
@@ -481,16 +479,16 @@ export class StoolTestsController {
     description: 'El examen ya está desactivado o no se puede desactivar',
   })
   async deactivate(@Param('id', ParseIntPipe) id: number) {
-    return await this.stoolTestsService.deactivate(id);
+    return await this.stoolTestsService.deactivate(id as any);
   }
 
   @Patch(':id/reactivate')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Reactivar examen coprológico',
     description: 'Reactiva un examen coprológico desactivado, marcándolo como activo nuevamente (isActive = true)'
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'ID del examen a reactivar',
     type: 'number',
     example: 1
@@ -509,6 +507,6 @@ export class StoolTestsController {
     description: 'El examen ya está activo o no se puede reactivar',
   })
   async reactivate(@Param('id', ParseIntPipe) id: number) {
-    return await this.stoolTestsService.reactivate(id);
+    return await this.stoolTestsService.reactivate(id as any);
   }
 }

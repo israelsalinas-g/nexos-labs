@@ -20,7 +20,7 @@
                 [(ngModel)]="credentials.username"
                 required
                 class="form-control"
-                [disabled]="isLoading"
+                [disabled]="isLoading()"
                 placeholder="Ingrese su usuario"
               />
             </div>
@@ -34,23 +34,23 @@
                 [(ngModel)]="credentials.password"
                 required
                 class="form-control"
-                [disabled]="isLoading"
+                [disabled]="isLoading()"
                 placeholder="Ingrese su contraseña"
               />
             </div>
 
-            @if (errorMessage) {
+            @if (errorMessage()) {
               <div class="alert alert-danger">
-                {{ errorMessage }}
+                {{ errorMessage() }}
               </div>
             }
 
             <button
               type="submit"
               class="btn btn-primary btn-block"
-              [disabled]="!loginForm.form.valid || isLoading"
+              [disabled]="!loginForm.form.valid || isLoading()"
             >
-              @if (isLoading) {
+              @if (isLoading()) {
                 <span class="spinner"></span>
                 Iniciando sesión...
               } @else {

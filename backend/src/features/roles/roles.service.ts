@@ -1,6 +1,6 @@
 import {
   Injectable, ConflictException, ForbiddenException,
-  Logger, BadRequestException,
+  Logger, BadRequestException, NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,7 +11,6 @@ import { PaginationResult } from '../../common/interfaces';
 import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { RoleEnum } from '../../common/enums/role.enum';
 import { BaseService } from '../../common/bases/base.service';
-import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class RolesService extends BaseService<Role> {
@@ -26,8 +25,8 @@ export class RolesService extends BaseService<Role> {
     super(roleRepository);
   }
 
-  async create(createRoleDto: CreateRoleDto, currentUser: JwtPayload): Promise<Role> {
-    if (currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede crear roles');
+  async create(createRoleDto: CreateRoleDto, currentUser?: JwtPayload): Promise<Role> {
+    if (currentUser && currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede crear roles');
 
     const existing = await this.roleRepository.findOne({ where: { name: createRoleDto.name } });
     if (existing) throw new ConflictException(`El rol "${createRoleDto.name}" ya existe`);
@@ -48,16 +47,16 @@ export class RolesService extends BaseService<Role> {
     return super.findOne(id, { relations: ['permissions', 'users'] });
   }
 
-  async update(id: string, updateRoleDto: UpdateRoleDto, currentUser: JwtPayload): Promise<Role> {
-    if (currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede actualizar roles');
+  async update(id: string, updateRoleDto: UpdateRoleDto, currentUser?: JwtPayload): Promise<Role> {
+    if (currentUser && currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede actualizar roles');
 
     const role = await this.findOne(id);
     if (updateRoleDto.description) role.description = updateRoleDto.description;
     return await this.roleRepository.save(role);
   }
 
-  async remove(id: string, currentUser: JwtPayload): Promise<{ message: string }> {
-    if (currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede eliminar roles');
+  async remove(id: string, currentUser?: JwtPayload): Promise<void> {
+    if (currentUser && currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede eliminar roles');
 
     const role = await this.findOne(id);
 
@@ -69,7 +68,6 @@ export class RolesService extends BaseService<Role> {
     }
 
     await this.roleRepository.remove(role);
-    return { message: `Rol ${role.name} eliminado exitosamente` };
   }
 
   async getPermissions(roleId: string): Promise<Permission[]> {
@@ -77,8 +75,8 @@ export class RolesService extends BaseService<Role> {
     return role.permissions || [];
   }
 
-  async addPermission(roleId: string, dto: CreatePermissionDto, currentUser: JwtPayload): Promise<Permission> {
-    if (currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede agregar permisos');
+  async addPermission(roleId: string, dto: CreatePermissionDto, currentUser?: JwtPayload): Promise<Permission> {
+    if (currentUser && currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede agregar permisos');
 
     const role = await this.findOne(roleId);
     const existing = await this.permissionRepository.findOne({ where: { code: dto.code, role: { id: roleId } } });
@@ -88,8 +86,8 @@ export class RolesService extends BaseService<Role> {
     return await this.permissionRepository.save(permission);
   }
 
-  async removePermission(roleId: string, permissionId: string, currentUser: JwtPayload): Promise<{ message: string }> {
-    if (currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede remover permisos');
+  async removePermission(roleId: string, permissionId: string, currentUser?: JwtPayload): Promise<{ message: string }> {
+    if (currentUser && currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede remover permisos');
 
     const permission = await this.permissionRepository.findOne({ where: { id: permissionId } });
     if (!permission) throw new NotFoundException(`Permiso con ID ${permissionId} no encontrado`);

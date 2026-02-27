@@ -125,7 +125,7 @@
         <div class="form-group">
           <label for="username">Usuario *</label>
           <input id="username" type="text" [ngModel]="userFormData().username"
-            (ngModelChange)="userFormData.set({...userFormData(), username: $event})" name="username" required
+            (ngModelChange)="updateUserForm('username', $event)" name="username" required
             [disabled]="isEditMode()" placeholder="Ej: jperez">
         </div>
 
@@ -133,7 +133,7 @@
         <div class="form-group">
           <label for="password">Contraseña *</label>
           <input id="password" type="password" [ngModel]="userFormData().password"
-            (ngModelChange)="userFormData.set({...userFormData(), password: $event})" name="password" required
+            (ngModelChange)="updateUserForm('password', $event)" name="password" required
             placeholder="Mínimo 6 caracteres">
         </div>
         }
@@ -141,21 +141,21 @@
         <div class="form-group">
           <label for="name">Nombre *</label>
           <input id="name" type="text" [ngModel]="userFormData().name"
-            (ngModelChange)="userFormData.set({...userFormData(), name: $event})" name="name" required
+            (ngModelChange)="updateUserForm('name', $event)" name="name" required
             placeholder="Ej: Juan">
         </div>
 
         <div class="form-group">
           <label for="lastName">Apellido *</label>
           <input id="lastName" type="text" [ngModel]="userFormData().lastName"
-            (ngModelChange)="userFormData.set({...userFormData(), lastName: $event})" name="lastName" required
+            (ngModelChange)="updateUserForm('lastName', $event)" name="lastName" required
             placeholder="Ej: Pérez">
         </div>
 
         <div class="form-group">
           <label for="email">Email *</label>
           <input id="email" type="email" [ngModel]="userFormData().email"
-            (ngModelChange)="userFormData.set({...userFormData(), email: $event})" name="email" required
+            (ngModelChange)="updateUserForm('email', $event)" name="email" required
             placeholder="Ej: juan@lab.com">
         </div>
 
@@ -167,7 +167,7 @@
           </div>
           } @else {
           <select id="roleId" [ngModel]="userFormData().roleId"
-            (ngModelChange)="userFormData.set({...userFormData(), roleId: $event})" name="roleId" required>
+            (ngModelChange)="updateUserForm('roleId', $event)" name="roleId" required>
             <option value="">Seleccionar rol</option>
             @for (role of roles(); track role.id) {
             <option [value]="role.id">{{ role.name }}</option>
@@ -180,7 +180,7 @@
         <div class="form-group">
           <label for="isActive">Estado</label>
           <select id="isActive" [ngModel]="userFormData().isActive"
-            (ngModelChange)="userFormData.set({...userFormData(), isActive: $event})" name="isActive">
+            (ngModelChange)="updateUserForm('isActive', $event)" name="isActive">
             <option [value]="true">Activo</option>
             <option [value]="false">Inactivo</option>
           </select>

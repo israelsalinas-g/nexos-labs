@@ -20,8 +20,8 @@
   font-size: 12px;
   font-weight: 600;
 }
-.progress-badge.completed { background: #dcfce7; color: #166534; }
-.progress-badge.pending { background: #fef9c3; color: #854d0e; }
+.progress-badge.completed { background: rgba(34, 197, 94, 0.12); color: var(--color-success); border: 1px solid rgba(34, 197, 94, 0.3); }
+.progress-badge.pending { background: rgba(249, 115, 22, 0.12); color: var(--color-warning); border: 1px solid rgba(249, 115, 22, 0.3); }
 
 .btn-back {
   background: none;
@@ -60,8 +60,8 @@
   gap: 12px;
   transition: border-color 0.2s;
 }
-.result-card.saved { border-color: #86efac; }
-.result-card.abnormal { border-color: #fca5a5; }
+.result-card.saved { border-color: var(--color-success); }
+.result-card.abnormal { border-color: var(--color-danger); }
 
 .card-header {
   display: flex;
@@ -76,8 +76,8 @@
 .test-unit { font-size: 12px; color: var(--color-primary); }
 
 .status-indicators { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-.abnormal-badge { font-size: 12px; color: #991b1b; background: #fee2e2; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
-.normal-badge { font-size: 12px; color: #166534; background: #dcfce7; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+.abnormal-badge { font-size: 12px; color: var(--color-danger); background: rgba(239, 68, 68, 0.12); padding: 3px 8px; border-radius: 10px; font-weight: 600; border: 1px solid rgba(239, 68, 68, 0.3); }
+.normal-badge { font-size: 12px; color: var(--color-success); background: rgba(34, 197, 94, 0.12); padding: 3px 8px; border-radius: 10px; font-weight: 600; border: 1px solid rgba(34, 197, 94, 0.3); }
 .saved-badge { font-size: 16px; }
 
 /* Input area */
@@ -96,8 +96,8 @@
   transition: border-color 0.2s;
 }
 .result-input:focus { outline: none; border-color: var(--color-primary); }
-.result-input.abnormal-input { border-color: #ef4444; }
-.result-input.normal-input { border-color: #22c55e; }
+.result-input.abnormal-input { border-color: var(--color-danger); }
+.result-input.normal-input { border-color: var(--color-success); }
 .input-unit { font-size: 13px; color: var(--color-text-muted); white-space: nowrap; }
 
 .result-textarea {

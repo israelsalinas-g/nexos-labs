@@ -76,6 +76,10 @@ export class StoolTestsComponent implements OnInit {
     this.loadStoolTests();
   }
 
+  updateFilters(update: Partial<StoolTestFilters>): void {
+    this.filters.update(prev => ({ ...prev, ...update }));
+  }
+
   clearFilters(): void {
     this.filters.set({});
     this.currentPage.set(1);

@@ -37,18 +37,15 @@ export class UrineTestsService extends BaseService<UrineTest> {
       ...createUrineTestDto,
       sampleNumber,
       testDate: new Date(createUrineTestDto.testDate || new Date()),
-    });
+    } as any) as any;
 
-    urineTest.status = urineTest.getAutoStatus(createUrineTestDto.status);
+    urineTest.status = urineTest.getAutoStatus ? urineTest.getAutoStatus(createUrineTestDto.status) : createUrineTestDto.status;
 
     const savedTest = await this.urineTestRepository.save(urineTest);
-    return this.findOne(savedTest.id);
+    return this.findOne((savedTest as any).id);
   }
 
-  async findAll(options?: any): Promise<PaginationResult<UrineTest>> {
-    const page = options?.page || 1;
-    const limit = options?.limit || 7;
-
+  async findAll(page: number = 1, limit: number = 10, options?: any): Promise<PaginationResult<UrineTest>> {
     const query = this.urineTestRepository.createQueryBuilder('urineTest')
       .leftJoinAndSelect('urineTest.patient', 'patient')
       .leftJoinAndSelect('urineTest.doctor', 'doctor')
@@ -63,8 +60,23 @@ export class UrineTestsService extends BaseService<UrineTest> {
 
     if (options?.patientId) query.andWhere('urineTest.patientId = :patientId', { patientId: options.patientId });
     if (options?.status) query.andWhere('urineTest.status = :status', { status: options.status });
+    if (options?.hasAbnormalResults) {
+      // Simplificación: esto dependería de la lógica de negocio real
+      query.andWhere('urineTest.gravity > 1.025 OR urineTest.protein != \'Negativo\'');
+    }
+    if (options?.dateFrom) {
+      query.andWhere('urineTest.testDate >= :dateFrom', { dateFrom: options.dateFrom });
+    }
+    if (options?.dateTo) {
+      query.andWhere('urineTest.testDate <= :dateTo', { dateTo: options.dateTo });
+    }
 
     return this.paginateQueryBuilder(query, page, limit);
+  }
+
+  async remove(id: string): Promise<void> {
+    const urineTest = await this.findOne(id);
+    await this.urineTestRepository.remove(urineTest);
   }
 
   async update(id: string, updateUrineTestDto: UpdateUrineTestDto): Promise<UrineTest> {
@@ -100,5 +112,72 @@ export class UrineTestsService extends BaseService<UrineTest> {
       .getRawMany();
 
     return { total, byStatus };
+  }
+
+  async getPendingReview(): Promise<UrineTest[]> {
+    return this.urineTestRepository.find({
+      where: { status: 'Pendiente' as any, isActive: true },
+      relations: ['patient', 'doctor'],
+      order: { testDate: 'DESC' },
+    });
+  }
+
+  async findByPatient(patientId: string): Promise<UrineTest[]> {
+    return this.urineTestRepository.find({
+      where: { patientId, isActive: true },
+      relations: ['patient', 'doctor'],
+      order: { testDate: 'DESC' },
+    });
+  }
+
+  async getMedicalReport(id: string): Promise<any> {
+    const test = await this.findOne(id);
+    // Lógica para generar reporte médico (simplificada)
+    return {
+      test,
+      generatedAt: new Date(),
+      institution: 'NEXOS Residencial',
+    };
+  }
+
+  async markAsCompleted(id: string, reviewedBy?: string): Promise<UrineTest> {
+    const test = await this.findOne(id);
+    (test as any).status = 'Completado';
+    if (reviewedBy) (test as any).reviewedBy = reviewedBy;
+    (test as any).reviewedAt = new Date();
+    return this.urineTestRepository.save(test);
+  }
+
+  async findAllActive(page: number, limit: number): Promise<PaginationResult<UrineTest>> {
+    return this.findAll(page, limit, { isActive: true });
+  }
+
+  async findAllIncludingInactive(page: number, limit: number): Promise<PaginationResult<UrineTest>> {
+    const query = this.urineTestRepository.createQueryBuilder('urineTest')
+      .leftJoinAndSelect('urineTest.patient', 'patient')
+      .leftJoinAndSelect('urineTest.doctor', 'doctor')
+      .orderBy('urineTest.testDate', 'DESC');
+
+    return this.paginateQueryBuilder(query, page, limit);
+  }
+
+  async findInactive(page: number, limit: number): Promise<PaginationResult<UrineTest>> {
+    return this.findAll(page, limit, { isActive: false });
+  }
+
+  async findByPatientActive(patientId: string, page: number, limit: number): Promise<PaginationResult<UrineTest>> {
+    return this.findAll(page, limit, { patientId, isActive: true });
+  }
+
+  async deactivate(id: string): Promise<UrineTest> {
+    const test = await this.findOne(id);
+    test.isActive = false;
+    return this.urineTestRepository.save(test);
+  }
+
+  async reactivate(id: string): Promise<UrineTest> {
+    const test = await this.findOne(id);
+    test.isActive = true;
+    return this.urineTestRepository.save(test);
   }
 }

@@ -20,7 +20,7 @@ class BulkUpdateDto {
 @ApiTags('Lab Settings')
 @Controller('lab-settings')
 export class LabSettingsController {
-  constructor(private readonly service: LabSettingsService) {}
+  constructor(private readonly service: LabSettingsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Obtener todos los settings del laboratorio (público)' })
@@ -51,6 +51,7 @@ export class LabSettingsController {
   @ApiOperation({ summary: 'Actualizar múltiples settings (requiere SUPERADMIN)' })
   @ApiResponse({ status: 200, type: [LabSetting] })
   bulkUpdate(@Body() dto: BulkUpdateDto): Promise<LabSetting[]> {
-    return this.service.bulkUpdate(dto.updates);
+    // Cast to any to handle the optional value correctly in the service
+    return this.service.bulkUpdate(dto.updates as any);
   }
 }

@@ -43,9 +43,11 @@ export class PatientsService extends BaseService<Patient> {
   async findAll(
     page: number = 1,
     limit: number = 7,
-    search?: string,
-    isActive?: boolean
+    options?: any
   ): Promise<PaginationResult<Patient>> {
+    const search = options?.search;
+    const isActive = options?.isActive;
+
     this.logger.log(`Obteniendo pacientes - Página: ${page}, Límite: ${limit}, Search: "${search}"`);
 
     const query = this.patientsRepository.createQueryBuilder('patient');
@@ -116,6 +118,18 @@ export class PatientsService extends BaseService<Patient> {
 
   async activate(id: string): Promise<Patient> {
     return this.update(id, { isActive: true } as any);
+  }
+
+  async findByDni(dni: string): Promise<Patient> {
+    const patient = await this.patientsRepository.findOne({ where: { dni } });
+    if (!patient) throw new NotFoundException(`Paciente con DNI ${dni} no encontrado`);
+    return patient;
+  }
+
+  async debugTable(): Promise<any> {
+    const count = await this.patientsRepository.count();
+    const samples = await this.patientsRepository.find({ take: 5 });
+    return { count, samples };
   }
 
   async getStatistics(): Promise<any> {

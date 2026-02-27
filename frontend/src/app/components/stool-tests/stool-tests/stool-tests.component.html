@@ -14,14 +14,14 @@
     <div class="filter-group">
       <label for="patientIdSearch">ID Paciente:</label>
       <input id="patientIdSearch" type="text" [ngModel]="filters().patientId"
-        (ngModelChange)="filters.set({...filters(), patientId: $event})" placeholder="ID del paciente..."
-        (input)="onSearch()">
+        (ngModelChange)="updateFilters({patientId: $event})" placeholder="ID del paciente..."
+        (input)="onFilterChange()">
     </div>
 
     <div class="filter-group">
       <label for="statusFilter">Estado:</label>
       <select id="statusFilter" [ngModel]="filters().status"
-        (ngModelChange)="filters.set({...filters(), status: $event}); onFilterChange()">
+        (ngModelChange)="updateFilters({status: $event}); onFilterChange()">
         <option value="">Todos los estados</option>
         <option value="pending">Pendiente</option>
         <option value="completed">Completado</option>
@@ -32,13 +32,13 @@
     <div class="filter-group">
       <label for="dateFrom">Desde:</label>
       <input id="dateFrom" type="date" [ngModel]="filters().dateFrom"
-        (ngModelChange)="filters.set({...filters(), dateFrom: $event}); onFilterChange()">
+        (ngModelChange)="updateFilters({dateFrom: $event}); onFilterChange()">
     </div>
 
     <div class="filter-group">
       <label for="dateTo">Hasta:</label>
       <input id="dateTo" type="date" [ngModel]="filters().dateTo"
-        (ngModelChange)="filters.set({...filters(), dateTo: $event}); onFilterChange()">
+        (ngModelChange)="updateFilters({dateTo: $event}); onFilterChange()">
     </div>
 
     <div class="filter-actions">

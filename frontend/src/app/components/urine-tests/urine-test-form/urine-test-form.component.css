@@ -13,16 +13,9 @@
       margin-bottom: 30px;
     }
 
-    .header-actions {
-      display: flex;
-      gap: 10px;
-    }
+    .header-actions { display: flex; gap: 10px; }
 
-    h1 {
-      color: #2c3e50;
-      font-weight: 600;
-      margin: 0;
-    }
+    h1 { color: var(--color-text); font-weight: 600; margin: 0; }
 
     .loading, .error, .success {
       text-align: center;
@@ -33,46 +26,45 @@
     }
 
     .loading {
-      background-color: #e3f2fd;
-      color: #1976d2;
-      border: 1px solid #bbdefb;
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--color-info);
+      border: 1px solid rgba(59, 130, 246, 0.3);
     }
 
     .error {
-      background-color: #ffebee;
-      color: #c62828;
-      border: 1px solid #ffcdd2;
+      background-color: var(--color-error-bg);
+      color: var(--color-error-text);
+      border: 1px solid var(--color-error-border);
     }
 
     .success {
-      background-color: #e8f5e8;
-      color: #2e7d32;
-      border: 1px solid #c8e6c9;
+      background-color: rgba(34, 197, 94, 0.1);
+      color: var(--color-success);
+      border: 1px solid rgba(34, 197, 94, 0.3);
     }
 
     .urine-test-form {
-      background: white;
+      background: var(--color-surface);
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px var(--color-shadow);
+      border: 1px solid var(--color-border);
       overflow: hidden;
     }
 
     .form-section {
       padding: 25px;
-      border-bottom: 1px solid #e9ecef;
+      border-bottom: 1px solid var(--color-border);
     }
 
-    .form-section:last-child {
-      border-bottom: none;
-    }
+    .form-section:last-child { border-bottom: none; }
 
     .form-section h3 {
-      color: #495057;
+      color: var(--color-text);
       font-size: 18px;
       font-weight: 600;
       margin: 0 0 20px 0;
       padding-bottom: 10px;
-      border-bottom: 2px solid #007bff;
+      border-bottom: 2px solid var(--color-primary);
     }
 
     .form-row {
@@ -82,53 +74,45 @@
       margin-bottom: 20px;
     }
 
-    .form-group {
-      margin-bottom: 20px;
-    }
+    .form-group { margin-bottom: 20px; }
 
     .form-group label {
       display: block;
       margin-bottom: 6px;
       font-weight: 600;
-      color: #495057;
+      color: var(--color-text);
       font-size: 14px;
     }
 
     .form-control {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid #ced4da;
+      border: 1px solid var(--color-border);
       border-radius: 4px;
       font-size: 14px;
       box-sizing: border-box;
       transition: border-color 0.2s, box-shadow 0.2s;
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-family: inherit;
     }
+
+    .form-control::placeholder { color: var(--color-text-muted); }
 
     .form-control:focus {
       outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-primary-soft);
     }
 
-    .patient-select-container {
+    .patient-select-container, .doctor-selector-container {
       display: flex;
       gap: 10px;
       align-items: stretch;
     }
 
-    .patient-select-container .form-control {
-      flex: 1;
-    }
-
-    .doctor-selector-container {
-      display: flex;
-      gap: 10px;
-      align-items: stretch;
-    }
-
-    .doctor-selector-container .form-control {
-      flex: 1;
-    }
+    .patient-select-container .form-control,
+    .doctor-selector-container .form-control { flex: 1; }
 
     .btn-add-patient {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -172,58 +156,42 @@
       box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
     }
 
-    .btn-add-patient:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn-add-patient:active {
-      transform: translateY(0);
-    }
-
-    textarea.form-control {
-      resize: vertical;
-      min-height: 80px;
-    }
+    textarea.form-control { resize: vertical; min-height: 80px; }
 
     .form-help {
       display: block;
       margin-top: 4px;
       font-size: 12px;
-      color: #6c757d;
+      color: var(--color-text-muted);
       font-style: italic;
     }
 
     .error-message {
-      color: #dc3545;
+      color: var(--color-danger);
       font-size: 12px;
       margin-top: 4px;
       font-weight: 500;
     }
 
-    /* Array items styling */
     .array-item {
       margin-bottom: 15px;
       padding: 15px;
-      background: #f8f9fa;
+      background: var(--color-surface-alt);
       border-radius: 6px;
-      border: 1px solid #e9ecef;
+      border: 1px solid var(--color-border);
     }
 
     .array-item .form-row {
-      display: grid;
       grid-template-columns: 2fr 2fr auto;
       gap: 10px;
       align-items: start;
       margin-bottom: 0;
     }
 
-    .array-item .form-group {
-      margin-bottom: 0;
-    }
+    .array-item .form-group { margin-bottom: 0; }
 
     .btn-remove {
-      background: #dc3545;
+      background: var(--color-danger);
       color: white;
       border: none;
       padding: 10px 15px;
@@ -234,27 +202,20 @@
       margin-top: 24px;
     }
 
-    .btn-remove:hover {
-      background: #c82333;
-      transform: translateY(-1px);
-    }
-
-    .btn-sm {
-      padding: 8px 16px;
-      font-size: 13px;
-    }
+    .btn-remove:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
 
     .form-actions {
       display: flex;
       justify-content: flex-end;
       gap: 15px;
       padding: 25px;
-      background: #f8f9fa;
-      border-top: 1px solid #e9ecef;
+      background: var(--color-surface-alt);
+      border-top: 1px solid var(--color-border);
     }
 
     .btn {
-      background: #007bff;
+      background: var(--color-primary);
       color: white;
       border: none;
       padding: 10px 20px;
@@ -269,25 +230,15 @@
       gap: 8px;
     }
 
-    .btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 2px 6px var(--color-shadow); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-    .btn:disabled {
-      background: #6c757d;
-      cursor: not-allowed;
-      transform: none;
-      opacity: 0.6;
-    }
+    .btn-primary { background: var(--color-primary); color: white; }
+    .btn-secondary { background: var(--color-surface-alt); color: var(--color-text); border: 1px solid var(--color-border); }
+    .btn-warning { background: var(--color-warning); color: white; }
 
-    .btn-primary { background: #007bff; }
-    .btn-secondary { background: #6c757d; }
-    .btn-warning { background: #ffc107; color: #000; }
-
-    .btn-primary:hover { background: #0056b3; }
-    .btn-secondary:hover { background: #545b62; }
-    .btn-warning:hover { background: #e0a800; }
+    .btn-primary:hover:not(:disabled), .btn-warning:hover:not(:disabled) { opacity: 0.9; }
+    .btn-secondary:hover { opacity: 0.9; }
 
     .spinner {
       width: 16px;
@@ -303,67 +254,33 @@
       100% { transform: rotate(360deg); }
     }
 
-    @media (max-width: 768px) {
-      .container {
-        padding: 10px;
-      }
-
-      .header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-      }
-
-      .form-row {
-        grid-template-columns: 1fr;
-        gap: 15px;
-      }
-
-      .array-item .form-row {
-        grid-template-columns: 1fr;
-      }
-
-      .btn-remove {
-        margin-top: 0;
-      }
-
-      .form-section {
-        padding: 20px 15px;
-      }
-
-      .form-actions {
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-
-      .patient-select-container {
-        flex-direction: column;
-      }
-
-      .btn-add-patient {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-
     .form-control-static {
       display: block;
       padding: 10px 12px;
-      background-color: #f8f9fa;
-      border: 1px solid #ced4da;
+      background-color: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
       border-radius: 4px;
       font-size: 14px;
-      color: #495057;
+      color: var(--color-text-muted);
       margin: 0;
     }
 
-    .form-section:nth-child(1) h3 { border-bottom-color: #17a2b8; }
-    .form-section:nth-child(2) h3 { border-bottom-color: #28a745; }
-    .form-section:nth-child(3) h3 { border-bottom-color: #ffc107; }
-    .form-section:nth-child(4) h3 { border-bottom-color: #dc3545; }
-    .form-section:nth-child(5) h3 { border-bottom-color: #6c757d; }
+    /* Section accent colors */
+    .form-section:nth-child(1) h3 { border-bottom-color: var(--color-info); }
+    .form-section:nth-child(2) h3 { border-bottom-color: var(--color-success); }
+    .form-section:nth-child(3) h3 { border-bottom-color: var(--color-warning); }
+    .form-section:nth-child(4) h3 { border-bottom-color: var(--color-danger); }
+    .form-section:nth-child(5) h3 { border-bottom-color: var(--color-text-muted); }
+
+    @media (max-width: 768px) {
+      .container { padding: 10px; }
+      .header { flex-direction: column; gap: 15px; text-align: center; }
+      .form-row { grid-template-columns: 1fr; gap: 15px; }
+      .array-item .form-row { grid-template-columns: 1fr; }
+      .btn-remove { margin-top: 0; }
+      .form-section { padding: 20px 15px; }
+      .form-actions { flex-direction: column; gap: 10px; }
+      .btn { width: 100%; justify-content: center; }
+      .patient-select-container { flex-direction: column; }
+      .btn-add-patient { width: 100%; justify-content: center; }
+    }

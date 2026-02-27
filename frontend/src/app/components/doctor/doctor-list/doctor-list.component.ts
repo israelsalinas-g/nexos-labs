@@ -219,4 +219,8 @@ export class DoctorListComponent implements OnInit {
       isStaff: false, isActive: true, notes: ''
     };
   }
+
+  updateField(field: keyof (CreateDoctorRequest & { id?: string }), value: any): void {
+    this.formData.update(current => ({ ...current, [field]: value }));
+  }
 }

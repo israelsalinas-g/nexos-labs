@@ -33,7 +33,7 @@
     <div class="filter-group">
       <label for="statusFilter">Estado:</label>
       <select id="statusFilter" [ngModel]="filters().status"
-        (ngModelChange)="filters.set({...filters(), status: $event}); applyFilters()">
+        (ngModelChange)="updateFilters('status', $event); applyFilters()">
         <option value="">Todos los estados</option>
         @for (option of statusOptions; track option.value) {
         <option [value]="option.value">{{ option.label }}</option>
@@ -43,21 +43,21 @@
 
     <div class="filter-group">
       <label for="dateFromFilter">Desde:</label>
-      <input id="dateFromFilter" type="date" [ngModel]="filters().dateFrom"
-        (ngModelChange)="filters.set({...filters(), dateFrom: $event}); applyFilters()">
+      <input id="dateFromFilter" type="date" class="form-control" [ngModel]="filters().dateFrom"
+        (ngModelChange)="updateFilters('dateFrom', $event); applyFilters()">
     </div>
 
     <div class="filter-group">
       <label for="dateToFilter">Hasta:</label>
-      <input id="dateToFilter" type="date" [ngModel]="filters().dateTo"
-        (ngModelChange)="filters.set({...filters(), dateTo: $event}); applyFilters()">
+      <input id="dateToFilter" type="date" class="form-control" [ngModel]="filters().dateTo"
+        (ngModelChange)="updateFilters('dateTo', $event); applyFilters()">
     </div>
 
     <div class="filter-group checkbox-group">
       <label>
         <input type="checkbox" [ngModel]="filters().hasAbnormalResults"
-          (ngModelChange)="filters.set({...filters(), hasAbnormalResults: $event}); applyFilters()">
-        Solo resultados anormales
+          (ngModelChange)="updateFilters('hasAbnormalResults', $event); applyFilters()">
+        Resultados anormales
       </label>
     </div>
 

@@ -9,7 +9,7 @@ import { PaginationResult } from '../../common/interfaces';
 @ApiTags('Test Profiles')
 @Controller('test-profiles')
 export class TestProfilesController {
-  constructor(private readonly testProfilesService: TestProfilesService) {}
+  constructor(private readonly testProfilesService: TestProfilesService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo perfil de pruebas' })
@@ -38,7 +38,7 @@ export class TestProfilesController {
     const pageNum = page ? parseInt(page) : 1;
     const limitNum = limit ? parseInt(limit) : 10;
     const includeInactiveBool = includeInactive === 'true';
-    return this.testProfilesService.findAll(pageNum, limitNum, sectionId, includeInactiveBool, search);
+    return this.testProfilesService.findAll(pageNum, limitNum, { sectionId, includeInactive: includeInactiveBool, search });
   }
 
   @Get('stats')

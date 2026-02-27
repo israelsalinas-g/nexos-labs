@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +13,8 @@ import { TestProfileFormComponent } from '../test-profile-form/test-profile-form
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, TestProfileFormComponent],
   templateUrl: './test-profile-list.component.html',
-  styleUrls: ['./test-profile-list.component.css']
+  styleUrls: ['./test-profile-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TestProfileListComponent implements OnInit {
   profiles: TestProfile[] = [];
@@ -33,7 +34,8 @@ export class TestProfileListComponent implements OnInit {
 
   constructor(
     private profileService: TestProfileService,
-    private categoryService: TestSectionService
+    private categoryService: TestSectionService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -45,6 +47,7 @@ export class TestProfileListComponent implements OnInit {
     this.categoryService.getActiveTestSections().subscribe({
       next: (categories) => {
         this.categories = categories;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Error loading categories:', err);
@@ -68,11 +71,13 @@ export class TestProfileListComponent implements OnInit {
         this.totalPages = response.totalPages;
         this.currentPage = response.page;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.message || 'Error al cargar los perfiles';
         this.loading = false;
         console.error('Error loading profiles:', err);
+        this.cdr.markForCheck();
       }
     });
   }
@@ -138,6 +143,7 @@ export class TestProfileListComponent implements OnInit {
         },
         error: (err) => {
           this.error = err.message;
+          this.cdr.markForCheck();
         }
       });
     }

@@ -32,10 +32,11 @@ export class TestResultsService extends BaseService<TestResult> {
   }
 
   async findAll(
-    page = 1, limit = 10, search?: string,
-    isAbnormal?: boolean, isCritical?: boolean,
-    startDate?: Date, endDate?: Date,
+    page: number = 1,
+    limit: number = 10,
+    options?: any,
   ): Promise<PaginationResult<TestResult>> {
+    const { search, isAbnormal, isCritical, startDate, endDate } = options || {};
     const query = this.testResultRepository.createQueryBuilder('result')
       .leftJoinAndSelect('result.orderTest', 'orderTest')
       .orderBy('result.createdAt', 'DESC');
@@ -65,6 +66,13 @@ export class TestResultsService extends BaseService<TestResult> {
       .orderBy('result.testedAt', 'DESC');
 
     return this.paginateQueryBuilder(query, page, limit);
+  }
+
+  async findByOrderTest(orderTestId: string): Promise<TestResult | null> {
+    return this.testResultRepository.findOne({
+      where: { orderTestId } as any,
+      relations: ['orderTest'],
+    });
   }
 
   async getStats() {

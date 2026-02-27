@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { TestResultsService } from './test-results.service';
 import { TestResult } from '../../entities/test-result.entity';
@@ -8,7 +8,7 @@ import { CreateTestResultDto } from '../../dto';
 @ApiTags('Test Results')
 @Controller('test-results')
 export class TestResultsController {
-  constructor(private readonly testResultsService: TestResultsService) {}
+  constructor(private readonly testResultsService: TestResultsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Obtener todos los resultados de pruebas con paginación' })
@@ -39,11 +39,13 @@ export class TestResultsController {
     return this.testResultsService.findAll(
       pageNum,
       limitNum,
-      search,
-      isAbnormalBool,
-      isCriticalBool,
-      startDateObj,
-      endDateObj
+      {
+        search,
+        isAbnormal: isAbnormalBool,
+        isCritical: isCriticalBool,
+        startDate: startDateObj,
+        endDate: endDateObj
+      }
     );
   }
 
@@ -84,14 +86,16 @@ export class TestResultsController {
   @ApiResponse({ status: 200, description: 'Resultado encontrado', type: TestResult })
   @ApiResponse({ status: 404, description: 'Resultado no encontrado' })
   findOne(@Param('id', ParseIntPipe) id: number): Promise<TestResult> {
-    return this.testResultsService.findOne(id);
+    return this.testResultsService.findOne(id as any);
   }
 
   @Get('order-test/:orderTestId')
   @ApiOperation({ summary: 'Obtener un resultado por ID de prueba ordenada' })
   @ApiResponse({ status: 200, description: 'Resultado encontrado', type: TestResult })
   @ApiResponse({ status: 404, description: 'Resultado no encontrado' })
-  findByOrderTest(@Param('orderTestId', ParseIntPipe) orderTestId: number): Promise<TestResult> {
-    return this.testResultsService.findByOrderTest(orderTestId);
+  async findByOrderTest(@Param('orderTestId', ParseIntPipe) orderTestId: number): Promise<TestResult> {
+    const result = await this.testResultsService.findByOrderTest(orderTestId as any);
+    if (!result) throw new NotFoundException(`Resultado para prueba ordenada ${orderTestId} no encontrado`);
+    return result;
   }
 }

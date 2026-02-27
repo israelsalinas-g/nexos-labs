@@ -24,7 +24,12 @@ export class TestSectionsService extends BaseService<TestSection> {
     return await this.testSectionRepository.save(section);
   }
 
-  async findAll(page = 1, limit = 10, includeInactive = false, search?: string): Promise<PaginationResult<TestSection>> {
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    options?: any,
+  ): Promise<PaginationResult<TestSection>> {
+    const { includeInactive = false, search } = options || {};
     const query = this.testSectionRepository.createQueryBuilder('section')
       .leftJoinAndSelect('section.tests', 'tests')
       .orderBy('section.displayOrder', 'ASC')
@@ -68,6 +73,13 @@ export class TestSectionsService extends BaseService<TestSection> {
     const section = await this.findOne(id);
     section.isActive = !section.isActive;
     return await this.testSectionRepository.save(section);
+  }
+
+  async findByCode(code: string): Promise<TestSection | null> {
+    return this.testSectionRepository.findOne({
+      where: { code },
+      relations: ['tests'],
+    });
   }
 
   async getStats() {

@@ -8,7 +8,7 @@ import { Doctor } from '../../entities/doctor.entity';
 @ApiTags('Doctors')
 @Controller('doctors')
 export class DoctorsController {
-  constructor(private readonly doctorsService: DoctorsService) {}
+  constructor(private readonly doctorsService: DoctorsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo médico' })
@@ -33,14 +33,14 @@ export class DoctorsController {
     @Query('includeInactive') includeInactive?: string,
     @Query('staffOnly') staffOnly?: string
   ) {
-    const includeInactiveBool = includeInactive === 'true';
-    const staffOnlyBool = staffOnly === 'true';
     return this.doctorsService.findAll(
       page ? +page : 1,
       limit ? +limit : 7,
-      includeInactiveBool,
-      staffOnlyBool,
-      search
+      {
+        includeInactive: includeInactive === 'true',
+        staffOnly: staffOnly === 'true',
+        search
+      }
     );
   }
 
@@ -49,7 +49,7 @@ export class DoctorsController {
   @ApiQuery({ name: 'q', required: true, type: String, description: 'Término de búsqueda' })
   @ApiResponse({ status: 200, description: 'Resultados de búsqueda', type: [Doctor] })
   search(@Query('q') searchTerm: string): Promise<Doctor[]> {
-    return this.doctorsService.search(searchTerm);
+    return this.doctorsService.findAll(1, 100, { search: searchTerm }).then(r => r.data);
   }
 
   @Get('stats')
@@ -63,7 +63,7 @@ export class DoctorsController {
   @ApiOperation({ summary: 'Obtener un médico por su email' })
   @ApiResponse({ status: 200, description: 'Médico encontrado', type: Doctor })
   @ApiResponse({ status: 404, description: 'Médico no encontrado' })
-  findByEmail(@Param('email') email: string): Promise<Doctor> {
+  findByEmail(@Param('email') email: string): Promise<Doctor | null> {
     return this.doctorsService.findByEmail(email);
   }
 
@@ -71,7 +71,7 @@ export class DoctorsController {
   @ApiOperation({ summary: 'Obtener un médico por su número de licencia' })
   @ApiResponse({ status: 200, description: 'Médico encontrado', type: Doctor })
   @ApiResponse({ status: 404, description: 'Médico no encontrado' })
-  findByLicense(@Param('licenseNumber') licenseNumber: string): Promise<Doctor> {
+  findByLicense(@Param('licenseNumber') licenseNumber: string): Promise<Doctor | null> {
     return this.doctorsService.findByLicense(licenseNumber);
   }
 

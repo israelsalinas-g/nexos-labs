@@ -28,14 +28,14 @@ import { UrineTest } from '../../entities/urine-test.entity';
 @ApiTags('Urine Tests')
 @Controller('urine-tests')
 export class UrineTestsController {
-  constructor(private readonly urineTestService: UrineTestsService) {}
+  constructor(private readonly urineTestService: UrineTestsService) { }
 
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Crear nuevo examen de orina',
     description: 'Registra un nuevo examen general de orina para un paciente específico. Los cristales y cilindros ahora son arrays que permiten registrar múltiples hallazgos con sus cantidades específicas.'
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateUrineTestDto,
     examples: {
       'examen-normal': {
@@ -62,7 +62,7 @@ export class UrineTestsController {
           bacteria: "Escasa",
           mucousFilaments: "Escasa",
           crystals: [
-            { 
+            {
               type: "OXALATOS DE CALCIO, DIHIDRATADO",
               quantity: "2-3 por campo"
             }
@@ -101,7 +101,7 @@ export class UrineTestsController {
           bacteria: "Abundante",
           mucousFilaments: "Moderada",
           crystals: [
-            { 
+            {
               type: "ACIDO URICO",
               quantity: "abundante"
             },
@@ -148,7 +148,7 @@ export class UrineTestsController {
   }
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener lista de exámenes de orina',
     description: 'Obtiene todos los exámenes de orina con opciones de filtrado, búsqueda y paginación'
   })
@@ -173,9 +173,7 @@ export class UrineTestsController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    return await this.urineTestService.findAll({
-      page,
-      limit,
+    return await this.urineTestService.findAll(page, limit, {
       search,
       patientId,
       status,
@@ -185,7 +183,7 @@ export class UrineTestsController {
   }
 
   @Get('statistics')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener estadísticas de exámenes de orina',
     description: 'Obtiene estadísticas generales de los exámenes de orina'
   })
@@ -198,7 +196,7 @@ export class UrineTestsController {
   }
 
   @Get('pending-review')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener exámenes pendientes de revisión',
     description: 'Obtiene todos los exámenes que están pendientes o en progreso'
   })
@@ -212,7 +210,7 @@ export class UrineTestsController {
   }
 
   @Get('patient/:patientId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener exámenes de orina por paciente',
     description: 'Obtiene todos los exámenes de orina de un paciente específico'
   })
@@ -228,12 +226,12 @@ export class UrineTestsController {
   })
   async findByPatient(
     @Param('patientId', ParseUUIDPipe) patientId: string,
-  ): Promise<UrineTest[]> {
+  ): Promise<any> {
     return await this.urineTestService.findByPatient(patientId);
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener examen de orina por ID',
     description: 'Obtiene un examen de orina específico por su ID'
   })
@@ -252,7 +250,7 @@ export class UrineTestsController {
   }
 
   @Get(':id/medical-report')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener reporte médico del examen',
     description: 'Obtiene un reporte médico interpretado del examen de orina, incluyendo análisis detallado de cristales y cilindros encontrados. El reporte incluye la clasificación específica de cada tipo de cristal y cilindro junto con su cantidad observada.'
   })
@@ -270,7 +268,7 @@ export class UrineTestsController {
   }
 
   @Patch(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Actualizar examen de orina',
     description: 'Actualiza los datos de un examen de orina existente. Para actualizar cristales o cilindros, proporcione los arrays completos con todos los hallazgos que desea mantener.'
   })
@@ -297,7 +295,7 @@ export class UrineTestsController {
   }
 
   @Patch(':id/complete')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Marcar examen como completado',
     description: 'Marca un examen de orina como completado y opcionalmente registra quien lo revisó'
   })
@@ -320,7 +318,7 @@ export class UrineTestsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Eliminar examen de orina',
     description: 'Elimina (soft delete) un examen de orina del sistema'
   })
@@ -338,19 +336,19 @@ export class UrineTestsController {
   }
 
   @Get('active/list')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener exámenes activos con paginación',
     description: 'Retorna solo los exámenes marcados como activos (no eliminados con soft-delete)'
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number,
     description: 'Número de página (por defecto: 1)'
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number,
     description: 'Registros por página (por defecto: 10)'
   })
@@ -366,19 +364,19 @@ export class UrineTestsController {
   }
 
   @Get('admin/all')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener todos los exámenes incluyendo inactivos (ADMIN)',
     description: 'Retorna todos los exámenes incluyendo los marcados como inactivos. Solo para administradores.'
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number,
     description: 'Número de página'
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number,
     description: 'Registros por página'
   })
@@ -394,18 +392,18 @@ export class UrineTestsController {
   }
 
   @Get('admin/inactive')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener exámenes inactivos (auditoría)',
     description: 'Retorna solo los exámenes marcados como inactivos para auditoría y compliance'
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number
   })
   @ApiResponse({
@@ -420,19 +418,19 @@ export class UrineTestsController {
   }
 
   @Get('patient/:patientId/active')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Obtener exámenes activos de un paciente',
     description: 'Retorna solo los exámenes activos de un paciente específico'
   })
   @ApiParam({ name: 'patientId', type: String, description: 'UUID del paciente' })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     type: Number
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     type: Number
   })
   @ApiResponse({
@@ -453,7 +451,7 @@ export class UrineTestsController {
   }
 
   @Patch(':id/deactivate')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Desactivar examen (soft-delete)',
     description: 'Marca un examen como inactivo sin eliminarlo de la base de datos. Se mantiene para auditoría.'
   })
@@ -476,7 +474,7 @@ export class UrineTestsController {
   }
 
   @Patch(':id/reactivate')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Reactivar examen',
     description: 'Marca un examen inactivo como activo nuevamente'
   })

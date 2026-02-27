@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { TestSection } from '../entities/test-section.entity';
 import { TestDefinition } from '../entities/test-definition.entity';
 import { TestProfile } from '../entities/test-profile.entity';
@@ -28,7 +28,7 @@ export class SeedDemoData implements OnModuleInit {
     private doctorRepo: Repository<Doctor>,
     @InjectRepository(Patient)
     private patientRepo: Repository<Patient>,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     const shouldSeed = process.env.SEED_INITIAL_DATA === 'true';
@@ -50,20 +50,34 @@ export class SeedDemoData implements OnModuleInit {
     this.logger.log('📂 Creando secciones...');
 
     const data = [
-      { name: 'Química Sanguínea', code: 'QS', color: '#2196F3', displayOrder: 1,
-        description: 'Exámenes bioquímicos de sangre: glucosa, lípidos, función renal y hepática.' },
-      { name: 'Hematología', code: 'HEM', color: '#F44336', displayOrder: 2,
-        description: 'Análisis de células sanguíneas: hemograma, coagulación y VSG.' },
-      { name: 'Serología', code: 'SER', color: '#9C27B0', displayOrder: 3,
-        description: 'Pruebas de anticuerpos e infecciones: VIH, VDRL, hepatitis, toxoplasma.' },
-      { name: 'Uroanálisis', code: 'URO', color: '#FF9800', displayOrder: 4,
-        description: 'Exámenes de orina: EGO, urocultivo, proteínas y glucosa en orina.' },
-      { name: 'Microbiología', code: 'MIC', color: '#4CAF50', displayOrder: 5,
-        description: 'Cultivos y antibiogramas de diversas muestras biológicas.' },
-      { name: 'Hormonas', code: 'HOR', color: '#E91E63', displayOrder: 6,
-        description: 'Dosificación hormonal: tiroides, insulina, testosterona, PSA.' },
-      { name: 'Coagulación', code: 'COA', color: '#FF5722', displayOrder: 7,
-        description: 'Tiempos de coagulación: TP, TTP, INR.' },
+      {
+        name: 'Química Sanguínea', code: 'QS', color: '#2196F3', displayOrder: 1,
+        description: 'Exámenes bioquímicos de sangre: glucosa, lípidos, función renal y hepática.'
+      },
+      {
+        name: 'Hematología', code: 'HEM', color: '#F44336', displayOrder: 2,
+        description: 'Análisis de células sanguíneas: hemograma, coagulación y VSG.'
+      },
+      {
+        name: 'Serología', code: 'SER', color: '#9C27B0', displayOrder: 3,
+        description: 'Pruebas de anticuerpos e infecciones: VIH, VDRL, hepatitis, toxoplasma.'
+      },
+      {
+        name: 'Uroanálisis', code: 'URO', color: '#FF9800', displayOrder: 4,
+        description: 'Exámenes de orina: EGO, urocultivo, proteínas y glucosa en orina.'
+      },
+      {
+        name: 'Microbiología', code: 'MIC', color: '#4CAF50', displayOrder: 5,
+        description: 'Cultivos y antibiogramas de diversas muestras biológicas.'
+      },
+      {
+        name: 'Hormonas', code: 'HOR', color: '#E91E63', displayOrder: 6,
+        description: 'Dosificación hormonal: tiroides, insulina, testosterona, PSA.'
+      },
+      {
+        name: 'Coagulación', code: 'COA', color: '#FF5722', displayOrder: 7,
+        description: 'Tiempos de coagulación: TP, TTP, INR.'
+      },
     ];
 
     const result: Record<string, TestSection> = {};
@@ -102,135 +116,233 @@ export class SeedDemoData implements OnModuleInit {
 
     const definitions = [
       // ── Química Sanguínea ──
-      { section: QS, code: 'GLUC', name: 'Glucosa en Ayunas', resultType: NUM, unit: 'mg/dL',
+      {
+        section: QS, code: 'GLUC', name: 'Glucosa en Ayunas', resultType: NUM, unit: 'mg/dL',
         price: 120, processingTime: 2, displayOrder: 1, sampleType: 'Suero',
-        description: 'Determinación de glucosa sérica en muestra de ayuno de 8 horas.' },
-      { section: QS, code: 'CTOT', name: 'Colesterol Total', resultType: NUM, unit: 'mg/dL',
-        price: 100, processingTime: 2, displayOrder: 2, sampleType: 'Suero' },
-      { section: QS, code: 'TRIG', name: 'Triglicéridos', resultType: NUM, unit: 'mg/dL',
-        price: 100, processingTime: 2, displayOrder: 3, sampleType: 'Suero' },
-      { section: QS, code: 'HDL', name: 'HDL Colesterol', resultType: NUM, unit: 'mg/dL',
-        price: 110, processingTime: 2, displayOrder: 4, sampleType: 'Suero' },
-      { section: QS, code: 'LDL', name: 'LDL Colesterol', resultType: NUM, unit: 'mg/dL',
-        price: 110, processingTime: 2, displayOrder: 5, sampleType: 'Suero' },
-      { section: QS, code: 'CREAT', name: 'Creatinina', resultType: NUM, unit: 'mg/dL',
+        description: 'Determinación de glucosa sérica en muestra de ayuno de 8 horas.'
+      },
+      {
+        section: QS, code: 'CTOT', name: 'Colesterol Total', resultType: NUM, unit: 'mg/dL',
+        price: 100, processingTime: 2, displayOrder: 2, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'TRIG', name: 'Triglicéridos', resultType: NUM, unit: 'mg/dL',
+        price: 100, processingTime: 2, displayOrder: 3, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'HDL', name: 'HDL Colesterol', resultType: NUM, unit: 'mg/dL',
+        price: 110, processingTime: 2, displayOrder: 4, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'LDL', name: 'LDL Colesterol', resultType: NUM, unit: 'mg/dL',
+        price: 110, processingTime: 2, displayOrder: 5, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'CREAT', name: 'Creatinina', resultType: NUM, unit: 'mg/dL',
         price: 80, processingTime: 2, displayOrder: 6, sampleType: 'Suero',
-        description: 'Medición de creatinina sérica para evaluación de función renal.' },
-      { section: QS, code: 'BUN', name: 'Nitrógeno Ureico (BUN)', resultType: NUM, unit: 'mg/dL',
-        price: 80, processingTime: 2, displayOrder: 7, sampleType: 'Suero' },
-      { section: QS, code: 'URIC', name: 'Ácido Úrico', resultType: NUM, unit: 'mg/dL',
-        price: 80, processingTime: 2, displayOrder: 8, sampleType: 'Suero' },
-      { section: QS, code: 'TGO', name: 'TGO (AST)', resultType: NUM, unit: 'U/L',
-        price: 90, processingTime: 2, displayOrder: 9, sampleType: 'Suero' },
-      { section: QS, code: 'TGP', name: 'TGP (ALT)', resultType: NUM, unit: 'U/L',
-        price: 90, processingTime: 2, displayOrder: 10, sampleType: 'Suero' },
-      { section: QS, code: 'BILT', name: 'Bilirrubina Total', resultType: NUM, unit: 'mg/dL',
-        price: 80, processingTime: 2, displayOrder: 11, sampleType: 'Suero' },
-      { section: QS, code: 'BILD', name: 'Bilirrubina Directa', resultType: NUM, unit: 'mg/dL',
-        price: 80, processingTime: 2, displayOrder: 12, sampleType: 'Suero' },
-      { section: QS, code: 'PROT', name: 'Proteínas Totales', resultType: NUM, unit: 'g/dL',
-        price: 80, processingTime: 2, displayOrder: 13, sampleType: 'Suero' },
-      { section: QS, code: 'FALC', name: 'Fosfatasa Alcalina', resultType: NUM, unit: 'U/L',
-        price: 90, processingTime: 2, displayOrder: 14, sampleType: 'Suero' },
-      { section: QS, code: 'ALB', name: 'Albúmina', resultType: NUM, unit: 'g/dL',
-        price: 80, processingTime: 2, displayOrder: 15, sampleType: 'Suero' },
+        description: 'Medición de creatinina sérica para evaluación de función renal.'
+      },
+      {
+        section: QS, code: 'BUN', name: 'Nitrógeno Ureico (BUN)', resultType: NUM, unit: 'mg/dL',
+        price: 80, processingTime: 2, displayOrder: 7, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'URIC', name: 'Ácido Úrico', resultType: NUM, unit: 'mg/dL',
+        price: 80, processingTime: 2, displayOrder: 8, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'TGO', name: 'TGO (AST)', resultType: NUM, unit: 'U/L',
+        price: 90, processingTime: 2, displayOrder: 9, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'TGP', name: 'TGP (ALT)', resultType: NUM, unit: 'U/L',
+        price: 90, processingTime: 2, displayOrder: 10, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'BILT', name: 'Bilirrubina Total', resultType: NUM, unit: 'mg/dL',
+        price: 80, processingTime: 2, displayOrder: 11, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'BILD', name: 'Bilirrubina Directa', resultType: NUM, unit: 'mg/dL',
+        price: 80, processingTime: 2, displayOrder: 12, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'PROT', name: 'Proteínas Totales', resultType: NUM, unit: 'g/dL',
+        price: 80, processingTime: 2, displayOrder: 13, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'FALC', name: 'Fosfatasa Alcalina', resultType: NUM, unit: 'U/L',
+        price: 90, processingTime: 2, displayOrder: 14, sampleType: 'Suero'
+      },
+      {
+        section: QS, code: 'ALB', name: 'Albúmina', resultType: NUM, unit: 'g/dL',
+        price: 80, processingTime: 2, displayOrder: 15, sampleType: 'Suero'
+      },
 
       // ── Hematología ──
-      { section: HEM, code: 'HGB', name: 'Hemoglobina', resultType: NUM, unit: 'g/dL',
-        price: 80, processingTime: 1, displayOrder: 1, sampleType: 'Sangre EDTA' },
-      { section: HEM, code: 'HCT', name: 'Hematocrito', resultType: NUM, unit: '%',
-        price: 80, processingTime: 1, displayOrder: 2, sampleType: 'Sangre EDTA' },
-      { section: HEM, code: 'GR', name: 'Glóbulos Rojos (Eritrocitos)', resultType: NUM, unit: 'x10⁶/µL',
-        price: 80, processingTime: 1, displayOrder: 3, sampleType: 'Sangre EDTA' },
-      { section: HEM, code: 'GB', name: 'Glóbulos Blancos (Leucocitos)', resultType: NUM, unit: 'x10³/µL',
-        price: 80, processingTime: 1, displayOrder: 4, sampleType: 'Sangre EDTA' },
-      { section: HEM, code: 'PLAQ', name: 'Plaquetas', resultType: NUM, unit: 'x10³/µL',
-        price: 80, processingTime: 1, displayOrder: 5, sampleType: 'Sangre EDTA' },
-      { section: HEM, code: 'VSG', name: 'Velocidad de Sedimentación Globular', resultType: NUM, unit: 'mm/h',
-        price: 80, processingTime: 2, displayOrder: 6, sampleType: 'Sangre EDTA' },
-      { section: HEM, code: 'DIFF', name: 'Diferencial de Leucocitos', resultType: TXT, unit: '%',
+      {
+        section: HEM, code: 'HGB', name: 'Hemoglobina', resultType: NUM, unit: 'g/dL',
+        price: 80, processingTime: 1, displayOrder: 1, sampleType: 'Sangre EDTA'
+      },
+      {
+        section: HEM, code: 'HCT', name: 'Hematocrito', resultType: NUM, unit: '%',
+        price: 80, processingTime: 1, displayOrder: 2, sampleType: 'Sangre EDTA'
+      },
+      {
+        section: HEM, code: 'GR', name: 'Glóbulos Rojos (Eritrocitos)', resultType: NUM, unit: 'x10⁶/µL',
+        price: 80, processingTime: 1, displayOrder: 3, sampleType: 'Sangre EDTA'
+      },
+      {
+        section: HEM, code: 'GB', name: 'Glóbulos Blancos (Leucocitos)', resultType: NUM, unit: 'x10³/µL',
+        price: 80, processingTime: 1, displayOrder: 4, sampleType: 'Sangre EDTA'
+      },
+      {
+        section: HEM, code: 'PLAQ', name: 'Plaquetas', resultType: NUM, unit: 'x10³/µL',
+        price: 80, processingTime: 1, displayOrder: 5, sampleType: 'Sangre EDTA'
+      },
+      {
+        section: HEM, code: 'VSG', name: 'Velocidad de Sedimentación Globular', resultType: NUM, unit: 'mm/h',
+        price: 80, processingTime: 2, displayOrder: 6, sampleType: 'Sangre EDTA'
+      },
+      {
+        section: HEM, code: 'DIFF', name: 'Diferencial de Leucocitos', resultType: TXT, unit: '%',
         price: 100, processingTime: 2, displayOrder: 7, sampleType: 'Sangre EDTA',
-        description: 'Conteo diferencial: neutrófilos, linfocitos, monocitos, eosinófilos, basófilos.' },
+        description: 'Conteo diferencial: neutrófilos, linfocitos, monocitos, eosinófilos, basófilos.'
+      },
 
       // ── Serología ──
-      { section: SER, code: 'VDRL', name: 'VDRL / RPR (Sífilis)', resultType: REAC,
-        price: 80, processingTime: 3, displayOrder: 1, sampleType: 'Suero' },
-      { section: SER, code: 'VIH', name: 'VIH (Anticuerpos 1 y 2)', resultType: REAC,
+      {
+        section: SER, code: 'VDRL', name: 'VDRL / RPR (Sífilis)', resultType: REAC,
+        price: 80, processingTime: 3, displayOrder: 1, sampleType: 'Suero'
+      },
+      {
+        section: SER, code: 'VIH', name: 'VIH (Anticuerpos 1 y 2)', resultType: REAC,
         price: 200, processingTime: 4, displayOrder: 2, sampleType: 'Suero',
-        description: 'Tamizaje de anticuerpos anti-VIH-1/2. Prueba de cuarta generación.' },
-      { section: SER, code: 'HBS', name: 'Hepatitis B (HBsAg)', resultType: REAC,
-        price: 120, processingTime: 3, displayOrder: 3, sampleType: 'Suero' },
-      { section: SER, code: 'HCV', name: 'Hepatitis C (Anti-HCV)', resultType: REAC,
-        price: 120, processingTime: 3, displayOrder: 4, sampleType: 'Suero' },
-      { section: SER, code: 'TOXIG', name: 'Toxoplasma IgG', resultType: REAC,
-        price: 120, processingTime: 4, displayOrder: 5, sampleType: 'Suero' },
-      { section: SER, code: 'TOXIM', name: 'Toxoplasma IgM', resultType: REAC,
-        price: 120, processingTime: 4, displayOrder: 6, sampleType: 'Suero' },
-      { section: SER, code: 'FR', name: 'Factor Reumatoide', resultType: REAC,
-        price: 80, processingTime: 3, displayOrder: 7, sampleType: 'Suero' },
-      { section: SER, code: 'PCR', name: 'Proteína C Reactiva', resultType: NUM, unit: 'mg/dL',
-        price: 90, processingTime: 3, displayOrder: 8, sampleType: 'Suero' },
+        description: 'Tamizaje de anticuerpos anti-VIH-1/2. Prueba de cuarta generación.'
+      },
+      {
+        section: SER, code: 'HBS', name: 'Hepatitis B (HBsAg)', resultType: REAC,
+        price: 120, processingTime: 3, displayOrder: 3, sampleType: 'Suero'
+      },
+      {
+        section: SER, code: 'HCV', name: 'Hepatitis C (Anti-HCV)', resultType: REAC,
+        price: 120, processingTime: 3, displayOrder: 4, sampleType: 'Suero'
+      },
+      {
+        section: SER, code: 'TOXIG', name: 'Toxoplasma IgG', resultType: REAC,
+        price: 120, processingTime: 4, displayOrder: 5, sampleType: 'Suero'
+      },
+      {
+        section: SER, code: 'TOXIM', name: 'Toxoplasma IgM', resultType: REAC,
+        price: 120, processingTime: 4, displayOrder: 6, sampleType: 'Suero'
+      },
+      {
+        section: SER, code: 'FR', name: 'Factor Reumatoide', resultType: REAC,
+        price: 80, processingTime: 3, displayOrder: 7, sampleType: 'Suero'
+      },
+      {
+        section: SER, code: 'PCR', name: 'Proteína C Reactiva', resultType: NUM, unit: 'mg/dL',
+        price: 90, processingTime: 3, displayOrder: 8, sampleType: 'Suero'
+      },
 
       // ── Uroanálisis ──
-      { section: URO, code: 'EGO', name: 'Examen General de Orina', resultType: TXT,
+      {
+        section: URO, code: 'EGO', name: 'Examen General de Orina', resultType: TXT,
         price: 80, processingTime: 1, displayOrder: 1, sampleType: 'Orina fresca',
-        description: 'Análisis físico, químico y microscópico de orina.' },
-      { section: URO, code: 'PROTU', name: 'Proteínas en Orina (Cualitativo)', resultType: EMAA,
-        price: 80, processingTime: 1, displayOrder: 2, sampleType: 'Orina fresca' },
-      { section: URO, code: 'GLUCU', name: 'Glucosa en Orina (Cualitativo)', resultType: POSN,
-        price: 80, processingTime: 1, displayOrder: 3, sampleType: 'Orina fresca' },
-      { section: URO, code: 'MICRU', name: 'Microalbuminuria', resultType: NUM, unit: 'mg/g creatinina',
-        price: 150, processingTime: 2, displayOrder: 4, sampleType: 'Orina 24h' },
+        description: 'Análisis físico, químico y microscópico de orina.'
+      },
+      {
+        section: URO, code: 'PROTU', name: 'Proteínas en Orina (Cualitativo)', resultType: EMAA,
+        price: 80, processingTime: 1, displayOrder: 2, sampleType: 'Orina fresca'
+      },
+      {
+        section: URO, code: 'GLUCU', name: 'Glucosa en Orina (Cualitativo)', resultType: POSN,
+        price: 80, processingTime: 1, displayOrder: 3, sampleType: 'Orina fresca'
+      },
+      {
+        section: URO, code: 'MICRU', name: 'Microalbuminuria', resultType: NUM, unit: 'mg/g creatinina',
+        price: 150, processingTime: 2, displayOrder: 4, sampleType: 'Orina 24h'
+      },
 
       // ── Microbiología ──
-      { section: MIC, code: 'UROC', name: 'Urocultivo + Antibiograma', resultType: TXT,
+      {
+        section: MIC, code: 'UROC', name: 'Urocultivo + Antibiograma', resultType: TXT,
         price: 180, processingTime: 48, displayOrder: 1, sampleType: 'Orina de chorro medio',
-        description: 'Cultivo de orina con identificación de microorganismo y sensibilidad antibiótica.' },
-      { section: MIC, code: 'COPR', name: 'Coprocultivo + Antibiograma', resultType: TXT,
-        price: 200, processingTime: 72, displayOrder: 2, sampleType: 'Heces frescas' },
-      { section: MIC, code: 'CULTH', name: 'Cultivo de Herida + Antibiograma', resultType: TXT,
-        price: 180, processingTime: 72, displayOrder: 3, sampleType: 'Hisopado de herida' },
-      { section: MIC, code: 'HEMOC', name: 'Hemocultivo', resultType: TXT,
+        description: 'Cultivo de orina con identificación de microorganismo y sensibilidad antibiótica.'
+      },
+      {
+        section: MIC, code: 'COPR', name: 'Coprocultivo + Antibiograma', resultType: TXT,
+        price: 200, processingTime: 72, displayOrder: 2, sampleType: 'Heces frescas'
+      },
+      {
+        section: MIC, code: 'CULTH', name: 'Cultivo de Herida + Antibiograma', resultType: TXT,
+        price: 180, processingTime: 72, displayOrder: 3, sampleType: 'Hisopado de herida'
+      },
+      {
+        section: MIC, code: 'HEMOC', name: 'Hemocultivo', resultType: TXT,
         price: 350, processingTime: 120, displayOrder: 4, sampleType: 'Sangre venosa',
-        description: 'Detección de bacteriemia. Incubación hasta 5 días.' },
+        description: 'Detección de bacteriemia. Incubación hasta 5 días.'
+      },
 
       // ── Hormonas ──
-      { section: HOR, code: 'TSH', name: 'TSH (Hormona Estimulante de Tiroides)', resultType: NUM, unit: 'µUI/mL',
-        price: 200, processingTime: 4, displayOrder: 1, sampleType: 'Suero' },
-      { section: HOR, code: 'T4L', name: 'T4 Libre', resultType: NUM, unit: 'ng/dL',
-        price: 200, processingTime: 4, displayOrder: 2, sampleType: 'Suero' },
-      { section: HOR, code: 'T3L', name: 'T3 Libre', resultType: NUM, unit: 'pg/mL',
-        price: 200, processingTime: 4, displayOrder: 3, sampleType: 'Suero' },
-      { section: HOR, code: 'INS', name: 'Insulina en Ayunas', resultType: NUM, unit: 'µUI/mL',
-        price: 180, processingTime: 4, displayOrder: 4, sampleType: 'Suero' },
-      { section: HOR, code: 'PSA', name: 'PSA (Antígeno Prostático Específico)', resultType: NUM, unit: 'ng/mL',
-        price: 250, processingTime: 4, displayOrder: 5, sampleType: 'Suero' },
-      { section: HOR, code: 'TESTO', name: 'Testosterona Total', resultType: NUM, unit: 'ng/dL',
-        price: 220, processingTime: 4, displayOrder: 6, sampleType: 'Suero' },
-      { section: HOR, code: 'FSH', name: 'FSH (Hormona Foliculoestimulante)', resultType: NUM, unit: 'mUI/mL',
-        price: 200, processingTime: 4, displayOrder: 7, sampleType: 'Suero' },
-      { section: HOR, code: 'LH', name: 'LH (Hormona Luteinizante)', resultType: NUM, unit: 'mUI/mL',
-        price: 200, processingTime: 4, displayOrder: 8, sampleType: 'Suero' },
+      {
+        section: HOR, code: 'TSH', name: 'TSH (Hormona Estimulante de Tiroides)', resultType: NUM, unit: 'µUI/mL',
+        price: 200, processingTime: 4, displayOrder: 1, sampleType: 'Suero'
+      },
+      {
+        section: HOR, code: 'T4L', name: 'T4 Libre', resultType: NUM, unit: 'ng/dL',
+        price: 200, processingTime: 4, displayOrder: 2, sampleType: 'Suero'
+      },
+      {
+        section: HOR, code: 'T3L', name: 'T3 Libre', resultType: NUM, unit: 'pg/mL',
+        price: 200, processingTime: 4, displayOrder: 3, sampleType: 'Suero'
+      },
+      {
+        section: HOR, code: 'INS', name: 'Insulina en Ayunas', resultType: NUM, unit: 'µUI/mL',
+        price: 180, processingTime: 4, displayOrder: 4, sampleType: 'Suero'
+      },
+      {
+        section: HOR, code: 'PSA', name: 'PSA (Antígeno Prostático Específico)', resultType: NUM, unit: 'ng/mL',
+        price: 250, processingTime: 4, displayOrder: 5, sampleType: 'Suero'
+      },
+      {
+        section: HOR, code: 'TESTO', name: 'Testosterona Total', resultType: NUM, unit: 'ng/dL',
+        price: 220, processingTime: 4, displayOrder: 6, sampleType: 'Suero'
+      },
+      {
+        section: HOR, code: 'FSH', name: 'FSH (Hormona Foliculoestimulante)', resultType: NUM, unit: 'mUI/mL',
+        price: 200, processingTime: 4, displayOrder: 7, sampleType: 'Suero'
+      },
+      {
+        section: HOR, code: 'LH', name: 'LH (Hormona Luteinizante)', resultType: NUM, unit: 'mUI/mL',
+        price: 200, processingTime: 4, displayOrder: 8, sampleType: 'Suero'
+      },
 
       // ── Coagulación ──
-      { section: COA, code: 'TP', name: 'Tiempo de Protrombina (TP)', resultType: NUM, unit: 'segundos',
-        price: 100, processingTime: 2, displayOrder: 1, sampleType: 'Plasma citratado' },
-      { section: COA, code: 'TTP', name: 'Tiempo Parcial de Tromboplastina (TTP)', resultType: NUM, unit: 'segundos',
-        price: 100, processingTime: 2, displayOrder: 2, sampleType: 'Plasma citratado' },
-      { section: COA, code: 'INR', name: 'INR', resultType: NUM, unit: 'ratio',
-        price: 100, processingTime: 2, displayOrder: 3, sampleType: 'Plasma citratado' },
+      {
+        section: COA, code: 'TP', name: 'Tiempo de Protrombina (TP)', resultType: NUM, unit: 'segundos',
+        price: 100, processingTime: 2, displayOrder: 1, sampleType: 'Plasma citratado'
+      },
+      {
+        section: COA, code: 'TTP', name: 'Tiempo Parcial de Tromboplastina (TTP)', resultType: NUM, unit: 'segundos',
+        price: 100, processingTime: 2, displayOrder: 2, sampleType: 'Plasma citratado'
+      },
+      {
+        section: COA, code: 'INR', name: 'INR', resultType: NUM, unit: 'ratio',
+        price: 100, processingTime: 2, displayOrder: 3, sampleType: 'Plasma citratado'
+      },
     ];
 
     const result: Record<string, TestDefinition> = {};
     for (const d of definitions) {
       let test = await this.testRepo.findOne({ where: { code: d.code } });
       if (!test) {
-        test = await this.testRepo.save(this.testRepo.create(d as any));
+        test = await this.testRepo.save(this.testRepo.create(d as any) as any) as any;
         this.logger.log(`  ✅ Prueba: ${d.name}`);
       } else {
         this.logger.log(`  ⏭️  Prueba ya existe: ${d.name}`);
       }
-      result[d.code] = test;
+      result[d.code] = test as TestDefinition;
     }
     return result;
   }
@@ -242,118 +354,186 @@ export class SeedDemoData implements OnModuleInit {
 
     const ranges: Partial<TestReferenceRange>[] = [
       // Glucosa en Ayunas
-      { testDefinition: tests['GLUC'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: 215,
-        minValue: 60, maxValue: 100, unit: 'mg/dL', interpretation: 'Normal (niños)' },
-      { testDefinition: tests['GLUC'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 70, maxValue: 100, unit: 'mg/dL', interpretation: 'Normal (adultos)' },
+      {
+        testDefinition: tests['GLUC'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: 215,
+        minValue: 60, maxValue: 100, unit: 'mg/dL', interpretation: 'Normal (niños)'
+      },
+      {
+        testDefinition: tests['GLUC'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 70, maxValue: 100, unit: 'mg/dL', interpretation: 'Normal (adultos)'
+      },
 
       // Colesterol Total
-      { testDefinition: tests['CTOT'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        maxValue: 200, unit: 'mg/dL', interpretation: 'Deseable', textualRange: '< 200 mg/dL' },
+      {
+        testDefinition: tests['CTOT'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        maxValue: 200, unit: 'mg/dL', interpretation: 'Deseable', textualRange: '< 200 mg/dL'
+      },
 
       // Triglicéridos
-      { testDefinition: tests['TRIG'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        maxValue: 150, unit: 'mg/dL', interpretation: 'Normal', textualRange: '< 150 mg/dL' },
+      {
+        testDefinition: tests['TRIG'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        maxValue: 150, unit: 'mg/dL', interpretation: 'Normal', textualRange: '< 150 mg/dL'
+      },
 
       // HDL Colesterol
-      { testDefinition: tests['HDL'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 40, unit: 'mg/dL', interpretation: 'Deseable', textualRange: '≥ 40 mg/dL' },
-      { testDefinition: tests['HDL'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 50, unit: 'mg/dL', interpretation: 'Deseable', textualRange: '≥ 50 mg/dL' },
+      {
+        testDefinition: tests['HDL'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 40, unit: 'mg/dL', interpretation: 'Deseable', textualRange: '≥ 40 mg/dL'
+      },
+      {
+        testDefinition: tests['HDL'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 50, unit: 'mg/dL', interpretation: 'Deseable', textualRange: '≥ 50 mg/dL'
+      },
 
       // LDL Colesterol
-      { testDefinition: tests['LDL'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        maxValue: 130, unit: 'mg/dL', interpretation: 'Óptimo a límite', textualRange: '< 130 mg/dL' },
+      {
+        testDefinition: tests['LDL'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        maxValue: 130, unit: 'mg/dL', interpretation: 'Óptimo a límite', textualRange: '< 130 mg/dL'
+      },
 
       // Creatinina
-      { testDefinition: tests['CREAT'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 0.7, maxValue: 1.3, unit: 'mg/dL', interpretation: 'Normal' },
-      { testDefinition: tests['CREAT'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 0.5, maxValue: 1.1, unit: 'mg/dL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['CREAT'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 0.7, maxValue: 1.3, unit: 'mg/dL', interpretation: 'Normal'
+      },
+      {
+        testDefinition: tests['CREAT'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 0.5, maxValue: 1.1, unit: 'mg/dL', interpretation: 'Normal'
+      },
 
       // BUN
-      { testDefinition: tests['BUN'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 7, maxValue: 20, unit: 'mg/dL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['BUN'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 7, maxValue: 20, unit: 'mg/dL', interpretation: 'Normal'
+      },
 
       // Ácido Úrico
-      { testDefinition: tests['URIC'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 3.5, maxValue: 7.2, unit: 'mg/dL', interpretation: 'Normal' },
-      { testDefinition: tests['URIC'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 2.6, maxValue: 6.0, unit: 'mg/dL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['URIC'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 3.5, maxValue: 7.2, unit: 'mg/dL', interpretation: 'Normal'
+      },
+      {
+        testDefinition: tests['URIC'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 2.6, maxValue: 6.0, unit: 'mg/dL', interpretation: 'Normal'
+      },
 
       // TGO (AST)
-      { testDefinition: tests['TGO'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 10, maxValue: 40, unit: 'U/L', interpretation: 'Normal' },
-      { testDefinition: tests['TGO'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 10, maxValue: 35, unit: 'U/L', interpretation: 'Normal' },
+      {
+        testDefinition: tests['TGO'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 10, maxValue: 40, unit: 'U/L', interpretation: 'Normal'
+      },
+      {
+        testDefinition: tests['TGO'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 10, maxValue: 35, unit: 'U/L', interpretation: 'Normal'
+      },
 
       // TGP (ALT)
-      { testDefinition: tests['TGP'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 7, maxValue: 56, unit: 'U/L', interpretation: 'Normal' },
-      { testDefinition: tests['TGP'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 7, maxValue: 45, unit: 'U/L', interpretation: 'Normal' },
+      {
+        testDefinition: tests['TGP'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 7, maxValue: 56, unit: 'U/L', interpretation: 'Normal'
+      },
+      {
+        testDefinition: tests['TGP'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 7, maxValue: 45, unit: 'U/L', interpretation: 'Normal'
+      },
 
       // Bilirrubina Total
-      { testDefinition: tests['BILT'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 0.2, maxValue: 1.2, unit: 'mg/dL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['BILT'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 0.2, maxValue: 1.2, unit: 'mg/dL', interpretation: 'Normal'
+      },
 
       // Proteínas Totales
-      { testDefinition: tests['PROT'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 6.4, maxValue: 8.3, unit: 'g/dL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['PROT'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 6.4, maxValue: 8.3, unit: 'g/dL', interpretation: 'Normal'
+      },
 
       // Hemoglobina
-      { testDefinition: tests['HGB'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 13.5, maxValue: 17.5, unit: 'g/dL', interpretation: 'Normal' },
-      { testDefinition: tests['HGB'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 12.0, maxValue: 16.0, unit: 'g/dL', interpretation: 'Normal' },
-      { testDefinition: tests['HGB'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: 215,
-        minValue: 11.0, maxValue: 16.0, unit: 'g/dL', interpretation: 'Normal (menores de 18 años)' },
+      {
+        testDefinition: tests['HGB'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 13.5, maxValue: 17.5, unit: 'g/dL', interpretation: 'Normal'
+      },
+      {
+        testDefinition: tests['HGB'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 12.0, maxValue: 16.0, unit: 'g/dL', interpretation: 'Normal'
+      },
+      {
+        testDefinition: tests['HGB'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: 215,
+        minValue: 11.0, maxValue: 16.0, unit: 'g/dL', interpretation: 'Normal (menores de 18 años)'
+      },
 
       // Hematocrito
-      { testDefinition: tests['HCT'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 41, maxValue: 53, unit: '%', interpretation: 'Normal' },
-      { testDefinition: tests['HCT'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 36, maxValue: 46, unit: '%', interpretation: 'Normal' },
+      {
+        testDefinition: tests['HCT'], gender: RangeGender.MALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 41, maxValue: 53, unit: '%', interpretation: 'Normal'
+      },
+      {
+        testDefinition: tests['HCT'], gender: RangeGender.FEMALE, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 36, maxValue: 46, unit: '%', interpretation: 'Normal'
+      },
 
       // Glóbulos Blancos
-      { testDefinition: tests['GB'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 4.5, maxValue: 11.0, unit: 'x10³/µL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['GB'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 4.5, maxValue: 11.0, unit: 'x10³/µL', interpretation: 'Normal'
+      },
 
       // Plaquetas
-      { testDefinition: tests['PLAQ'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
-        minValue: 150, maxValue: 400, unit: 'x10³/µL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['PLAQ'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
+        minValue: 150, maxValue: 400, unit: 'x10³/µL', interpretation: 'Normal'
+      },
 
       // TSH
-      { testDefinition: tests['TSH'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 0.4, maxValue: 4.0, unit: 'µUI/mL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['TSH'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 0.4, maxValue: 4.0, unit: 'µUI/mL', interpretation: 'Normal'
+      },
 
       // T4 Libre
-      { testDefinition: tests['T4L'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 0.8, maxValue: 1.8, unit: 'ng/dL', interpretation: 'Normal' },
+      {
+        testDefinition: tests['T4L'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 0.8, maxValue: 1.8, unit: 'ng/dL', interpretation: 'Normal'
+      },
 
       // Insulina en Ayunas
-      { testDefinition: tests['INS'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
-        minValue: 2.6, maxValue: 24.9, unit: 'µUI/mL', interpretation: 'Normal en ayuno' },
+      {
+        testDefinition: tests['INS'], gender: RangeGender.ANY, ageMinMonths: 216, ageMaxMonths: null,
+        minValue: 2.6, maxValue: 24.9, unit: 'µUI/mL', interpretation: 'Normal en ayuno'
+      },
 
       // PSA — por edad en hombres
-      { testDefinition: tests['PSA'], gender: RangeGender.MALE, ageMinMonths: 0, ageMaxMonths: 479,
-        maxValue: 2.0, unit: 'ng/mL', interpretation: 'Normal', textualRange: '< 2.0 ng/mL (< 40 años)' },
-      { testDefinition: tests['PSA'], gender: RangeGender.MALE, ageMinMonths: 480, ageMaxMonths: 719,
-        maxValue: 2.5, unit: 'ng/mL', interpretation: 'Normal', textualRange: '< 2.5 ng/mL (40-59 años)' },
-      { testDefinition: tests['PSA'], gender: RangeGender.MALE, ageMinMonths: 720, ageMaxMonths: null,
-        maxValue: 3.5, unit: 'ng/mL', interpretation: 'Normal', textualRange: '< 3.5 ng/mL (≥ 60 años)' },
+      {
+        testDefinition: tests['PSA'], gender: RangeGender.MALE, ageMinMonths: 0, ageMaxMonths: 479,
+        maxValue: 2.0, unit: 'ng/mL', interpretation: 'Normal', textualRange: '< 2.0 ng/mL (< 40 años)'
+      },
+      {
+        testDefinition: tests['PSA'], gender: RangeGender.MALE, ageMinMonths: 480, ageMaxMonths: 719,
+        maxValue: 2.5, unit: 'ng/mL', interpretation: 'Normal', textualRange: '< 2.5 ng/mL (40-59 años)'
+      },
+      {
+        testDefinition: tests['PSA'], gender: RangeGender.MALE, ageMinMonths: 720, ageMaxMonths: null,
+        maxValue: 3.5, unit: 'ng/mL', interpretation: 'Normal', textualRange: '< 3.5 ng/mL (≥ 60 años)'
+      },
 
       // Tiempo de Protrombina
-      { testDefinition: tests['TP'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
-        minValue: 11, maxValue: 14, unit: 'segundos', interpretation: 'Normal' },
+      {
+        testDefinition: tests['TP'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
+        minValue: 11, maxValue: 14, unit: 'segundos', interpretation: 'Normal'
+      },
 
       // TTP
-      { testDefinition: tests['TTP'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
-        minValue: 25, maxValue: 35, unit: 'segundos', interpretation: 'Normal' },
+      {
+        testDefinition: tests['TTP'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
+        minValue: 25, maxValue: 35, unit: 'segundos', interpretation: 'Normal'
+      },
 
       // INR
-      { testDefinition: tests['INR'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
-        minValue: 0.8, maxValue: 1.2, unit: 'ratio', interpretation: 'Normal (sin anticoagulación)' },
+      {
+        testDefinition: tests['INR'], gender: RangeGender.ANY, ageMinMonths: 0, ageMaxMonths: null,
+        minValue: 0.8, maxValue: 1.2, unit: 'ratio', interpretation: 'Normal (sin anticoagulación)'
+      },
     ];
 
     for (const r of ranges) {
@@ -363,7 +543,7 @@ export class SeedDemoData implements OnModuleInit {
           testDefinition: { id: td?.id },
           gender: r.gender,
           ageMinMonths: r.ageMinMonths,
-          ageMaxMonths: r.ageMaxMonths ?? null,
+          ageMaxMonths: r.ageMaxMonths === null ? IsNull() : r.ageMaxMonths,
         },
         relations: ['testDefinition'],
       });
@@ -613,11 +793,13 @@ export class SeedDemoData implements OnModuleInit {
     ];
 
     for (const p of patients) {
-      const existing = await this.patientRepo.findOne({
+      const existingPatients = await this.patientRepo.find({
         where: p.dni ? { dni: p.dni } : { name: p.name },
-      });
-      if (!existing) {
-        await this.patientRepo.save(this.patientRepo.create({ ...p, isActive: true }));
+      } as any);
+      if (existingPatients.length === 0) {
+        const patient = this.patientRepo.create(p as any) as any;
+        patient.isActive = true;
+        await this.patientRepo.save(patient);
         this.logger.log(`  ✅ Paciente: ${p.name}`);
       } else {
         this.logger.log(`  ⏭️  Paciente ya existe: ${p.name}`);

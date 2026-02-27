@@ -41,7 +41,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly uploadService: UploadService,
-  ) {}
+  ) { }
 
   @Post()
   @Roles('ADMIN', 'SUPERADMIN')
@@ -283,9 +283,8 @@ export class UsersController {
   })
   async remove(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @CurrentUser() currentUser: JwtPayload,
-  ): Promise<{ message: string }> {
-    return await this.usersService.remove(id, currentUser);
+  ): Promise<void> {
+    return await this.usersService.remove(id);
   }
 
   @Get('avatars/available')

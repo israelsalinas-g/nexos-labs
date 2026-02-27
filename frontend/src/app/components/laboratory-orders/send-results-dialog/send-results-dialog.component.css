@@ -115,6 +115,6 @@
   font-size: 13px;
   font-weight: 500;
 }
-.result-row.success { background: #dcfce7; color: #166534; }
-.result-row.error { background: var(--color-error-bg, #fee2e2); color: var(--color-danger, #dc2626); }
-.result-row.warn { background: #fef3c7; color: #92400e; }
+.result-row.success { background: rgba(34, 197, 94, 0.1); color: var(--color-success); border: 1px solid rgba(34, 197, 94, 0.3); }
+.result-row.error { background: var(--color-error-bg); color: var(--color-danger); border: 1px solid var(--color-error-border); }
+.result-row.warn { background: rgba(249, 115, 22, 0.1); color: var(--color-warning); border: 1px solid rgba(249, 115, 22, 0.3); }

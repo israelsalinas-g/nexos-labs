@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { TestSectionsService } from './test-sections.service';
 import { CreateTestSectionDto } from '../../dto/create-test-section.dto';
@@ -8,7 +8,7 @@ import { TestSection } from '../../entities/test-section.entity';
 @ApiTags('Test Sections')
 @Controller('test-sections')
 export class TestSectionsController {
-  constructor(private readonly testSectionsService: TestSectionsService) {}
+  constructor(private readonly testSectionsService: TestSectionsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear una nueva sección de examen' })
@@ -35,8 +35,7 @@ export class TestSectionsController {
     return this.testSectionsService.findAll(
       page ? +page : 1,
       limit ? +limit : 10,
-      includeInactiveBool,
-      search
+      { includeInactive: includeInactiveBool, search }
     );
   }
 
@@ -51,8 +50,10 @@ export class TestSectionsController {
   @ApiOperation({ summary: 'Obtener una sección por su código' })
   @ApiResponse({ status: 200, description: 'Sección encontrada', type: TestSection })
   @ApiResponse({ status: 404, description: 'Sección no encontrada' })
-  findByCode(@Param('code') code: string): Promise<TestSection> {
-    return this.testSectionsService.findByCode(code);
+  async findByCode(@Param('code') code: string): Promise<TestSection> {
+    const section = await this.testSectionsService.findByCode(code);
+    if (!section) throw new NotFoundException(`Sección con código ${code} no encontrada`);
+    return section;
   }
 
   @Get(':id')

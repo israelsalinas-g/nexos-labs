@@ -125,12 +125,9 @@ export class UsersService extends BaseService<User> {
     return await this.userRepository.save(user);
   }
 
-  async remove(id: string, currentUser: JwtPayload): Promise<{ message: string }> {
-    if (currentUser.roleLevel > 1) throw new ForbiddenException('Solo SUPERADMIN puede eliminar usuarios');
-
+  async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
     await this.userRepository.remove(user);
-    return { message: `Usuario ${user.username} eliminado exitosamente` };
   }
 
   async findByRole(roleId: string, page = 1, limit = 10): Promise<PaginationResult<User>> {

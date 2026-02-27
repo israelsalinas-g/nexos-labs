@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +15,8 @@ import { forkJoin } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, TestDefinitionFormComponent],
   templateUrl: './test-definition-list.component.html',
-  styleUrls: ['./test-definition-list.component.css']
+  styleUrls: ['./test-definition-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TestDefinitionListComponent implements OnInit {
   tests: TestDefinition[] = [];
@@ -35,7 +36,8 @@ export class TestDefinitionListComponent implements OnInit {
 
   constructor(
     private testService: TestDefinitionService,
-    private categoryService: TestSectionService
+    private categoryService: TestSectionService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -43,6 +45,7 @@ export class TestDefinitionListComponent implements OnInit {
     this.categoryService.getActiveTestSections().subscribe({
       next: (categories) => {
         this.categories = categories;
+        this.cdr.markForCheck();
         this.loadTests();
       },
       error: (err) => {
@@ -81,11 +84,13 @@ export class TestDefinitionListComponent implements OnInit {
         this.totalPages = response.totalPages;
         this.currentPage = response.page;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.message || 'Error al cargar las pruebas';
         this.loading = false;
         console.error('Error loading tests:', err);
+        this.cdr.markForCheck();
       }
     });
   }
@@ -164,6 +169,7 @@ export class TestDefinitionListComponent implements OnInit {
         },
         error: (err) => {
           this.error = err.message;
+          this.cdr.markForCheck();
         }
       });
     }

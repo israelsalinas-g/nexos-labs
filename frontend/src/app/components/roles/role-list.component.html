@@ -1,238 +1,223 @@
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1><i class="fas fa-lock"></i> Gestión de Roles</h1>
+    </div>
+    <button class="btn btn-primary" (click)="createNewRole()">
+      <i class="fas fa-plus"></i> Nuevo Rol
+    </button>
+  </div>
 
-    <div class="container">
-      <div class="header">
-        <div class="header-left">
-          <h1><i class="fas fa-lock"></i> Gestión de Roles</h1>
-        </div>
-        <button class="btn btn-primary" (click)="createNewRole()">
-          <i class="fas fa-plus"></i> Nuevo Rol
-        </button>
-      </div>
+  <!-- Loading State -->
+  @if (loading()) {
+  <div class="loading">
+    <i class="fas fa-spinner fa-spin"></i> Cargando roles...
+  </div>
+  }
 
-      <!-- Loading State -->
-      <div *ngIf="loading" class="loading">
-        <i class="fas fa-spinner fa-spin"></i> Cargando roles...
-      </div>
-      
-      <!-- Error State -->
-      <div *ngIf="error" class="error">
-        ❌ Error al cargar los roles: {{ error }}
-        <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
-      </div>
+  <!-- Error State -->
+  @if (error()) {
+  <div class="error">
+    ❌ Error al cargar los roles: {{ error() }}
+    <br><small>Verifica que el backend esté ejecutándose en http://localhost:3000</small>
+  </div>
+  }
 
-      <!-- Success State -->
-      <div *ngIf="successMessage" class="success">
-        ✅ {{ successMessage }}
-      </div>
+  <!-- Success State -->
+  @if (successMessage()) {
+  <div class="success">
+    ✅ {{ successMessage() }}
+  </div>
+  }
 
-      <!-- Empty State -->
-      <div *ngIf="!loading && !error && roles.length === 0" class="no-data">
-        📋 No se encontraron roles.
-        <br><small>Crea el primer rol haciendo clic en "Nuevo Rol".</small>
-      </div>
-      
-      <!-- Results Table -->
-      <div *ngIf="!loading && !error && roles.length > 0" class="table-container">
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Nivel</th>
-              <th>Descripción</th>
-              <th>Usuarios</th>
-              <th>Permisos</th>
-              <th>Creado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let role of (roles || [])" class="role-row">
-              <td>
-                <div class="role-info">
-                  <strong>{{ role.name }}</strong>
-                </div>
-              </td>
-              <td>
-                <span class="level-badge" [ngClass]="'level-' + role.level">
-                  Nivel {{ role.level }}
-                </span>
-              </td>
-              <td>{{ role.description || 'Sin descripción' }}</td>
-              <td>
-                <span class="count-badge">{{ role.usersCount || 0 }} usuarios</span>
-              </td>
-              <td>
-                <span class="count-badge">{{ role.permissionsCount || 0 }} permisos</span>
-              </td>
-              <td>{{ formatDate(role.createdAt) }}</td>
-              <td class="actions">
-                <button 
-                  class="action-btn view-btn" 
-                  (click)="viewRole(role)"
-                  title="Ver detalles">
-                  👁️ Ver
-                </button>
-                <button class="action-btn edit-btn" (click)="editRole(role)" title="Editar rol">
-                  ✏️ Editar
-                </button>
-                <button 
-                  class="action-btn delete-btn" 
-                  (click)="deleteRole(role)"
-                  title="Eliminar rol"
-                  [disabled]="isDefaultRole(role.name)">
-                  🗑️ Eliminar
-                </button>
-                <button class="action-btn permissions-btn" (click)="managePermissions(role)" title="Gestionar permisos">
-                  🔐 Permisos
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  <!-- Empty State -->
+  @if (!loading() && !error() && roles().length === 0) {
+  <div class="no-data">
+    📋 No se encontraron roles.
+    <br><small>Crea el primer rol haciendo clic en "Nuevo Rol".</small>
+  </div>
+  }
 
-      <!-- Pagination -->
-      <div *ngIf="totalPages > 1" class="pagination">
-        <button 
-          class="btn-page" 
-          [disabled]="currentPage <= 1"
-          (click)="goToPage(currentPage - 1)">
-          Anterior
-        </button>
-        
-        <span class="page-info">
-          Página {{ currentPage }} de {{ totalPages }} 
-          ({{ totalRoles }} roles)
-        </span>
-        
-        <button 
-          class="btn-page" 
-          [disabled]="currentPage >= totalPages"
-          (click)="goToPage(currentPage + 1)">
-          Siguiente
-        </button>
-      </div>
-
-      <!-- Modal de confirmación para eliminar -->
-      <div class="modal" *ngIf="showConfirmModal" (click)="closeModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>{{ confirmAction.title }}</h3>
-          <p>{{ confirmAction.message }}</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
-            <button class="btn-danger" (click)="confirmDelete()">Confirmar</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal para crear/editar rol -->
-      <div class="modal" *ngIf="showRoleModal" (click)="closeRoleModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>{{ isEditMode ? 'Editar Rol' : 'Crear Nuevo Rol' }}</h3>
-          
-          <form (ngSubmit)="saveRole()">
-            <div class="form-group">
-              <label for="roleName">Nombre *</label>
-              <input
-                id="roleName"
-                type="text"
-                [(ngModel)]="roleFormData.name"
-                name="name"
-                required
-                [disabled]="isEditMode && isDefaultRole(roleFormData.name)"
-                placeholder="Ej: Técnico Avanzado">
+  <!-- Results Table -->
+  @if (!loading() && !error() && roles().length > 0) {
+  <div class="table-container">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Nivel</th>
+          <th>Descripción</th>
+          <th>Usuarios</th>
+          <th>Permisos</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (role of roles(); track role.id) {
+        <tr class="role-row">
+          <td>
+            <div class="role-info">
+              <strong>{{ role.name }}</strong>
             </div>
+          </td>
+          <td>
+            <span class="level-badge" [ngClass]="'level-' + role.level">
+              Nivel {{ role.level }}
+            </span>
+          </td>
+          <td>{{ role.description || 'Sin descripción' }}</td>
+          <td>
+            <span class="count-badge">{{ role.usersCount || 0 }} usuarios</span>
+          </td>
+          <td>
+            <span class="count-badge">{{ role.permissionsCount || 0 }} permisos</span>
+          </td>
+          <td>{{ formatDate(role.createdAt) }}</td>
+          <td class="actions">
+            <button class="action-btn view-btn" (click)="managePermissions(role)" title="Ver detalles">
+              👁️ Ver
+            </button>
+            <button class="action-btn edit-btn" (click)="editRole(role)" title="Editar rol">
+              ✏️ Editar
+            </button>
+            <button class="action-btn delete-btn" (click)="deleteRole(role)" title="Eliminar rol"
+              [disabled]="isDefaultRole(role.name)">
+              🗑️ Eliminar
+            </button>
+            <button class="action-btn permissions-btn" (click)="managePermissions(role)" title="Gestionar permisos">
+              🔐 Permisos
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
 
-            <div class="form-group">
-              <label for="roleLevel">Nivel *</label>
-              <input
-                id="roleLevel"
-                type="number"
-                [(ngModel)]="roleFormData.level"
-                name="level"
-                required
-                min="1"
-                [disabled]="isEditMode && isDefaultRole(roleFormData.name)"
-                placeholder="Ej: 3">
-              <small>Menor número = Mayor privilegios</small>
-            </div>
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+  <div class="pagination">
+    <button class="btn-page" [disabled]="currentPage() <= 1" (click)="goToPage(currentPage() - 1)">
+      Anterior
+    </button>
 
-            <div class="form-group">
-              <label for="roleDescription">Descripción</label>
-              <textarea
-                id="roleDescription"
-                [(ngModel)]="roleFormData.description"
-                name="description"
-                rows="4"
-                placeholder="Descripción del rol..."></textarea>
-            </div>
+    <span class="page-info">
+      Página {{ currentPage() }} de {{ totalPages() }}
+      ({{ totalRoles() }} roles)
+    </span>
 
-            <div class="modal-actions">
-              <button type="button" class="btn-secondary" (click)="closeRoleModal()">Cancelar</button>
-              <button type="submit" class="btn-primary" [disabled]="!isFormValid()">
-                {{ isEditMode ? 'Actualizar' : 'Crear' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+    <button class="btn-page" [disabled]="currentPage() >= totalPages()" (click)="goToPage(currentPage() + 1)">
+      Siguiente
+    </button>
+  </div>
+  }
 
-      <!-- Modal para gestionar permisos -->
-      <div class="modal" *ngIf="showPermissionsModal" (click)="closePermissionsModal()">
-        <div class="modal-content modal-large" (click)="$event.stopPropagation()">
-          <h3>Gestionar Permisos - {{ selectedRole?.name }}</h3>
-          
-          <div class="permissions-container">
-            <div class="current-permissions">
-              <h4>Permisos Actuales</h4>
-              <div class="permissions-list">
-                <div *ngFor="let permission of (selectedRole?.permissions || [])" class="permission-item">
-                  <span>{{ permission.code }} - {{ permission.description }}</span>
-                  <button 
-                    type="button" 
-                    class="remove-btn"
-                    (click)="removePermission(permission.id)"
-                    title="Remover permiso">
-                    ✕
-                  </button>
-                </div>
-                <div *ngIf="!selectedRole?.permissions || selectedRole?.permissions?.length === 0" class="no-permissions">
-                  Sin permisos asignados
-                </div>
-              </div>
-            </div>
-
-            <div class="add-permission">
-              <h4>Agregar Permiso</h4>
-              <div class="form-group">
-                <label for="permissionCode">Código del Permiso *</label>
-                <input
-                  id="permissionCode"
-                  type="text"
-                  [(ngModel)]="newPermission.code"
-                  placeholder="Ej: CREATE_USER">
-              </div>
-              <div class="form-group">
-                <label for="permissionDesc">Descripción *</label>
-                <input
-                  id="permissionDesc"
-                  type="text"
-                  [(ngModel)]="newPermission.description"
-                  placeholder="Ej: Crear nuevo usuario">
-              </div>
-              <button 
-                type="button" 
-                class="btn btn-primary"
-                (click)="addPermission()"
-                [disabled]="!newPermission.code || !newPermission.description">
-                Agregar Permiso
-              </button>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" (click)="closePermissionsModal()">Cerrar</button>
-          </div>
-        </div>
+  <!-- Modal de confirmación para eliminar -->
+  @if (showConfirmModal()) {
+  <div class="modal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>{{ confirmAction().title }}</h3>
+      <p>{{ confirmAction().message }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmDelete()">Confirmar</button>
       </div>
     </div>
+  </div>
+  }
+
+  <!-- Modal para crear/editar rol -->
+  @if (showRoleModal()) {
+  <div class="modal" (click)="closeRoleModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>{{ isEditMode() ? 'Editar Rol' : 'Crear Nuevo Rol' }}</h3>
+
+      <form (ngSubmit)="saveRole()">
+        <div class="form-group">
+          <label for="roleName">Nombre *</label>
+          <input id="roleName" type="text" [ngModel]="roleFormData().name"
+            (ngModelChange)="updateRoleForm({name: $event})" name="name" required
+            [disabled]="isEditMode() && isDefaultRole(roleFormData().name)" placeholder="Ej: Técnico Avanzado">
+        </div>
+
+        <div class="form-group">
+          <label for="roleLevel">Nivel *</label>
+          <input id="roleLevel" type="number" [ngModel]="roleFormData().level"
+            (ngModelChange)="updateRoleForm({level: $event})" name="level" required min="1"
+            [disabled]="isEditMode() && isDefaultRole(roleFormData().name)" placeholder="Ej: 3">
+          <small>Menor número = Mayor privilegios</small>
+        </div>
+
+        <div class="form-group">
+          <label for="roleDescription">Descripción</label>
+          <textarea id="roleDescription" [ngModel]="roleFormData().description"
+            (ngModelChange)="updateRoleForm({description: $event})" name="description" rows="4"
+            placeholder="Descripción del rol..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeRoleModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="!isFormValid()">
+            {{ isEditMode() ? 'Actualizar' : 'Crear' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  }
+
+  <!-- Modal para gestionar permisos -->
+  @if (showPermissionsModal()) {
+  <div class="modal" (click)="closePermissionsModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <h3>Gestionar Permisos - {{ selectedRole()?.name }}</h3>
+
+      <div class="permissions-container">
+        <div class="current-permissions">
+          <h4>Permisos Actuales</h4>
+          <div class="permissions-list">
+            @for (permission of (selectedRole()?.permissions || []); track permission.id) {
+            <div class="permission-item">
+              <span>{{ permission.code }} - {{ permission.description }}</span>
+              <button type="button" class="remove-btn" (click)="removePermission(permission.id)"
+                title="Remover permiso">
+                ✕
+              </button>
+            </div>
+            }
+            @if (!selectedRole()?.permissions || selectedRole()?.permissions?.length === 0) {
+            <div class="no-permissions">
+              Sin permisos asignados
+            </div>
+            }
+          </div>
+        </div>
+
+        <div class="add-permission">
+          <h4>Agregar Permiso</h4>
+          <div class="form-group">
+            <label for="permissionCode">Código del Permiso *</label>
+            <input id="permissionCode" type="text" [ngModel]="newPermission().code"
+              (ngModelChange)="updatePermissionForm({code: $event})" placeholder="Ej: CREATE_USER">
+          </div>
+          <div class="form-group">
+            <label for="permissionDesc">Descripción *</label>
+            <input id="permissionDesc" type="text" [ngModel]="newPermission().description"
+              (ngModelChange)="updatePermissionForm({description: $event})" placeholder="Ej: Crear nuevo usuario">
+          </div>
+          <button type="button" class="btn btn-primary" (click)="addPermission()"
+            [disabled]="!newPermission().code || !newPermission().description">
+            Agregar Permiso
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="closePermissionsModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

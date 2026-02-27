@@ -11,7 +11,7 @@ import { Promotion } from '../../entities/promotion.entity';
 @ApiTags('Promotions')
 @Controller('promotions')
 export class PromotionsController {
-  constructor(private readonly promotionsService: PromotionsService) {}
+  constructor(private readonly promotionsService: PromotionsService) { }
 
   @Get('active')
   @ApiOperation({ summary: 'Obtener promociones vigentes (fecha actual dentro del rango)' })
@@ -33,14 +33,17 @@ export class PromotionsController {
     @Query('search') search?: string,
     @Query('includeInactive') includeInactive?: string,
   ) {
-    return this.promotionsService.findAll(page, limit, includeInactive === 'true', search);
+    return this.promotionsService.findAll(page, limit, {
+      includeInactive: includeInactive === 'true',
+      search
+    });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener una promoción por ID' })
   @ApiResponse({ status: 200, description: 'Promoción encontrada', type: Promotion })
   @ApiResponse({ status: 404, description: 'Promoción no encontrada' })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<Promotion> {
+  findOne(@Param('id') id: string): Promise<Promotion> {
     return this.promotionsService.findOne(id);
   }
 
@@ -57,7 +60,7 @@ export class PromotionsController {
   @ApiResponse({ status: 200, description: 'Promoción actualizada', type: Promotion })
   @ApiResponse({ status: 404, description: 'Promoción no encontrada' })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() dto: UpdatePromotionDto,
   ): Promise<Promotion> {
     return this.promotionsService.update(id, dto);
@@ -67,7 +70,7 @@ export class PromotionsController {
   @ApiOperation({ summary: 'Activar/Desactivar una promoción' })
   @ApiResponse({ status: 200, description: 'Estado actualizado', type: Promotion })
   @ApiResponse({ status: 404, description: 'Promoción no encontrada' })
-  toggleActive(@Param('id', ParseIntPipe) id: number): Promise<Promotion> {
+  toggleActive(@Param('id') id: string): Promise<Promotion> {
     return this.promotionsService.toggleActive(id);
   }
 
@@ -76,7 +79,7 @@ export class PromotionsController {
   @ApiOperation({ summary: 'Eliminar una promoción' })
   @ApiResponse({ status: 204, description: 'Promoción eliminada' })
   @ApiResponse({ status: 404, description: 'Promoción no encontrada' })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  remove(@Param('id') id: string): Promise<void> {
     return this.promotionsService.remove(id);
   }
 }

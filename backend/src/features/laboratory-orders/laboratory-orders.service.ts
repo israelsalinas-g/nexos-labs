@@ -63,9 +63,16 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
   }
 
   async findAll(
-    page = 1, limit = 10, status?: OrderStatus, priority?: OrderPriority,
-    search?: string, startDate?: Date, endDate?: Date,
+    page = 1,
+    limit = 10,
+    options?: any
   ): Promise<PaginationResult<LaboratoryOrder>> {
+    const status = options?.status;
+    const priority = options?.priority;
+    const search = options?.search;
+    const startDate = options?.startDate;
+    const endDate = options?.endDate;
+
     const query = this.laboratoryOrderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.patient', 'patient')
       .leftJoinAndSelect('order.doctor', 'doctor')
@@ -98,11 +105,15 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
     return order;
   }
 
-  /**
-   * Devuelve todas las pruebas de una orden con su tipo de respuesta y opciones
-   * cargadas, más el resultado ya capturado si existe. Usado por la pantalla
-   * de captura de resultados.
-   */
+  async findByOrderNumber(orderNumber: string): Promise<LaboratoryOrder> {
+    const order = await this.laboratoryOrderRepository.findOne({
+      where: { orderNumber },
+      relations: ['patient', 'doctor'],
+    });
+    if (!order) throw new NotFoundException(`Orden con número ${orderNumber} no encontrada`);
+    return order;
+  }
+
   async getPendingCapture(orderId: string): Promise<any> {
     const order = await this.laboratoryOrderRepository.findOne({
       where: { id: orderId },
@@ -110,7 +121,6 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
     });
     if (!order) throw new NotFoundException(`Orden ${orderId} no encontrada`);
 
-    // Cargar order_tests con testDefinition → responseType → options (ordenadas)
     const orderTests = await this.orderTestRepository.createQueryBuilder('ot')
       .where('ot.orderId = :orderId', { orderId })
       .leftJoinAndSelect('ot.testDefinition', 'td')
@@ -120,7 +130,6 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
       .addOrderBy('rto.displayOrder', 'ASC')
       .getMany();
 
-    // Cargar resultados ya capturados (para modo "edición")
     const existingByOrderTestId = new Map<number, UnifiedTestResult>();
     if (orderTests.length > 0) {
       const existing = await this.unifiedResultRepository.find({
@@ -130,7 +139,6 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
       existing.forEach(r => existingByOrderTestId.set(r.orderTestId, r));
     }
 
-    // Mapear sexo del paciente a M/F/ANY (formato de test_reference_ranges)
     const patient = order.patient;
     let patientGender: 'M' | 'F' | 'ANY' = 'ANY';
     if (patient?.sex === Genres.MALE) patientGender = 'M';
@@ -228,7 +236,6 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
         }
       }
 
-      // Expansión de promoción: agrega todas las pruebas individuales y perfiles
       if (test.promotionId) {
         const promotion = await this.promotionRepository.findOne({
           where: { id: test.promotionId },

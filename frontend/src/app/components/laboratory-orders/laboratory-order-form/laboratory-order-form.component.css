@@ -13,13 +13,15 @@
     }
 
     .modal-content {
-      background: white;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
       border-radius: 8px;
       padding: 30px;
       max-width: 500px;
       width: 90%;
       max-height: 90vh;
       overflow-y: auto;
+      box-shadow: 0 4px 16px var(--color-shadow);
     }
 
     .modal-header {
@@ -31,7 +33,7 @@
 
     .modal-header h2 {
       margin: 0;
-      color: #2c3e50;
+      color: var(--color-text);
     }
 
     .close-btn {
@@ -39,8 +41,11 @@
       border: none;
       font-size: 24px;
       cursor: pointer;
-      color: #7f8c8d;
+      color: var(--color-text-muted);
+      transition: color 0.2s;
     }
+
+    .close-btn:hover { color: var(--color-text); }
 
     .form {
       display: flex;
@@ -56,25 +61,31 @@
 
     .form-group label {
       font-weight: 600;
-      color: #2c3e50;
+      color: var(--color-text);
+      font-size: 14px;
     }
 
     .form-control {
       padding: 10px;
-      border: 1px solid #bdc3c7;
+      border: 1px solid var(--color-border);
       border-radius: 4px;
       font-size: 14px;
       font-family: inherit;
+      background: var(--color-surface);
+      color: var(--color-text);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
+
+    .form-control::placeholder { color: var(--color-text-muted); }
 
     .form-control:focus {
       outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-soft);
     }
 
     .error-text {
-      color: #dc3545;
+      color: var(--color-danger);
       font-size: 12px;
     }
 
@@ -92,43 +103,37 @@
       cursor: pointer;
       font-size: 14px;
       font-weight: 600;
+      transition: all 0.2s;
     }
 
     .btn-primary {
-      background-color: #3498db;
+      background-color: var(--color-primary);
       color: white;
     }
 
-    .btn-primary:hover:not(:disabled) {
-      background-color: #2980b9;
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .btn-secondary {
-      background-color: #95a5a6;
-      color: white;
+      background-color: var(--color-surface-alt);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
     }
 
-    .btn-secondary:hover {
-      background-color: #7f8c8d;
-    }
+    .btn-secondary:hover { opacity: 0.9; }
 
     .error-message {
-      color: #dc3545;
-      background-color: #f8d7da;
+      color: var(--color-error-text);
+      background-color: var(--color-error-bg);
       padding: 10px;
       border-radius: 4px;
-      border: 1px solid #f5c6cb;
+      border: 1px solid var(--color-error-border);
     }
 
     .success-message {
-      color: #155724;
-      background-color: #d4edda;
+      color: var(--color-success);
+      background-color: rgba(34, 197, 94, 0.1);
       padding: 10px;
       border-radius: 4px;
-      border: 1px solid #c3e6cb;
+      border: 1px solid rgba(34, 197, 94, 0.3);
     }

@@ -27,10 +27,12 @@ export class DoctorsService extends BaseService<Doctor> {
   async findAll(
     page: number = 1,
     limit: number = 7,
-    includeInactive = false,
-    staffOnly = false,
-    search?: string,
+    options?: any,
   ): Promise<PaginationResult<Doctor>> {
+    const includeInactive = options?.includeInactive === true;
+    const staffOnly = options?.staffOnly === true;
+    const search = options?.search;
+
     const query = this.doctorRepository.createQueryBuilder('doctor')
       .orderBy('doctor.lastName', 'ASC')
       .addOrderBy('doctor.firstName', 'ASC');
@@ -87,6 +89,14 @@ export class DoctorsService extends BaseService<Doctor> {
       total, active, inactive: total - active, staff, external: active - staff,
       bySpecialty: bySpecialty.map(i => ({ specialty: i.specialty, count: parseInt(i.count) }))
     };
+  }
+
+  async findByEmail(email: string): Promise<Doctor | null> {
+    return this.doctorRepository.findOne({ where: { email } });
+  }
+
+  async findByLicense(licenseNumber: string): Promise<Doctor | null> {
+    return this.doctorRepository.findOne({ where: { licenseNumber } });
   }
 
   private async validateUniqueness(email?: string, licenseNumber?: string, excludeId?: string): Promise<void> {

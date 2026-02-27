@@ -54,6 +54,14 @@ export class RoleListComponent implements OnInit {
   // Default roles that cannot be deleted
   readonly defaultRoles = ['SUPERADMIN', 'ADMIN', 'TECNICO', 'OPERADOR'];
 
+  updateRoleForm(data: Partial<CreateRoleRequest>): void {
+    this.roleFormData.update(prev => ({ ...prev, ...data }));
+  }
+
+  updatePermissionForm(data: Partial<{ code: string; description: string }>): void {
+    this.newPermission.update(prev => ({ ...prev, ...data }));
+  }
+
   ngOnInit(): void {
     this.loadRoles();
   }

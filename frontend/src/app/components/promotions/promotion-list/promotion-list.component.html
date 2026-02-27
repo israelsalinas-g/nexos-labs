@@ -17,7 +17,7 @@
         class="search-input"
         placeholder="Buscar por nombre o descripción..."
         [value]="searchTerm()"
-        (input)="onSearch(($event.target as HTMLInputElement).value)">
+        (input)="onSearch($any($event.target).value)">
     </div>
     <label class="toggle-label">
       <input type="checkbox" [checked]="includeInactive()" (change)="onToggleInactive()">

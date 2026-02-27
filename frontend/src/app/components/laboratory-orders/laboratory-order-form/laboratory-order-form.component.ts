@@ -1,13 +1,14 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LaboratoryOrder, CreateLaboratoryOrderDto, UpdateLaboratoryOrderDto } from '../../../models/laboratory-order.interface';
 import { LaboratoryOrderService } from '../../../services/laboratory-order.service';
-import { OrderPriority } from '../../../enums/order-status.enums';
+import { OrderPriority, OrderStatus } from '../../../enums/order-status.enums';
 
 @Component({
   selector: 'app-laboratory-order-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './laboratory-order-form.component.html',
   styleUrls: ['./laboratory-order-form.component.css']
@@ -19,12 +20,13 @@ export class LaboratoryOrderFormComponent implements OnInit {
   @Output() cancelled = new EventEmitter<void>();
 
   orderForm!: FormGroup;
-  isSubmitting = false;
-  submitError = '';
-  submitSuccess = '';
-  
-  // Hacer accessible en el template
+  isSubmitting = signal(false);
+  submitError = signal('');
+  submitSuccess = signal('');
+
+  // Hacer accesibles en el template
   OrderPriority = OrderPriority;
+  OrderStatus = OrderStatus;
 
   constructor(
     private fb: FormBuilder,
@@ -48,7 +50,7 @@ export class LaboratoryOrderFormComponent implements OnInit {
       ],
       clinicalIndication: [this.order?.clinicalIndication || ''],
       notes: [this.order?.notes || ''],
-      status: [this.order?.status || 'PENDING']
+      status: [this.order?.status || OrderStatus.PENDING]
     });
   }
 
@@ -57,9 +59,9 @@ export class LaboratoryOrderFormComponent implements OnInit {
       return;
     }
 
-    this.isSubmitting = true;
-    this.submitError = '';
-    this.submitSuccess = '';
+    this.isSubmitting.set(true);
+    this.submitError.set('');
+    this.submitSuccess.set('');
 
     const formValue = this.orderForm.value;
 
@@ -73,14 +75,14 @@ export class LaboratoryOrderFormComponent implements OnInit {
 
       this.orderService.updateOrder(this.order.id, updateData).subscribe({
         next: (updatedOrder: LaboratoryOrder) => {
-          this.submitSuccess = 'Orden actualizada exitosamente';
+          this.submitSuccess.set('Orden actualizada exitosamente');
           setTimeout(() => {
             this.saved.emit(updatedOrder);
           }, 1000);
         },
         error: (err: any) => {
-          this.submitError = err.message || 'Error al actualizar la orden';
-          this.isSubmitting = false;
+          this.submitError.set(err.message || 'Error al actualizar la orden');
+          this.isSubmitting.set(false);
         }
       });
     } else {
@@ -94,14 +96,14 @@ export class LaboratoryOrderFormComponent implements OnInit {
 
       this.orderService.createOrder(createData).subscribe({
         next: (newOrder: LaboratoryOrder) => {
-          this.submitSuccess = 'Orden creada exitosamente';
+          this.submitSuccess.set('Orden creada exitosamente');
           setTimeout(() => {
             this.saved.emit(newOrder);
           }, 1000);
         },
         error: (err: any) => {
-          this.submitError = err.message || 'Error al crear la orden';
-          this.isSubmitting = false;
+          this.submitError.set(err.message || 'Error al crear la orden');
+          this.isSubmitting.set(false);
         }
       });
     }

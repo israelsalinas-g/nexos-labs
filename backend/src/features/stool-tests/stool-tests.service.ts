@@ -41,12 +41,12 @@ export class StoolTestsService extends BaseService<StoolTest> {
     return await this.stoolTestRepository.save(stoolTest);
   }
 
-  async findAll(options?: {
-    page?: number; limit?: number; patientId?: string;
-    status?: string; dateFrom?: string; dateTo?: string; search?: string;
-  }): Promise<PaginationResult<StoolTest>> {
-    const page = options?.page || 1;
-    const limit = options?.limit || 7;
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    options?: any,
+  ): Promise<PaginationResult<StoolTest>> {
+    const { patientId, status, dateFrom, dateTo, search } = options || {};
 
     const query = this.stoolTestRepository
       .createQueryBuilder('stoolTest')
@@ -62,10 +62,69 @@ export class StoolTestsService extends BaseService<StoolTest> {
     }
     if (options?.patientId) query.andWhere('stoolTest.patientId = :patientId', { patientId: options.patientId });
     if (options?.status) query.andWhere('stoolTest.status = :status', { status: options.status });
-    if (options?.dateFrom) query.andWhere('stoolTest.testDate >= :dateFrom', { dateFrom: new Date(options.dateFrom) });
-    if (options?.dateTo) query.andWhere('stoolTest.testDate <= :dateTo', { dateTo: new Date(options.dateTo) });
+    if (dateFrom) query.andWhere('stoolTest.testDate >= :dateFrom', { dateFrom: new Date(dateFrom) });
+    if (dateTo) query.andWhere('stoolTest.testDate <= :dateTo', { dateTo: new Date(dateTo) });
 
     return this.paginateQueryBuilder(query, page, limit);
+  }
+
+  async findByStatus(status: string): Promise<StoolTest[]> {
+    return this.stoolTestRepository.find({
+      where: { status, isActive: true } as any,
+      relations: ['patient', 'doctor'],
+      order: { testDate: 'DESC' },
+    });
+  }
+
+  async findByPatient(patientId: string): Promise<StoolTest[]> {
+    return this.stoolTestRepository.find({
+      where: { patientId, isActive: true },
+      relations: ['patient', 'doctor'],
+      order: { testDate: 'DESC' },
+    });
+  }
+
+  async findByPatientActive(patientId: string, page: number, limit: number): Promise<PaginationResult<StoolTest>> {
+    return this.findAll(page, limit, { patientId, isActive: true });
+  }
+
+  async findAllActive(page: number, limit: number): Promise<PaginationResult<StoolTest>> {
+    return this.findAll(page, limit, { isActive: true });
+  }
+
+  async findAllIncludingInactive(page: number, limit: number): Promise<PaginationResult<StoolTest>> {
+    return this.findAll(page, limit, { isActive: undefined }); // Base findAll handles filtering, if not passed it shows all
+  }
+
+  async findInactive(page: number, limit: number): Promise<PaginationResult<StoolTest>> {
+    return this.findAll(page, limit, { isActive: false });
+  }
+
+  async completeTest(id: number): Promise<StoolTest> {
+    const test = await this.findOne(id.toString());
+    test.status = 'completed';
+    return this.stoolTestRepository.save(test);
+  }
+
+  async generateMedicalReport(id: number): Promise<any> {
+    const test = await this.findOne(id.toString());
+    return {
+      test,
+      generatedAt: new Date(),
+      institution: 'NEXOS Residencial',
+    };
+  }
+
+  async deactivate(id: number): Promise<StoolTest> {
+    const stoolTest = await this.findOne(id.toString());
+    stoolTest.isActive = false;
+    return await this.stoolTestRepository.save(stoolTest);
+  }
+
+  async reactivate(id: number): Promise<StoolTest> {
+    const stoolTest = await this.findOne(id.toString());
+    stoolTest.isActive = true;
+    return await this.stoolTestRepository.save(stoolTest);
   }
 
   async update(id: string, updateStoolTestDto: UpdateStoolTestDto): Promise<StoolTest> {
@@ -77,20 +136,6 @@ export class StoolTestsService extends BaseService<StoolTest> {
     }
 
     Object.assign(stoolTest, updateStoolTestDto);
-    return await this.stoolTestRepository.save(stoolTest);
-  }
-
-  async deactivate(id: string): Promise<StoolTest> {
-    const stoolTest = await this.findOne(id);
-    if (!stoolTest.isActive) throw new BadRequestException('El examen ya está desactivado');
-    stoolTest.isActive = false;
-    return await this.stoolTestRepository.save(stoolTest);
-  }
-
-  async reactivate(id: string): Promise<StoolTest> {
-    const stoolTest = await this.findOne(id);
-    if (stoolTest.isActive) throw new BadRequestException('El examen ya está activo');
-    stoolTest.isActive = true;
     return await this.stoolTestRepository.save(stoolTest);
   }
 

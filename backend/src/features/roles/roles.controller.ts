@@ -37,7 +37,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class RolesController {
-  constructor(private readonly rolesService: RolesService) {}
+  constructor(private readonly rolesService: RolesService) { }
 
   @Post()
   @Roles('SUPERADMIN')
@@ -213,7 +213,8 @@ export class RolesController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() currentUser: JwtPayload,
   ): Promise<{ message: string }> {
-    return await this.rolesService.remove(id, currentUser);
+    await this.rolesService.remove(id, currentUser);
+    return { message: 'Rol eliminado exitosamente' };
   }
 
   @Post(':id/permissions')

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,6 +12,7 @@ import { LoginRequest } from '../../../models/auth.interface';
 @Component({
   selector: 'app-login',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
@@ -25,16 +26,16 @@ export class LoginComponent {
     password: ''
   };
 
-  isLoading = false;
-  errorMessage = '';
+  isLoading = signal(false);
+  errorMessage = signal('');
 
   onSubmit(): void {
-    if (this.isLoading) {
+    if (this.isLoading()) {
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
@@ -43,11 +44,11 @@ export class LoginComponent {
       },
       error: (error) => {
         console.error('Error en login:', error);
-        this.errorMessage = error.message || 'Usuario o contraseña incorrectos';
-        this.isLoading = false;
+        this.errorMessage.set(error.message || 'Usuario o contraseña incorrectos');
+        this.isLoading.set(false);
       },
       complete: () => {
-        this.isLoading = false;
+        this.isLoading.set(false);
       }
     });
   }

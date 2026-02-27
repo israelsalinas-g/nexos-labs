@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TestResponseType } from '../../../models/test-response-type.interface';
@@ -10,7 +10,8 @@ import { TestResponseTypeFormComponent } from '../test-response-type-form/test-r
   standalone: true,
   imports: [CommonModule, FormsModule, TestResponseTypeFormComponent],
   templateUrl: './test-response-type-list.component.html',
-  styleUrls: ['./test-response-type-list.component.css']
+  styleUrls: ['./test-response-type-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TestResponseTypeListComponent implements OnInit {
   responseTypes: TestResponseType[] = [];
@@ -26,7 +27,7 @@ export class TestResponseTypeListComponent implements OnInit {
   showFormModal = false;
   selectedType?: TestResponseType;
 
-  constructor(private service: TestResponseTypeService) {}
+  constructor(private service: TestResponseTypeService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadTypes();
@@ -46,10 +47,12 @@ export class TestResponseTypeListComponent implements OnInit {
         this.totalItems = res.total;
         this.totalPages = res.totalPages;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.message;
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -96,7 +99,7 @@ export class TestResponseTypeListComponent implements OnInit {
   toggleActive(type: TestResponseType): void {
     this.service.toggleActive(type.id).subscribe({
       next: () => this.loadTypes(),
-      error: (err) => { this.error = err.message; }
+      error: (err) => { this.error = err.message; this.cdr.markForCheck(); }
     });
   }
 
@@ -108,7 +111,7 @@ export class TestResponseTypeListComponent implements OnInit {
     if (confirm(`¿Eliminar el tipo de respuesta "${type.name}"?`)) {
       this.service.delete(type.id).subscribe({
         next: () => this.loadTypes(),
-        error: (err) => { this.error = err.message; }
+        error: (err) => { this.error = err.message; this.cdr.markForCheck(); }
       });
     }
   }

@@ -237,6 +237,13 @@ export class UserListComponent implements OnInit {
     this.selectedUser.set(null);
   }
 
+  updateUserForm(field: string, value: any): void {
+    this.userFormData.set({
+      ...this.userFormData(),
+      [field]: value
+    });
+  }
+
   isUserFormValid(): boolean {
     const form = this.userFormData();
     if (this.isEditMode()) {
@@ -249,8 +256,9 @@ export class UserListComponent implements OnInit {
     return roleName.toLowerCase();
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('es-HN', {
+  formatDate(date: Date | string | null | undefined): string {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('es-HN', {
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   }

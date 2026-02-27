@@ -37,15 +37,15 @@ export class TestReferenceRange {
 
   @ApiProperty({ description: 'Edad máxima en meses (null = sin límite)', example: null, required: false })
   @Column({ name: 'age_max_months', type: 'int', nullable: true })
-  ageMaxMonths: number;
+  ageMaxMonths: number | null;
 
   @ApiProperty({ description: 'Valor mínimo normal (para numéricos)', example: 70, required: false })
   @Column({ name: 'min_value', type: 'decimal', precision: 12, scale: 4, nullable: true })
-  minValue: number;
+  minValue: number | null;
 
   @ApiProperty({ description: 'Valor máximo normal (para numéricos)', example: 110, required: false })
   @Column({ name: 'max_value', type: 'decimal', precision: 12, scale: 4, nullable: true })
-  maxValue: number;
+  maxValue: number | null;
 
   @ApiProperty({
     description: 'Valor de referencia textual (para tipos cualitativos o texto libre)',

@@ -5,11 +5,11 @@
     <button class="btn-back" (click)="goBack()">← Volver a la orden</button>
     <div class="header-info">
       <h1>Captura de Resultados</h1>
-      @if (order()) {
-        <span class="order-number">{{ (order())?.orderNumber }}</span>
-        @if ((order() as any)?.patient) {
+      @if (captureData()) {
+        <span class="order-number">{{ captureData()?.orderNumber }}</span>
+        @if (captureData()?.patient) {
           <span class="patient-name">
-            {{ (order() as any).patient.firstName }} {{ (order() as any).patient.lastName }}
+            {{ captureData()?.patient?.firstName }} {{ captureData()?.patient?.lastName }}
           </span>
         }
       }
@@ -31,14 +31,14 @@
     </div>
   } @else {
     <div class="results-grid">
-      @for (item of items(); track item.orderTest.id) {
+      @for (item of items(); track item.orderTestId) {
         <div class="result-card" [class.saved]="item.saved" [class.abnormal]="isAbnormal(item) === true">
           <!-- Test info -->
           <div class="card-header">
             <div class="test-info">
-              <span class="test-name">{{ item.orderTest.testDefinition?.name ?? 'Prueba #' + item.orderTest.id }}</span>
-              @if (item.orderTest.testDefinition?.code) {
-                <span class="test-code">{{ item.orderTest.testDefinition.code }}</span>
+              <span class="test-name">{{ item.testDefinition?.name ?? 'Prueba #' + item.orderTestId }}</span>
+              @if (item.testDefinition?.code) {
+                <span class="test-code">{{ item.testDefinition.code }}</span>
               }
               @if (getUnit(item)) {
                 <span class="test-unit">{{ getUnit(item) }}</span>
@@ -67,7 +67,7 @@
                   [class.abnormal-input]="isAbnormal(item) === true"
                   [class.normal-input]="isAbnormal(item) === false"
                   [value]="item.draftValue ?? ''"
-                  (input)="onNumericInput(item, ($event.target as HTMLInputElement).value)"
+                  (input)="onNumericInput(item, $any($event.target).value)"
                   placeholder="0.00"
                   step="any">
                 @if (getUnit(item)) {
@@ -84,10 +84,10 @@
                          [class.selected]="item.draftOptionId === opt.id"
                          [style.border-color]="item.draftOptionId === opt.id && opt.color ? opt.color : null"
                          [style.background-color]="item.draftOptionId === opt.id && opt.color ? opt.color + '22' : null">
-                    <input type="radio" [name]="'opt-' + item.orderTest.id"
+                    <input type="radio" [name]="'opt-' + item.orderTestId"
                            [value]="opt.id"
                            [checked]="item.draftOptionId === opt.id"
-                           (change)="onOptionSelect(item, String(opt.id))">
+                           (change)="onOptionSelect(item, '' + opt.id)">
                     @if (opt.color) {
                       <span class="opt-dot" [style.background]="opt.color"></span>
                     }
@@ -104,7 +104,7 @@
               <textarea
                 class="result-textarea"
                 [value]="item.draftValue ?? ''"
-                (input)="onTextInput(item, ($event.target as HTMLTextAreaElement).value)"
+                (input)="onTextInput(item, $any($event.target).value)"
                 rows="2"
                 placeholder="Ingrese el resultado..."></textarea>
             }

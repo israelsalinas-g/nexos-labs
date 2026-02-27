@@ -30,7 +30,7 @@
       @if (activeTab() === 'tests') {
         <div class="search-row">
           <input type="text" class="search-input" placeholder="Buscar prueba..."
-                 [value]="testSearch()" (input)="onSearch('tests', ($event.target as HTMLInputElement).value)">
+                 [value]="testSearch()" (input)="onSearch('tests', $any($event.target).value)">
         </div>
         @if (loadingTests()) {
           <p class="loading-msg">Cargando pruebas...</p>
@@ -60,7 +60,7 @@
       @if (activeTab() === 'profiles') {
         <div class="search-row">
           <input type="text" class="search-input" placeholder="Buscar perfil..."
-                 [value]="profileSearch()" (input)="onSearch('profiles', ($event.target as HTMLInputElement).value)">
+                 [value]="profileSearch()" (input)="onSearch('profiles', $any($event.target).value)">
         </div>
         @if (loadingProfiles()) {
           <p class="loading-msg">Cargando perfiles...</p>
@@ -90,7 +90,7 @@
       @if (activeTab() === 'promotions') {
         <div class="search-row">
           <input type="text" class="search-input" placeholder="Buscar promoción..."
-                 [value]="promotionSearch()" (input)="onSearch('promotions', ($event.target as HTMLInputElement).value)">
+                 [value]="promotionSearch()" (input)="onSearch('promotions', $any($event.target).value)">
         </div>
         @if (loadingPromotions()) {
           <p class="loading-msg">Cargando promociones...</p>

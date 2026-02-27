@@ -50,8 +50,11 @@ export class TestResponseTypesService extends BaseService<TestResponseType> {
   }
 
   async findAll(
-    page = 1, limit = 20, search?: string, includeInactive = false,
+    page: number = 1,
+    limit: number = 10,
+    options?: any,
   ): Promise<PaginationResult<TestResponseType>> {
+    const { search, includeInactive = false } = options || {};
     const query = this.responseTypeRepository.createQueryBuilder('rt')
       .leftJoinAndSelect('rt.options', 'options')
       .orderBy('rt.name', 'ASC')

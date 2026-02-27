@@ -12,7 +12,7 @@ export class TestResponseOption {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @ApiProperty({ description: 'Tipo de respuesta al que pertenece esta opción' })
+  @ApiProperty({ description: 'Tipo de respuesta al que pertenece esta opción', type: () => TestResponseType })
   @ManyToOne(() => TestResponseType, type => type.options, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'response_type_id' })
   responseType: TestResponseType;

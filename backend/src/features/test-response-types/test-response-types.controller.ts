@@ -8,7 +8,7 @@ import { TestResponseType } from '../../entities/test-response-type.entity';
 @ApiTags('Test Response Types')
 @Controller('test-response-types')
 export class TestResponseTypesController {
-  constructor(private readonly service: TestResponseTypesService) {}
+  constructor(private readonly service: TestResponseTypesService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo tipo de respuesta' })
@@ -25,12 +25,13 @@ export class TestResponseTypesController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'includeInactive', required: false, type: Boolean })
   findAll(
-    @Query('page', new DefaultValuePipe(1)) page?: number,
-    @Query('limit', new DefaultValuePipe(20)) limit?: number,
+    @Query('page', new DefaultValuePipe(1)) page: number,
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
     @Query('search') search?: string,
     @Query('includeInactive') includeInactive?: string,
   ) {
-    return this.service.findAll(page, limit, search, includeInactive === 'true');
+    const includeInactiveBool = includeInactive === 'true';
+    return this.service.findAll(page, limit, { search, includeInactive: includeInactiveBool });
   }
 
   @Get('active')

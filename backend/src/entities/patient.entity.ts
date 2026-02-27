@@ -70,8 +70,8 @@ export class Patient {
     required: false,
     pattern: '^[0-9]{13}$'
   })
-  @Column({ unique: true, nullable: true })
-  dni: string;
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  dni: string | null;
 
   @ApiProperty({
     description: 'Número de teléfono (8 dígitos) (Campo obligatorio)',
@@ -88,8 +88,8 @@ export class Patient {
     required: false,
     format: 'email'
   })
-  @Column({ unique: true, nullable: true })
-  email: string;
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  email: string | null;
 
   @ApiProperty({
     description: 'Fecha de nacimiento del paciente (Campo obligatorio)',

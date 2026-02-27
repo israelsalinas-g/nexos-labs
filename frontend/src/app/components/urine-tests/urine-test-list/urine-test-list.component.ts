@@ -108,6 +108,13 @@ export class UrineTestListComponent implements OnInit {
     this.loadUrineTests();
   }
 
+  updateFilters(field: string, value: any): void {
+    this.filters.set({
+      ...this.filters(),
+      [field]: value
+    });
+  }
+
   sort(field: string): void {
     if (this.sortField() === field) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');

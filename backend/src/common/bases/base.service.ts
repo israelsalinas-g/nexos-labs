@@ -1,8 +1,8 @@
 import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, FindManyOptions, FindOneOptions, SelectQueryBuilder } from 'typeorm';
+import { Repository, FindManyOptions, FindOneOptions, SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 import { PaginationResult } from '../interfaces/pagination.interface';
 
-export abstract class BaseService<T> {
+export abstract class BaseService<T extends ObjectLiteral> {
     protected abstract readonly logger: Logger;
 
     constructor(protected readonly repository: Repository<T>) { }
@@ -10,7 +10,7 @@ export abstract class BaseService<T> {
     async create(data: any): Promise<T> {
         try {
             const entity = this.repository.create(data as any);
-            return await this.repository.save(entity);
+            return await this.repository.save(entity as any);
         } catch (error) {
             this.logger.error(`Error creating entity: ${error.message}`);
             throw error;

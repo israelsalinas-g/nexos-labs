@@ -41,9 +41,11 @@ export class TestProfilesService extends BaseService<TestProfile> {
   }
 
   async findAll(
-    page = 1, limit = 10, sectionId?: string,
-    includeInactive = false, search?: string,
+    page: number = 1,
+    limit: number = 10,
+    options?: any,
   ): Promise<PaginationResult<TestProfile>> {
+    const { sectionId, includeInactive = false, search } = options || {};
     const query = this.testProfileRepository.createQueryBuilder('profile')
       .leftJoinAndSelect('profile.section', 'section')
       .leftJoinAndSelect('profile.tests', 'tests')

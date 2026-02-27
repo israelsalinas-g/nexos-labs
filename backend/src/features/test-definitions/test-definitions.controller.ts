@@ -8,7 +8,7 @@ import { TestDefinition } from '../../entities/test-definition.entity';
 @ApiTags('Test Definitions')
 @Controller('test-definitions')
 export class TestDefinitionsController {
-  constructor(private readonly testDefinitionsService: TestDefinitionsService) {}
+  constructor(private readonly testDefinitionsService: TestDefinitionsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear una nueva definición de prueba' })
@@ -36,11 +36,9 @@ export class TestDefinitionsController {
   ) {
     const includeInactiveBool = includeInactive === 'true';
     return this.testDefinitionsService.findAll(
-      page || 1,
-      limit || 10,
-      sectionId,
-      includeInactiveBool,
-      search
+      page ? +page : 1,
+      limit ? +limit : 10,
+      { includeInactive: includeInactiveBool, search }
     );
   }
 

@@ -43,7 +43,7 @@ export class TestResponseType {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
-  @ApiProperty({ description: 'Opciones disponibles para este tipo (solo si inputType = enum)' })
+  @ApiProperty({ description: 'Opciones disponibles para este tipo (solo si inputType = enum)', type: () => [TestResponseOption] })
   @OneToMany(() => TestResponseOption, option => option.responseType, { cascade: true, eager: true })
   options: TestResponseOption[];
 

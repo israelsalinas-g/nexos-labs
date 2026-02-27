@@ -94,6 +94,20 @@ export class UrineTestService extends BaseService {
     if (newTestDate) body.testDate = newTestDate;
 
     return this.http.post<UrineTest>(`${this.endpoint}/${id}/duplicate`, body)
-      .pipe(catchError(err => this.handleError(err)));
+      .pipe(catchError((err: any) => this.handleError(err)));
+  }
+
+  hasAbnormalResults(test: any): boolean {
+    return !!(
+      (test.gravity && (test.gravity < 1.005 || test.gravity > 1.030)) ||
+      (test.ph && (test.ph < 5.0 || test.ph > 8.0)) ||
+      (test.protein && test.protein !== 'Negativo') ||
+      (test.glucose && test.glucose !== 'Negativo') ||
+      (test.ketones && test.ketones !== 'Negativo') ||
+      (test.occultBlood && test.occultBlood !== 'Negativo') ||
+      (test.bilirubin && test.bilirubin !== 'Negativo') ||
+      (test.nitrites && test.nitrites !== 'Negativo') ||
+      (test.leukocytes && test.leukocytes !== 'Negativo')
+    );
   }
 }
