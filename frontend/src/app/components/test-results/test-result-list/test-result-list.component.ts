@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { TestResult } from '../../../models/test-result.interface';
@@ -12,7 +12,8 @@ import { PaginatedResponse } from '../../../models/paginated-response.interface'
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './test-result-list.component.html',
-  styleUrls: ['./test-result-list.component.css']
+  styleUrls: ['./test-result-list.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TestResultListComponent implements OnInit, OnDestroy {
   results: TestResult[] = [];
@@ -27,7 +28,8 @@ export class TestResultListComponent implements OnInit, OnDestroy {
 
   constructor(
     private resultService: TestResultService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -50,11 +52,13 @@ export class TestResultListComponent implements OnInit, OnDestroy {
           this.results = response.data;
           this.totalPages = response.totalPages;
           this.loading = false;
+          this.cdr.markForCheck();
         },
         error: (err: any) => {
           this.error = 'Error cargando resultados. Por favor, intente de nuevo.';
           this.loading = false;
           console.error('Error loading results:', err);
+          this.cdr.markForCheck();
         }
       });
   }
@@ -82,6 +86,7 @@ export class TestResultListComponent implements OnInit, OnDestroy {
           error: (err: any) => {
             console.error('Error deleting result:', err);
             this.error = 'Error al eliminar el resultado.';
+            this.cdr.markForCheck();
           }
         });
     }
