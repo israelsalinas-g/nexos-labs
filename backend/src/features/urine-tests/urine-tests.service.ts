@@ -7,6 +7,7 @@ import { UpdateUrineTestDto } from '../../dto/update-urine-test.dto';
 import { Patient } from '../../entities/patient.entity';
 import { BaseService } from '../../common/bases/base.service';
 import { PaginationResult } from '../../common/interfaces/pagination.interface';
+import { PdfUrineReportService } from './pdf-urine-report.service';
 
 @Injectable()
 export class UrineTestsService extends BaseService<UrineTest> {
@@ -17,8 +18,13 @@ export class UrineTestsService extends BaseService<UrineTest> {
     private urineTestRepository: Repository<UrineTest>,
     @InjectRepository(Patient)
     private patientRepository: Repository<Patient>,
+    private readonly pdfUrineReportService: PdfUrineReportService,
   ) {
     super(urineTestRepository);
+  }
+
+  async generatePdf(id: string): Promise<Buffer> {
+    return this.pdfUrineReportService.generateUrineTestPdf(id);
   }
 
   async create(createUrineTestDto: CreateUrineTestDto): Promise<UrineTest> {

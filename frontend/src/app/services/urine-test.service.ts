@@ -97,6 +97,11 @@ export class UrineTestService extends BaseService {
       .pipe(catchError((err: any) => this.handleError(err)));
   }
 
+  downloadPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.endpoint}/${id}/pdf`, { responseType: 'blob' })
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
   hasAbnormalResults(test: any): boolean {
     return !!(
       (test.gravity && (test.gravity < 1.005 || test.gravity > 1.030)) ||

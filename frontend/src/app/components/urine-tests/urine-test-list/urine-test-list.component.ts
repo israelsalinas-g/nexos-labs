@@ -5,7 +5,6 @@ import { Router, RouterModule } from '@angular/router';
 import { UrineTest, UrineTestFilters } from '../../../models/urine-test.interface';
 import { ConfirmAction } from '../../../models/common.interface';
 import { UrineTestService } from '../../../services/urine-test.service';
-import { PdfUrineTestService } from '../../../services/pdf/pdf-urine-test.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
@@ -19,7 +18,6 @@ import { ToastService } from '../../../services/toast.service';
 export class UrineTestListComponent implements OnInit {
   private urineTestService = inject(UrineTestService);
   private router = inject(Router);
-  private pdfService = inject(PdfUrineTestService);
   private toastService = inject(ToastService);
 
   urineTests = signal<UrineTest[]>([]);
@@ -223,14 +221,19 @@ export class UrineTestListComponent implements OnInit {
 
   generateReport(id: string): void {
     const test = this.urineTests().find(t => t.id === id);
-    if (test) {
-      try {
-        this.pdfService.generateUrineReport(test);
+    if (!test) return;
+    this.urineTestService.downloadPdf(id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Orina-${(test as any).sampleNumber ?? id}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
         this.toastService.success('PDF generado correctamente');
-      } catch (error) {
-        this.toastService.error('Error al generar el PDF');
-      }
-    }
+      },
+      error: () => this.toastService.error('Error al generar el PDF')
+    });
   }
 
   markAsCompleted(id: string): void {

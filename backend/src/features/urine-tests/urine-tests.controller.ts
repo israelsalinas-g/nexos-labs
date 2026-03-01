@@ -11,7 +11,9 @@ import {
   HttpStatus,
   ParseIntPipe,
   DefaultValuePipe,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -228,6 +230,24 @@ export class UrineTestsController {
     @Param('patientId', ParseUUIDPipe) patientId: string,
   ): Promise<any> {
     return await this.urineTestService.findByPatient(patientId);
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({ summary: 'Descargar PDF del examen de orina' })
+  @ApiParam({ name: 'id', type: String, description: 'ID del examen' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'PDF generado exitosamente' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Examen no encontrado' })
+  async downloadPdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const pdfBuffer = await this.urineTestService.generatePdf(id);
+    (res as any).set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="Orina-${id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    (res as any).end(pdfBuffer);
   }
 
   @Get(':id')
