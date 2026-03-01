@@ -66,7 +66,7 @@ export class PdfUrineReportService {
     const [pr, pg, pb] = this.hexToRgb(primaryColor);
 
     // 1. HEADER (logo + info_contacto)
-    let curY = this.renderHeader(doc, labSettings, pr, pg, pb);
+    let curY = this.renderHeader(doc);
 
     // 2. BARRA AZUL - "GENERAL DE ORINA"
     curY += 6;
@@ -243,23 +243,19 @@ export class PdfUrineReportService {
 
   // ─── Header / Footer ─────────────────────────────────────────────────────────
 
-  private renderHeader(doc: any, labSettings: Record<string, string>, pr: number, pg: number, pb: number): number {
+  private renderHeader(doc: any): number {
     const logoBuffer = this.tryLoadImage('logo_CMO_LABS.png');
     const contactBuffer = this.tryLoadImage('info_contacto.png');
-    const startY = 18;
+    const startY = 14;
 
     if (logoBuffer) {
       try { doc.image(logoBuffer, MARGIN, startY, { width: 88, height: 58 }); } catch { /* skip */ }
     }
     if (contactBuffer) {
-      try { doc.image(contactBuffer, 283, startY - 8, { width: 282 }); } catch { /* skip */ }
+      try { doc.image(contactBuffer, 283, startY, { width: 282 }); } catch { /* skip */ }
     }
 
-    const tagline = labSettings['lab_tagline'] || '¡Los resultados en los que puede confiar!';
-    doc.font('Helvetica-Oblique').fontSize(7.5).fillColor('#555555')
-      .text(tagline, MARGIN, startY + 64, { width: 200, lineBreak: false });
-
-    return startY + 78;
+    return startY + 64;
   }
 
   private renderFooter(
