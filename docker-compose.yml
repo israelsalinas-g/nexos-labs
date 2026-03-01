@@ -10,7 +10,9 @@ services:
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - nexos_labs_postgres_data:/var/lib/postgresql/data
+    networks:
+      - nexos_labs_net
 
   backend:
     build:
@@ -38,6 +40,8 @@ services:
       - /app/node_modules
     depends_on:
       - db
+    networks:
+      - nexos_labs_net
 
   frontend:
     build:
@@ -52,6 +56,8 @@ services:
       - /app/node_modules
     depends_on:
       - backend
+    networks:
+      - nexos_labs_net
 
   pgadmin:
     image: dpage/pgadmin4
@@ -62,8 +68,17 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
     ports:
       - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - nexos_labs_pgadmin_data:/var/lib/pgadmin
     depends_on:
       - db
+    networks:
+      - nexos_labs_net
+
+networks:
+  nexos_labs_net:
+    driver: bridge
 
 volumes:
-  postgres_data:
+  nexos_labs_postgres_data:
+  nexos_labs_pgadmin_data:

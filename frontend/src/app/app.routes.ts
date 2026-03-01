@@ -111,6 +111,7 @@ export const routes: Routes = [
   {
     path: 'test-sections',
     canActivate: [authGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.SUPERADMIN] },
     loadComponent: () => import('./components/test-sections/test-section-list/test-section-list.component').then(m => m.TestSectionListComponent)
   },
   {
@@ -119,14 +120,16 @@ export const routes: Routes = [
     data: { roles: [UserRole.ADMIN, UserRole.SUPERADMIN] },
     loadComponent: () => import('./components/test-response-types/test-response-type-list/test-response-type-list.component').then(m => m.TestResponseTypeListComponent)
   },
-  { 
+  {
     path: 'test-definitions',
     canActivate: [authGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.SUPERADMIN] },
     loadComponent: () => import('./components/test-definitions/test-definition-list/test-definition-list.component').then(m => m.TestDefinitionListComponent)
   },
   {
     path: 'test-profiles',
     canActivate: [authGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.SUPERADMIN] },
     loadComponent: () => import('./components/test-profiles/test-profile-list/test-profile-list.component').then(m => m.TestProfileListComponent)
   },
   {
@@ -153,6 +156,7 @@ export const routes: Routes = [
   {
     path: 'laboratory-orders/:id/results',
     canActivate: [authGuard],
+    data: { roles: [UserRole.TECNICO, UserRole.ADMIN, UserRole.SUPERADMIN] },
     loadComponent: () => import('./components/result-capture/result-capture.component').then(m => m.ResultCaptureComponent)
   },
   {

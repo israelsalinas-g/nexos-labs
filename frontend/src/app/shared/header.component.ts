@@ -108,37 +108,17 @@ import { ThemeService } from '../services/theme.service';
                 </div>
               }
 
-              <!-- Configuración -->
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-section">
-                <div class="dropdown-section-title">Configuración</div>
-                <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/test-sections')">
-                  <span class="item-icon">📂</span>
-                  <span>Secciones de Pruebas</span>
-                </button>
-                <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/test-definitions')">
-                  <span class="item-icon">🧪</span>
-                  <span>Definiciones de Pruebas</span>
-                </button>
-                <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/test-profiles')">
-                  <span class="item-icon">📋</span>
-                  <span>Perfiles de Pruebas</span>
-                </button>
-                @if (canAccessAdmin) {
-                  <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/test-response-types')">
-                    <span class="item-icon">🎛️</span>
-                    <span>Tipos de Respuesta</span>
-                  </button>
-                  <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/promotions')">
-                    <span class="item-icon">🎁</span>
-                    <span>Promociones</span>
-                  </button>
+              <!-- Configuración del Sistema (solo ADMIN/SUPERADMIN) -->
+              @if (canAccessAdmin) {
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-section">
+                  <div class="dropdown-section-title">Sistema</div>
                   <button class="dropdown-item" type="button" role="menuitem" (click)="navigateTo('/settings')">
                     <span class="item-icon">⚙️</span>
                     <span>Configuración del Laboratorio</span>
                   </button>
-                }
-              </div>
+                </div>
+              }
 
               <!-- Cerrar Sesión -->
               <div class="dropdown-divider"></div>

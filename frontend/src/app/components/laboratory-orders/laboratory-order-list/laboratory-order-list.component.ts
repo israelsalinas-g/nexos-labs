@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LaboratoryOrder } from '../../../models/laboratory-order.interface';
 import { LaboratoryOrderService } from '../../../services/laboratory-order.service';
@@ -37,6 +37,7 @@ export class LaboratoryOrderListComponent implements OnInit {
   private orderService = inject(LaboratoryOrderService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   orders = signal<LaboratoryOrder[]>([]);
   selectedOrder = signal<LaboratoryOrder | null>(null);
@@ -56,7 +57,10 @@ export class LaboratoryOrderListComponent implements OnInit {
   readonly OrderPriorityLabels = OrderPriorityLabels;
 
   ngOnInit(): void {
-    this.loadOrders();
+    this.route.queryParams.subscribe(params => {
+      if (params['status']) this.statusFilter.set(params['status']);
+      this.loadOrders();
+    });
   }
 
   loadOrders(): void {
