@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { NotificationsService, SendResultsResponse } from '../notifications/notifications.service';
+import { PdfReportService } from './pdf-report.service';
 import { SendResultsDto } from '../../dto/send-results.dto';
 import { LaboratoryOrder } from '../../entities/laboratory-order.entity';
 import { OrderTest } from '../../entities/order-test.entity';
@@ -25,6 +26,7 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
 
   constructor(
     private readonly notificationsService: NotificationsService,
+    private readonly pdfReportService: PdfReportService,
     @InjectRepository(LaboratoryOrder)
     private readonly laboratoryOrderRepository: Repository<LaboratoryOrder>,
     @InjectRepository(Patient)
@@ -269,11 +271,22 @@ export class LaboratoryOrdersService extends BaseService<LaboratoryOrder> {
     return { orderId: order.id, totalTestsAdded: createdTests.length, tests: createdTests };
   }
 
+  async generatePdf(orderId: string): Promise<Buffer> {
+    return this.pdfReportService.generateOrderPdf(orderId);
+  }
+
   async sendResults(id: string, dto: SendResultsDto): Promise<SendResultsResponse & { order: LaboratoryOrder }> {
-    const orderForNumber = await this.laboratoryOrderRepository.findOne({ where: { id } });
-    const result = await this.notificationsService.sendOrderResults(
-      id, dto.channels, dto.pdfBase64, dto.orderNumber ?? orderForNumber?.orderNumber,
-    );
+    // Generate PDF on the backend (no longer received from frontend)
+    let pdfBuffer: Buffer | undefined;
+    if (dto.channels.includes('email')) {
+      try {
+        pdfBuffer = await this.pdfReportService.generateOrderPdf(id);
+      } catch (err: any) {
+        this.logger.warn(`No se pudo generar PDF para orden ${id}: ${err.message}`);
+      }
+    }
+
+    const result = await this.notificationsService.sendOrderResults(id, dto.channels, pdfBuffer);
 
     const order = await this.laboratoryOrderRepository.findOne({ where: { id } });
     if (order) {

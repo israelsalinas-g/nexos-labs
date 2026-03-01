@@ -142,4 +142,15 @@ export class CreateTestDefinitionDto {
   @IsOptional()
   @IsInt()
   responseTypeId?: number;
+
+  @ApiProperty({
+    description: 'Sub-agrupación dentro de la sección (para sub-encabezados en PDF)',
+    example: 'Examen Físico',
+    required: false,
+    maxLength: 100
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  subsection?: string;
 }

@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseEnumPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseEnumPipe, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { LaboratoryOrdersService } from './laboratory-orders.service';
 import { SendResultsDto } from '../../dto/send-results.dto';
@@ -65,6 +66,21 @@ export class LaboratoryOrdersController {
   @ApiResponse({ status: 200, description: 'Estadísticas obtenidas exitosamente' })
   getStats() {
     return this.laboratoryOrdersService.getStats();
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({ summary: 'Generar y descargar PDF de resultados de una orden' })
+  @ApiParam({ name: 'id', description: 'ID de la orden de laboratorio' })
+  @ApiResponse({ status: 200, description: 'PDF generado exitosamente (application/pdf)' })
+  @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+  async downloadPdf(@Param('id') id: string, @Res() res: Response): Promise<void> {
+    const pdfBuffer = await this.laboratoryOrdersService.generatePdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="Resultados-${id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
   }
 
   @Get(':id/pending-capture')

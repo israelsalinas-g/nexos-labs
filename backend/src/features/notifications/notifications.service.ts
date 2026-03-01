@@ -31,8 +31,7 @@ export class NotificationsService {
   async sendOrderResults(
     orderId: string,
     channels: ('email' | 'whatsapp')[],
-    pdfBase64?: string,
-    orderNumber?: string,
+    pdfBuffer?: Buffer,
   ): Promise<SendResultsResponse> {
     const response: SendResultsResponse = { emailSent: false, whatsappSent: false, errors: [] };
 
@@ -60,13 +59,10 @@ export class NotificationsService {
     const resultMap = new Map<number, UnifiedTestResult>();
     results.forEach(r => resultMap.set(r.orderTestId, r));
 
-    const { textBody, htmlBody } = this.buildMessages(order, orderTests, resultMap, !!pdfBase64);
+    const { textBody, htmlBody } = this.buildMessages(order, orderTests, resultMap, !!pdfBuffer);
 
     const patient = order.patient;
-
-    // Preparar adjunto PDF si se envió desde el frontend
-    const pdfBuffer = pdfBase64 ? Buffer.from(pdfBase64, 'base64') : null;
-    const pdfFilename = `Resultados-${orderNumber ?? order.orderNumber ?? orderId}.pdf`;
+    const pdfFilename = `Resultados-${order.orderNumber ?? orderId}.pdf`;
 
     if (channels.includes('email')) {
       if (!patient?.email) {
@@ -77,10 +73,14 @@ export class NotificationsService {
             patient.email,
             `Resultados de Orden ${order.orderNumber}`,
             htmlBody,
-            pdfBuffer ? [{ filename: pdfFilename, content: pdfBuffer, contentType: 'application/pdf' }] : [],
+            pdfBuffer
+              ? [{ filename: pdfFilename, content: pdfBuffer, contentType: 'application/pdf' }]
+              : [],
           );
           response.emailSent = true;
-          this.logger.log(`📧 Email enviado a ${patient.email} para orden ${order.orderNumber}${pdfBuffer ? ' (con PDF adjunto)' : ''}`);
+          this.logger.log(
+            `📧 Email enviado a ${patient.email} para orden ${order.orderNumber}${pdfBuffer ? ' (con PDF adjunto)' : ''}`,
+          );
         } catch (err: any) {
           response.errors.push(`Error enviando email: ${err.message}`);
           this.logger.error(`Error enviando email: ${err.message}`);

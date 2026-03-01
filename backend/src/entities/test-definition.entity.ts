@@ -112,13 +112,21 @@ export class TestDefinition {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   price: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Orden de visualización dentro de su sección',
     example: 1,
     default: 0
   })
   @Column({ name: 'display_order', type: 'int', default: 0 })
   displayOrder: number;
+
+  @ApiProperty({
+    description: 'Sub-agrupación dentro de la sección (para sub-encabezados en PDF)',
+    example: 'Examen Físico',
+    required: false
+  })
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  subsection: string;
 
   @ApiProperty({ 
     description: 'Indica si la prueba está activa',

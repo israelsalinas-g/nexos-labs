@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LaboratoryOrdersController } from './laboratory-orders.controller';
 import { LaboratoryOrdersService } from './laboratory-orders.service';
+import { PdfReportService } from './pdf-report.service';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { LabSettingsModule } from '../lab-settings/lab-settings.module';
 
 import { OrderTest,
 LaboratoryOrder,
@@ -18,6 +20,7 @@ import { UnifiedTestResult } from '../../entities/unified-test-result.entity';
 @Module({
   imports: [
     NotificationsModule,
+    LabSettingsModule,
     TypeOrmModule.forFeature([
       // Entidades principales
       LaboratoryOrder,
@@ -35,7 +38,7 @@ import { UnifiedTestResult } from '../../entities/unified-test-result.entity';
     ])
   ],
   controllers: [LaboratoryOrdersController],
-  providers: [LaboratoryOrdersService],
+  providers: [LaboratoryOrdersService, PdfReportService],
   exports: [LaboratoryOrdersService]
 })
 export class LaboratoryOrdersModule {}

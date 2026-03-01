@@ -163,7 +163,8 @@ export class TestDefinitionFormComponent implements OnInit, OnChanges {
         [Validators.min(0)]
       ],
       displayOrder: [this.testDefinition?.displayOrder || 0],
-      isActive: [this.testDefinition?.isActive !== undefined ? this.testDefinition.isActive : true]
+      isActive: [this.testDefinition?.isActive !== undefined ? this.testDefinition.isActive : true],
+      subsection: [this.testDefinition?.subsection || '']
     });
 
     // Al cambiar responseTypeId, sincronizar resultType con el slug para compatibilidad
@@ -298,7 +299,8 @@ export class TestDefinitionFormComponent implements OnInit, OnChanges {
         processingTime: formValue.processingTime !== null && formValue.processingTime !== undefined ? formValue.processingTime : undefined,
         price: priceValue,
         displayOrder: formValue.displayOrder,
-        isActive: formValue.isActive
+        isActive: formValue.isActive,
+        subsection: formValue.subsection || undefined,
       };
 
       this.testService.updateTestDefinition(this.testDefinition.id.toString(), updateData)
@@ -326,7 +328,8 @@ export class TestDefinitionFormComponent implements OnInit, OnChanges {
         processingTime: formValue.processingTime !== null && formValue.processingTime !== undefined ? formValue.processingTime : undefined,
         price: priceValue,
         displayOrder: formValue.displayOrder,
-        isActive: formValue.isActive
+        isActive: formValue.isActive,
+        subsection: formValue.subsection || undefined,
       };
 
       this.testService.createTestDefinition(createData)

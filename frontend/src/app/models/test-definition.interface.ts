@@ -17,6 +17,7 @@ export interface TestDefinition {
   category: null | string;
   sectionId?: string;  // ID de la sección relacionada
   section?: { id: string; name: string };  // Objeto sección completo
+  subsection?: string | null; // Sub-agrupación para PDF (ej: "Examen Físico")
   description: string | null;
   resultType: string; // TestResultType enum serializado como string (legado)
   responseType?: TestResponseType; // Nuevo tipo de respuesta dinámico
@@ -37,6 +38,7 @@ export interface CreateTestDefinitionDto {
   code: string;
   name: string;
   sectionId: string;
+  subsection?: string; // Sub-agrupación para PDF
   description?: string;
   method?: string;
   unit?: string;
@@ -47,7 +49,7 @@ export interface CreateTestDefinitionDto {
   processingTime?: number;
   price?: number;
   displayOrder?: number;
-  isActive?: boolean; 
+  isActive?: boolean;
 }
 
 export interface UpdateTestDefinitionDto extends Partial<CreateTestDefinitionDto> {

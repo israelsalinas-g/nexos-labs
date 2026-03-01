@@ -33,6 +33,13 @@
           <div class="error-message" *ngIf="isFieldInvalid('sectionId')">La sección es requerida</div>
         </div>
 
+        <!-- Subsección (para sub-encabezados en PDF) -->
+        <div class="form-group">
+          <label for="subsection">Subsección <span class="hint">(opcional, para PDF)</span></label>
+          <input id="subsection" type="text" formControlName="subsection" class="form-control"
+            placeholder="Ej: Examen Físico, Examen Químico, Examen Microscópico">
+        </div>
+
         <!-- Nombre y Código -->
         <div class="form-row">
           <div class="form-group">

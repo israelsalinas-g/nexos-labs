@@ -5,8 +5,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { LaboratoryOrder } from '../../../models/laboratory-order.interface';
 import { LaboratoryOrderService } from '../../../services/laboratory-order.service';
-import { PdfUnifiedResultsService } from '../../../services/pdf/pdf-unified-results.service';
-import { LabSettingsService } from '../../../services/lab-settings.service';
 
 export interface SendResultsClosedEvent {
   refreshOrder: boolean;
@@ -22,8 +20,6 @@ export interface SendResultsClosedEvent {
 })
 export class SendResultsDialogComponent {
   private orderService = inject(LaboratoryOrderService);
-  private pdfService = inject(PdfUnifiedResultsService);
-  private labSettings = inject(LabSettingsService);
 
   @Input() order: LaboratoryOrder | null = null;
   @Input() visible = false;
@@ -52,7 +48,7 @@ export class SendResultsDialogComponent {
   toggleEmail(): void { this.emailSelected.update(v => !v); }
   toggleWhatsapp(): void { this.whatsappSelected.update(v => !v); }
 
-  async submit(): Promise<void> {
+  submit(): void {
     if (!this.order?.id || !this.canSubmit()) return;
 
     const channels: ('email' | 'whatsapp')[] = [];
@@ -62,27 +58,11 @@ export class SendResultsDialogComponent {
 
     this.sending.set(true);
 
-    // Generar PDF en el frontend antes de enviar
-    let pdfBase64: string | undefined;
-    try {
-      pdfBase64 = await this.pdfService.generateForOrder(
-        this.order,
-        this.labSettings.settingsMap(),
-      );
-    } catch (err) {
-      console.warn('No se pudo generar el PDF — se enviará sin adjunto:', err);
-    }
-
-    this.orderService.sendResults(
-      this.order.id,
-      channels,
-      pdfBase64,
-      this.order.orderNumber,
-    ).subscribe({
+    // El backend genera el PDF internamente y lo adjunta al email
+    this.orderService.sendResults(this.order.id, channels).subscribe({
       next: (res) => {
         this.result.set(res);
         this.sending.set(false);
-        // Cerramos el dialog después de un breve delay para que el usuario vea el resultado
         setTimeout(() => this.close(true), 2000);
       },
       error: (err: any) => {
