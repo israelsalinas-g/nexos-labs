@@ -227,7 +227,10 @@ export class UrineTestListComponent implements OnInit {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Orina-${(test as any).sampleNumber ?? id}.pdf`;
+        const patientName = ((test as any).patient?.name ?? 'paciente')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+        link.download = `examen-orina-${patientName}.pdf`;
         link.click();
         URL.revokeObjectURL(url);
         this.toastService.success('PDF generado correctamente');

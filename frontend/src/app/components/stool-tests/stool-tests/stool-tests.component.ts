@@ -190,7 +190,10 @@ export class StoolTestsComponent implements OnInit {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Coprologico-${test.sampleNumber ?? test.id}.pdf`;
+        const patientName = ((test as any).patient?.name ?? 'paciente')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+        link.download = `examen-heces-${patientName}.pdf`;
         link.click();
         URL.revokeObjectURL(url);
         this.toastService.success('PDF generado correctamente');
