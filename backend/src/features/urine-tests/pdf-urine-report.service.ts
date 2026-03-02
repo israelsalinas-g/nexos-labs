@@ -283,6 +283,9 @@ export class PdfUrineReportService {
     doc.font('Helvetica').fontSize(7).fillColor('#555555')
       .text('Responsable de Laboratorio', MARGIN, stampY + STAMP_H + 16, { width: STAMP_W + 20, align: 'center', lineBreak: false });
 
+    // Resetear cursor antes de la columna derecha para evitar salto de página
+    doc.y = stampY;
+
     const selloBuffer = this.tryLoadImage('ogyne_sello.png');
     if (selloBuffer) {
       try { doc.image(selloBuffer, rightStampX, stampY, { width: STAMP_W, height: STAMP_H }); } catch { /* skip */ }
