@@ -71,4 +71,9 @@ export class StoolTestService extends BaseService {
     return this.http.get<{ sampleNumber: string }>(`${this.endpoint}/next-sample-number`)
       .pipe(catchError(err => this.handleError(err)));
   }
+
+  downloadPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.endpoint}/${id}/pdf`, { responseType: 'blob' })
+      .pipe(catchError(err => this.handleError(err)));
+  }
 }

@@ -13,7 +13,9 @@ import {
   DefaultValuePipe,
   NotFoundException,
   ParseUUIDPipe,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -193,6 +195,23 @@ export class StoolTestsController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({
+    summary: 'Descargar PDF del examen coprológico',
+    description: 'Genera y descarga el reporte PDF del examen coprológico'
+  })
+  @ApiParam({ name: 'id', description: 'ID del examen' })
+  @ApiResponse({ status: 200, description: 'PDF generado exitosamente' })
+  async downloadPdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response): Promise<void> {
+    const pdfBuffer = await this.stoolTestsService.generatePdf(id);
+    (res as any).set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="Coprologico-${id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    (res as any).end(pdfBuffer);
   }
 
   @Get(':id')

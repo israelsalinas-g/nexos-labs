@@ -1,9 +1,8 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { StoolTestService } from '../../../services/stool-test.service';
-import { PdfStoolTestService } from '../../../services/pdf/pdf-stool-test.service';
 import { ToastService } from '../../../services/toast.service';
 import { StoolTest } from '../../../models/stool-test.interface';
 import { StoolTestFilters } from '../../../models/stool-test.interfaces';
@@ -22,7 +21,6 @@ import { EscasaModeradaAbundanteAusenteQuantity } from '../../../enums/escasa-mo
 export class StoolTestsComponent implements OnInit {
   private stoolTestService = inject(StoolTestService);
   private router = inject(Router);
-  private pdfService = inject(PdfStoolTestService);
   private toastService = inject(ToastService);
 
   stoolTests = signal<StoolTest[]>([]);
@@ -185,12 +183,19 @@ export class StoolTestsComponent implements OnInit {
       test.erythrocytes === EscasaModeradaAbundanteAusenteQuantity.ABUNDANTE);
   }
 
-  async generatePdf(test: StoolTest, event: Event): Promise<void> {
+  generatePdf(test: StoolTest, event: Event): void {
     event.stopPropagation();
-    try {
-      await this.pdfService.generateStoolReport(test);
-    } catch (error) {
-      this.toastService.error('Error al generar el reporte PDF');
-    }
+    this.stoolTestService.downloadPdf(test.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Coprologico-${test.sampleNumber ?? test.id}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.toastService.success('PDF generado correctamente');
+      },
+      error: () => this.toastService.error('Error al generar el reporte PDF')
+    });
   }
 }

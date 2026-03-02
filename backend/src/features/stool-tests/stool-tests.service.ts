@@ -7,6 +7,7 @@ import { Patient } from '../../entities/patient.entity';
 import { StoolTest } from '../../entities/stool-test.entity';
 import { PaginationResult } from '../../common/interfaces';
 import { BaseService } from '../../common/bases/base.service';
+import { PdfStoolReportService } from './pdf-stool-report.service';
 
 @Injectable()
 export class StoolTestsService extends BaseService<StoolTest> {
@@ -17,8 +18,13 @@ export class StoolTestsService extends BaseService<StoolTest> {
     private stoolTestRepository: Repository<StoolTest>,
     @InjectRepository(Patient)
     private patientRepository: Repository<Patient>,
+    private readonly pdfStoolReportService: PdfStoolReportService,
   ) {
     super(stoolTestRepository);
+  }
+
+  async generatePdf(id: number): Promise<Buffer> {
+    return this.pdfStoolReportService.generateStoolTestPdf(id);
   }
 
   async create(createStoolTestDto: CreateStoolTestDto): Promise<StoolTest> {
