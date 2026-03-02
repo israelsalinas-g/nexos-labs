@@ -31,7 +31,7 @@ export class PdfUrineReportService {
     @InjectRepository(UrineTest)
     private readonly urineTestRepo: Repository<UrineTest>,
     private readonly labSettingsService: LabSettingsService,
-  ) {}
+  ) { }
 
   // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -289,15 +289,6 @@ export class PdfUrineReportService {
     const selloBuffer = this.tryLoadImage('ogyne_sello.png');
     if (selloBuffer) {
       try { doc.image(selloBuffer, rightStampX, stampY, { width: STAMP_W, height: STAMP_H }); } catch { /* skip */ }
-    }
-
-    const labName = labSettings['lab_name'] || 'Laboratorio Clínico';
-    const labTagline = labSettings['lab_tagline'] || '';
-    doc.font('Helvetica-Bold').fontSize(8).fillColor([pr, pg, pb])
-      .text(labName.toUpperCase(), rightStampX - 10, stampY + STAMP_H + 5, { width: STAMP_W + 20, align: 'center', lineBreak: false });
-    if (labTagline) {
-      doc.font('Helvetica').fontSize(7).fillColor('#555555')
-        .text(labTagline, rightStampX - 10, stampY + STAMP_H + 16, { width: STAMP_W + 20, align: 'center', lineBreak: false });
     }
   }
 
