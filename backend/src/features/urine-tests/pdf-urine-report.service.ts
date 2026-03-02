@@ -40,7 +40,7 @@ export class PdfUrineReportService {
       where: { id },
       relations: ['patient', 'doctor'],
     });
-    if (!test) throw new NotFoundException(`Examen de orina ${id} no encontrado`);
+    if (!test) throw new NotFoundException(`Examen general de orina ${id} no encontrado`);
 
     const labSettings = await this.labSettingsService.getAsMap();
     return this.renderPdf(test, labSettings);
