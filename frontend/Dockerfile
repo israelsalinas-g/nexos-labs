@@ -16,4 +16,4 @@ EXPOSE 4200
 
 # Start Angular dev server
 # --host 0.0.0.0 is necessary for Docker access
-CMD ["npx", "ng", "serve", "--host", "0.0.0.0"]
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--poll", "2000"]

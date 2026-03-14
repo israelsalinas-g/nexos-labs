@@ -27,8 +27,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      /* background-image: url('../../../assets/images/login/login-img-nexos-labs.png'); */
-      background-image: url('../../../assets//images//login/login-img-nexos-labs-v2.png');
+      background-image: url('/assets/images/login/login-img-nexos-labs-v3.png');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -73,11 +72,11 @@
       margin-bottom: 30px;
     }
 
-    .login-header h1 {
-      color: #333;
-      font-size: 32px;
-      margin-bottom: 10px;
-      font-weight: 700;
+    .login-logo {
+      max-width: 200px;
+      height: auto;
+      display: block;
+      margin: 0 auto 12px;
     }
 
     .login-header p {

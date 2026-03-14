@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SidebarService } from '../services/sidebar.service';
 import { AuthService } from '../services/auth.service';
+import { ThemeService } from '../services/theme.service';
 
 interface MenuItem {
   label: string;
@@ -31,7 +32,13 @@ interface MenuSection {
       <div class="sidebar-header">
         <div class="logo">
           @if (!sidebarService.isCollapsed$()) {
-            <span class="logo-text">NEXOS Labs</span>
+            <img
+              [src]="themeService.theme() === 'dark'
+                ? 'assets/images/logo_NEXOS_LABS_dark.png'
+                : 'assets/images/logo_NEXOS_LABS_light.png'"
+              alt="NEXOS Labs"
+              class="logo-img"
+            />
           } @else {
             <span class="logo-text-collapsed">NL</span>
           }
@@ -128,12 +135,12 @@ interface MenuSection {
       text-align: center;
     }
 
-    .logo-text {
-      color: var(--color-sidebar-text);
-      font-size: 24px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      transition: opacity 0.3s ease;
+    .logo-img {
+      max-width: 100%;
+      height: 48px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
     }
 
     .logo-text-collapsed {
@@ -344,6 +351,7 @@ interface MenuSection {
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   protected sidebarService: SidebarService;
+  protected themeService = inject(ThemeService);
   private authService: AuthService;
   private router: Router;
   private userSub?: Subscription;
